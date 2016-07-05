@@ -26,9 +26,9 @@
   // },
   "background": {
     "scripts": [
-      "./js/checkIsOnline.js",
       "./js/diff.js",
-      "./js/polish_back.js"
+      "./js/polish_back.js",
+      "./js/checkIsOnline.js"
     ]
   },
   "content_scripts": [
