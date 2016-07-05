@@ -1,0 +1,43 @@
+#backtotop {
+  position: fixed;
+  bottom: 5px;
+  right: 25px;
+  z-index: 104;
+}
+#backtotop .backtotop-btn {
+  position: relative;
+
+  width: 38px;
+  height: 38px;
+  border-radius: 3px;
+
+  background-color: #E4E4E4;
+  cursor: pointer;
+}
+#backtotop .backtotop-btn:hover {  background-color: #e2e2e2;  }
+#backtotop .arrow-upward, #backtotop .vertical-stick {
+  position: absolute;
+  right: 0;
+  left: 0;
+  margin: auto;
+}
+#backtotop .arrow-upward {
+  top: -1px;
+
+  width: 0;
+  height: 0;
+  
+  border: 9px solid transparent;
+  border-bottom-color: #404040;
+}
+#backtotop .backtotop-btn:hover .arrow-upward {  border-bottom-color: #0085a1;  }
+#backtotop .vertical-stick {
+  top: 15px;
+
+  width: 8px;
+  height: 14px;
+  
+  border-radius: 1px;
+  background-color: #404040;
+}
+#backtotop .backtotop-btn:hover .vertical-stick {  background-color: #0085a1;  }

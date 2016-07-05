@@ -1,0 +1,15 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+body {
+  height: 200px;
+  width: 250px;
+}
+#s {
+  margin: 10% 5%;
+
+  color: red;
+  text-align: center;
+
+}

@@ -1,0 +1,66 @@
+.submission-output > div {
+  font-size: 30px;
+}
+
+.phase-content {
+  font-size: 18px;
+}
+
+.diff-removed-bg {
+  background-color: pink;
+}
+.diff-added-bg {
+  background-color: darkseagreen;
+}
+
+.plain-text-wrapper {
+  background: url("https://developer.cdn.mozilla.net/static/img/blueprint-dark.fd85a7a074ae.png") top center #fafbfc;
+  border-left: 10px solid #558abb;
+  padding-left: 1em;
+  
+  position: relative;
+  word-wrap: normal;
+  overflow-x: auto;
+}
+.line-numbers-wrapper {
+  padding-left: 4em;
+}
+.line-numbers-wrapper > pre {
+  margin: 0 0;
+  padding-left: 1em;
+}
+.diffPre {
+  padding-left: 6.7em;
+}
+.one-diff-content-one-row-binary {
+  color: rgba(95, 95, 95, 1);
+  font-size: 14px;
+}
+
+.line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  font-size: 100%;
+  left: 0em;
+  width: 3.3em;
+  letter-spacing: -1px;
+  border-right: 1px solid #999;
+/*  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;*/
+}
+.line-numbers-rows-right {
+  left: 3.4em;
+}
+.line-numbers-rows > div {
+  display: block;
+  color: rgba(107, 107, 107, 1);
+  padding-right: .5em;
+  text-align: right;
+}
+
+.hiding {
+  display: none;
+}

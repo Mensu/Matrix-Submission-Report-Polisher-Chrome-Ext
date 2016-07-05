@@ -1,0 +1,57 @@
+{
+  "manifest_version": 2,
+  "name": "Matrix Submission Report Polisher",  // 在扩展管理中的名字
+  "version": "0.1",
+  "description": "polish your submission report on Matrix",  // 在扩展管理中的描述
+  "icons": {
+    "16": "img/online.png",  // 右键菜单的图标
+    "48": "img/online.png",  // 扩展管理中的图标
+    "128": "img/online.png"  // 点击权限
+  },
+  "page_action": {
+    "default_icon": {
+      "19": "img/online.png",  // 初始图标
+      "38": "img/avatar.png"
+    },
+    "default_title": "connected to Matrix",  // 鼠标放到图标上
+    "default_popup": "popup.html"  // 点击弹出的小窗口
+  },
+  // "page_action": {
+    // "default_icon": {
+    //   "19": "img/icon_wechat.png",  // 初始图标
+    //   "38": "img/offline.png"
+    // },
+    // "default_title": "brower_action_default_title",  // 鼠标放到图标上
+    // "default_popup": "popup.html"  // 点击弹出的小窗口
+  // },
+  "background": {
+    "scripts": [
+      "./js/checkIsOnline.js",
+      "./js/diff.js",
+      "./js/polish_back.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [  // 需要注入代码（修改）的网站
+        "https://eden.sysu.edu.cn:*/*"
+        // "file://mac/Home/Desktop/*"
+      ],
+      "css": [
+        "./css/polish.css"
+      ],
+      "js": [
+        "./js/polish_front.js"
+      ]
+    }
+  ],
+  "options_page": "options.html",  // 右键图标，选项，时弹出的页面
+  "permissions": [
+    "https://eden.sysu.edu.cn:*/*",  // 可以向这个网站请求
+    "tabs",
+    "webRequest"
+  ]
+  // "web_accessible_resources": [
+  //   "img/*.png"
+  // ]
+}
