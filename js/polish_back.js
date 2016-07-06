@@ -234,10 +234,10 @@ function toReportObject(body) {
         else return begin + ' ~ ' + end;
       };
       var content = '';
-      content += '  File: ' + oneViolation.path.substr(5) + '\n';
-      content += '  Line: ' + range(oneViolation.startLine, oneViolation.endLine) + '\n';
+      content += 'File: ' + oneViolation.path.substr(5) + '\n';
+      content += 'Line: ' + range(oneViolation.startLine, oneViolation.endLine) + '\n';
       content += 'Column: ' + oneViolation.startColumn + ' ~ ' + oneViolation.endColumn + '\n';
-      content += '  Rule: ' + oneViolation.rule + ' [priority=' + oneViolation.priority + ']\n';
+      content += 'Rule: ' + oneViolation.rule + ' [priority=' + oneViolation.priority + ']\n';
       content += (oneViolation.message) ? 'Detail: ' + oneViolation.message + '\n' : '';
       curPhase['report'].push(content);
     }

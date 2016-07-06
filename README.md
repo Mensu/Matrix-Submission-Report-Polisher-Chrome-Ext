@@ -3,9 +3,9 @@
 
 # Download
 
-[``Unpacked Ext.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.1.zip)
+[``Unpacked Ext.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.2.zip)
 
-[``Unpacked Ext.tar.gz``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.1.tar.gz)
+[``Unpacked Ext.tar.gz``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.2.tar.gz)
 
 # Install
 

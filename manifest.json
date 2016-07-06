@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Matrix Submission Report Polisher",  // 在扩展管理中的名字
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "polish your submission report on Matrix",  // 在扩展管理中的描述
   "icons": {
     "16": "img/online.png",  // 右键菜单的图标
