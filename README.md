@@ -21,6 +21,6 @@
 
 ![check the auto polish box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto-polish.png)
 
-- If you meet this problem, you may want to revisit [``chrome://extensions``](chrome://extensions) and simply clear the ``developer mode`` box
+- If you encounter this problem, you may want to revisit [``chrome://extensions``](chrome://extensions) and simply clear the ``developer mode`` box
 
 ![clear developer mode box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-clear-box.png)
