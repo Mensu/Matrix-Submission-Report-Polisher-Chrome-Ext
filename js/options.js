@@ -40,9 +40,9 @@ saveButton.addEventListener('click', function() {
   saveCheckBox(showCRCheckBox, 'showCR'), saveCheckBox(autoPolishCheckBox, 'autoPolish');
   
   var saveCaseNumber = function(Input, name, description) {
-    if (Input.value.match(/^(\d){1,2}$/)
-      && 0 < parseInt(Input.value)
-      && parseInt(Input.value) <= 100)
+    if ((Input.value.match(/^(\d){1,2}$/)
+        && 0 < parseInt(Input.value) && parseInt(Input.value) < 100)
+      || (Input.value.match(/^(\d){3}$/) && parseInt(Input.value) == 100))
       return localStorage[name] = Input.value, false;
     else return alert(description + '应该是一个1到100的整数'), true;
   };
