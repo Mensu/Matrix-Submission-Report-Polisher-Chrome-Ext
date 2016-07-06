@@ -38,10 +38,12 @@
         // "file://mac/Home/Desktop/*"
       ],
       "css": [
-        "./css/polish.css"
+        "./css/polish.css",
+        "./css/backToTop.css"
       ],
       "js": [
-        "./js/polish_front.js"
+        "./js/polish_front.js",
+        "./js/backToTop.js"
       ]
     }
   ],

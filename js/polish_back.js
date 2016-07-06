@@ -118,7 +118,7 @@ function toReportObject(body) {
   var data = body.data;
   if (Object.prototype.toString.apply(data) == '[object Array]') {
       if (data.length == 0) {
-          reportObject.msg = 'no submission yet';
+          reportObject.msg = 'no submissions yet';
           reportObject.grade = null;
           console.log('body');
           console.log(body);
@@ -134,24 +134,32 @@ function toReportObject(body) {
     console.log(body);
     return reportObject;
   }
-
+  
   if (data.grade == -1 || data.grade === null) {
-    reportObject.msg = 'grading';
-    reportObject.grade = data.grade;
-    console.log('body.data (grading)');
+    // reportObject.msg = 'grading';
+    reportObject.grade = 'being judged';
+    console.log('body.data (submission being judged)');
     console.log(body.data);
-    return reportObject;
+    // return reportObject;
   }
   if (data.submitAt) reportObject.submitTime = toSubmitAt(data.submitAt, true);
   if (data.report === null) {
-    reportObject.msg = 'Error: body.data.report is empty';
+    reportObject.msg = 'report is empty';
     reportObject.grade = 0;
     console.log('body.data');
     console.log(body.data);
     return reportObject;
   }
-
-  var report = JSON.parse(data.report);
+  var report = null;
+  try {
+    var report = JSON.parse(data.report);
+  } catch(e) {
+    reportObject.msg = 'report is incomplete';
+    reportObject.grade = 0;
+    console.log('data.report');
+    console.log(data.report);
+    return reportObject;
+  }
   if (report.error){
     reportObject.msg = 'Error: ' + report.error;
     reportObject.grade = 0;
@@ -345,7 +353,7 @@ function updateUserId(details) {
 
 chrome.webRequest.onCompleted.addListener(updateUserId, {
   "urls": [
-    'https://eden.sysu.edu.cn/exam-problems?examId=*&userId=*'
+    matrix.rootUrl + '/exam-problems?examId=*&userId=*'
   ]
 });
 
@@ -353,10 +361,19 @@ var sent = false;
 
 function sendReportObjectToFront(err, body, otherInfo) {
   var reportObject = toReportObject(body);
+  if (otherInfo.submitAt && reportObject.submitTime === null)
+    reportObject.submitTime = toSubmitAt(otherInfo.submitAt, true);
   chrome.tabs.sendMessage(otherInfo.tabId, {
     "signal":'start',
     "wait": otherInfo.wait,
     "reportObject": reportObject,
+    "submissionsId": otherInfo.submissionsId,
+    "problemInfo": {
+      "problemId": otherInfo.problemId,
+      "userId": otherInfo.userId,
+      "limits": otherInfo.limits,
+      "totalPoints": otherInfo.grading
+    },
     "configs": {
       "showCR": localStorage.showCR,
       "autoPolish": localStorage.autoPolish,
@@ -372,11 +389,32 @@ function sendReportObjectToFront(err, body, otherInfo) {
 chrome.webRequest.onCompleted.addListener(function(details) {
   if (details.tabId == -1) return;
   sent = false;
-  matrix.getLatestReportByProblemIdUserId(details.url.substring(details.url.indexOf('problemId=') + 10),
-    matrix.tabInfo[details.tabId].userId, {"tabId": details.tabId, "wait": true}, sendReportObjectToFront);
+  var problemId = details.url.substring(details.url.indexOf('problemId=') + 10), userId = matrix.tabInfo[details.tabId].userId;
+  matrix.getProblemInfoByProblemId(problemId, {"tabId": details.tabId, "wait": true, "problemId": problemId, "userId": userId}, function(err, body, otherInfo) {
+    body = JSON.parse(body);
+    var data = body.data, config = null;
+    try {
+      config = JSON.parse(data.config);
+    } catch (e) {
+      config = {};
+    }
+    otherInfo['limits'] = config.limits;
+    otherInfo['grading'] = config.grading;
+    matrix.getSubmissionsInfoByStartPosProblemIdUserId(0, otherInfo.problemId, otherInfo.userId, otherInfo, function(err, body, otherInfo) {
+      body = JSON.parse(body);
+      if (body.data) {
+        if (body.data[0]) otherInfo['submitAt'] = body.data[0].submitAt;
+        otherInfo['submissionsId'] = body.data.map(function(oneSubmission, index, self) {
+          return oneSubmission.id;
+        });
+      }
+      matrix.getLatestReportByProblemIdUserId(otherInfo.problemId, otherInfo.userId, otherInfo, sendReportObjectToFront);
+    });
+  });
+
 }, {
   "urls": [
-    'https://eden.sysu.edu.cn/one-problem?problemId=*'
+    matrix.rootUrl + '/one-problem?problemId=*'
   ]
 });
 
@@ -386,6 +424,6 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     {"tabId": details.tabId, "wait": false}, sendReportObjectToFront);
 }, {
   "urls": [
-    'https://eden.sysu.edu.cn/one-submission?submissionId=*'
+    matrix.rootUrl + '/one-submission?submissionId=*'
   ]
 });

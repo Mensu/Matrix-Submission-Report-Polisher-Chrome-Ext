@@ -267,6 +267,9 @@ function getPolishedReport(reportObject, configs) {
   var maxStdCaseNum = (configs.maxStdCaseNum === undefined) ? 5 : configs.maxStdCaseNum;
   var maxRanCaseNum = (configs.maxRanCaseNum === undefined) ? 2 : configs.maxRanCaseNum;
   var maxMemCaseNum = (configs.maxMemCaseNum === undefined) ? 2 : configs.maxMemCaseNum;
+  var memoryLimit = (configs.limits.memory === undefined) ? null : configs.limits.memory + 'MB';
+  var timeLimit = (configs.limits.time === undefined) ? null : configs.limits.time + 'ms';
+  var totalPoints = configs.totalPoints;
 
   var hideButtonTemplate = createElementWith('input', 'hide-button');
   hideButtonTemplate.type = 'button';
@@ -328,6 +331,7 @@ function getPolishedReport(reportObject, configs) {
     "IE": 'Internal Error',
     "TL": 'Time Limit Exceeded',
     "ML": 'Memory Limit Exceeded',
+    "OL": 'Output Limit Exceeded',
     "RE": 'Runtime Error'
   };
   var crCaseIndex = 1;
@@ -356,9 +360,9 @@ function getPolishedReport(reportObject, configs) {
     var getSummary = function(caseInfo) {
       var summary = createElementWith('div', 'tests-check-summary');
       summary.appendChild(createElementWith('pre', 'index', 'Test [' + index + ']'));
-      summary.appendChild(createElementWith('pre', 'memoryused', 'Memory Used: ' + caseInfo.memoryused + 'KB'));
-      summary.appendChild(createElementWith('pre', 'timeused', 'Time Used: ' + caseInfo.timeused + 'ms'));
       summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultCode2Result[caseInfo.resultCode]));
+      summary.appendChild(createElementWith('br'));
+      summary.appendChild(createElementWith('pre', 'limit-use', 'Memory Used: ' + caseInfo.memoryused + 'KB / ' + memoryLimit + '\n\nTime Used: ' + caseInfo.timeused + 'ms / ' + timeLimit));
       return summary;
     };
     var breakFromInner = false;
@@ -496,35 +500,52 @@ function getPolishedReport(reportObject, configs) {
   }
   var standardTestsDetail = function(phaseInfo) { return testsDetail(phaseInfo, true); };
   var randomTestsDetail = function(phaseInfo) { return testsDetail(phaseInfo, false); };
+  var getScoreDiv = function(phaseId, phase, score, total, url) {
+    var nodesToBeAppended = [phase + ' : You got ' + score + ' of ' + total + ' possible points'];
+    if (typeof(url) == 'string' && score != total) {
+      var link = createElementWith('a', 'link', 'Why did it go wrong?');
+      link.href = url;
+      nodesToBeAppended.push(link);
+    }
+    return createElementWith('div', [phases[i].id.replace(/ /g, '-').replace(/-tests/, '-tests-check') + '-score', 'score'], nodesToBeAppended);
+  }
   var phases = [{
                   "id": 'compile check',
                   "getDetail": compileCheckDetail,
+                  "description": 'Compile Check',
                   "canShowCR": false
                 },
                 {
                   "id": 'static check',
                   "getDetail": staticCheckDetail,
+                  "description": 'Static Check',
+                  "url": 'http://oclint.org/',
                   "canShowCR": false
                 },
                 {
                   "id": 'standard tests',
                   "getDetail": standardTestsDetail,
+                  "description": 'Standard Tests',
                   "canShowCR": true
                 },
                 {
                   "id": 'random tests',
                   "getDetail": randomTestsDetail,
+                  "description": 'Random Tests',
                   "canShowCR": true
                 },
                 {
                   "id": 'memory check',
                   "getDetail": memoryCheckDetail,
+                  "description": 'Memory Check',
+                  "url": 'http://valgrind.org/',
                   "canShowCR": true
                 }];
 
   for (var i in phases) {
     if (reportObject[phases[i].id] === null) continue;
-    var reportSection = createElementWith('div', [phases[i].id.replace(/ /g, '-'), 'report-section'], createElementWith('div', 'score-to-be-replaced'));
+    var reportSection = createElementWith('div', [phases[i].id.replace(/ /g, '-'), 'report-section'],
+      getScoreDiv(phases[i].id, phases[i].description, reportObject[phases[i].id].grade, totalPoints[phases[i].id], phases[i].url));
     var testContent = createElementWith('div', 'test-content');
     var detail = null;
     if (reportObject[phases[i].id].error) detail = createElementWith('div', 'not-executing-check', reportObject[phases[i].id].error);
@@ -538,35 +559,62 @@ function getPolishedReport(reportObject, configs) {
   return report;
 }
 
+function sendRequestToGetSubmission() {
+  return httpRequest('https://eden.sysu.edu.cn:8000/one-submission?submissionId=' + this.submissionId, function(err, response) {});
+}
+
+function updateSubmissionsTab(submissionsTab, submissionsId) {
+  if (submissionsTab === null || !submissionsId) return;
+  var submissionRows = submissionsTab.querySelector('table tbody').childNodes;
+  var index = 0;
+  for (var i in submissionRows) {
+    if (submissionRows[i].nodeName == 'TR') {
+      submissionRows[i]['submissionId'] = submissionsId[index++];
+      submissionRows[i].removeEventListener("click", sendRequestToGetSubmission, false);
+      submissionRows[i].addEventListener("click", sendRequestToGetSubmission, false);
+    }
+  }
+}
+
 chrome.runtime.onMessage.addListener(function(body, sender, callback) {
+try {
   if (body.signal == 'start') {
     var toWait = (body.wait === undefined) ? true : body.wait;
-    var gradeTab = document.querySelector('.submit + .grade');
-    var old = gradeTab.querySelector('.polished-report-success');
-    if (old) gradeTab.removeChild(old);
-    old = gradeTab.querySelector('.switch-button');
-    if (old) gradeTab.removeChild(old);
     setTimeout(function() {
       var reportObject = body.reportObject;
+      var gradeTab = document.querySelector('.submit + .grade');
+      if (gradeTab === null) return callback("front couldn't find the grade Tab.");
+      var oldPolished = gradeTab.querySelector('.polished-report-success'), oldSwitch = gradeTab.querySelector('.switch-button');
       var oldReport = gradeTab.querySelector('.report-success');
+      
+
+      var submissionsTab = document.querySelector('.grade + .submissions');
+      if (body.submissionsId) {
+          updateSubmissionsTab(submissionsTab, body.submissionsId);
+          if (body.problemInfo.problemId)
+            gradeTab['problemInfo'] = body.problemInfo;
+      } else {
+          if (gradeTab.problemInfo) {
+              httpRequest('https://eden.sysu.edu.cn:8000' + '/problem-submissions?position=' + 0 + '&problemId=' + gradeTab.problemInfo.problemId + '&userId=' + gradeTab.problemInfo.userId, function(err, body) {
+                  body = JSON.parse(body);
+                  if (body.data) {
+                      var submissionsId = body.data.map(function(oneSubmission, index, self) {
+                        return oneSubmission.id;
+                      });
+                      updateSubmissionsTab(submissionsTab, submissionsId);
+                  }
+              });
+          }
+      }
+
       var newReport = getPolishedReport(reportObject, {
         "showCR": body.configs.showCR,
         "maxStdCaseNum": body.configs.maxStdCaseNum,
         "maxRanCaseNum": body.configs.maxRanCaseNum,
-        "maxMemCaseNum": body.configs.maxMemCaseNum
+        "maxMemCaseNum": body.configs.maxMemCaseNum,
+        "limits": gradeTab.problemInfo.limits,
+        "totalPoints": gradeTab.problemInfo.totalPoints,
       });
-
-      var phases = [{'id': 'compile check'},
-                    {'id': 'static check'},
-                    {'id': 'standard tests'},
-                    {'id': 'random tests'},
-                    {'id': 'memory check'}];
-      for (var i in phases) {
-        if (reportObject[phases[i].id] === null) continue;
-        var replacer = oldReport.querySelector('.' + phases[i].id.replace(/ /g, '-').replace(/-tests/, '-tests-check') + ' .score').cloneNode(true);
-        var parent = newReport.querySelector('.' + phases[i].id.replace(/ /g, '-'));
-        parent.replaceChild(replacer, parent.querySelector(' .score-to-be-replaced'));
-      }
 
       var switchBtn = createElementWith('input', 'switch-button');
       switchBtn.type = 'button';
@@ -593,8 +641,14 @@ chrome.runtime.onMessage.addListener(function(body, sender, callback) {
       oldReport.classList.add('hiding');
 
       gradeTab.appendChild(newReport);
+      if (oldPolished) gradeTab.removeChild(oldPolished);
+      if (oldSwitch) gradeTab.removeChild(oldSwitch);
       if (!body.configs.autoPolish) switchBtn.click();
     }, 500 * toWait + 1);
   }
-  return callback('front has got the reportObject and attached it to the grade tab!');
+} catch (e) {
+  console.log('the following error occurred when polishing a report:\n\n' + e.stack);
+  return callback('the following error occurred at front:\n\n' + e.stack);
+}
+  return callback('front has got the reportObject and attached the polished report to the grade tab!');
 });

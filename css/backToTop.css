@@ -1,7 +1,7 @@
 #backtotop {
   position: fixed;
-  bottom: 5px;
-  right: 25px;
+  bottom: 4em;
+  right: 2em;
   z-index: 104;
 }
 #backtotop .backtotop-btn {
