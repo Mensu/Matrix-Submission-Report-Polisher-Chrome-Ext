@@ -17,3 +17,6 @@
 
 ![2](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-2.png)
 
+- It is suggested that you keep "auto polish" checked
+
+![3](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-3.png)
