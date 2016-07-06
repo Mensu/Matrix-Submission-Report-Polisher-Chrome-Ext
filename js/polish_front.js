@@ -357,6 +357,7 @@ function getPolishedReport(reportObject, configs) {
     var detail = document.createDocumentFragment();
     var index = 1;
     var maxCaseNum = std ? maxStdCaseNum : maxRanCaseNum;
+    if (phaseInfo.failedCaseNum) detail.appendChild(createElementWith('div', 'failed-cases-summary', phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' tests failed to pass.'));
     var getSummary = function(caseInfo) {
       var summary = createElementWith('div', 'tests-check-summary');
       summary.appendChild(createElementWith('pre', 'index', 'Test [' + index + ']'));
@@ -501,7 +502,7 @@ function getPolishedReport(reportObject, configs) {
   var standardTestsDetail = function(phaseInfo) { return testsDetail(phaseInfo, true); };
   var randomTestsDetail = function(phaseInfo) { return testsDetail(phaseInfo, false); };
   var getScoreDiv = function(phaseId, phase, score, total, url) {
-    var nodesToBeAppended = [phase + ' : You got ' + score + ' of ' + total + ' possible points'];
+    var nodesToBeAppended = [phase + " : You've got " + score + ' of the total of ' + total + ' points'];
     if (typeof(url) == 'string' && score != total) {
       var link = createElementWith('a', 'link', 'Why did it go wrong?');
       link.href = url;

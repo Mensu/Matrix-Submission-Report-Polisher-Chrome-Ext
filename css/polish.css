@@ -26,7 +26,9 @@ pre.full-score {
   font-family: Arial;
   font-size: 1.2em;
 }
-.tests-check-summary pre.index {
+
+.tests-check-summary pre.index,
+div.failed-cases-summary {
   font-family: Arial;
   font-size: 1.2em !important;
   font-weight: bold !important;

@@ -182,14 +182,14 @@ function toReportObject(body) {
     var curPhase = reportObject[phaseName];
     curPhase['error'] = null;
     curPhase['report'] = [];
-    var pass = true;
+    var failedCaseNum = 0;
     for (i in info) {
       var oneCase = {};
       var oneTest = info[i];
       oneCase['memoryused'] = wrap(oneTest.memoryused);
       oneCase['timeused'] = wrap(oneTest.timeused);
       oneCase['resultCode'] = oneTest.result;
-      if (pass && oneTest.result != 'CR') pass = false;
+      if (oneTest.result != 'CR') ++failedCaseNum;
       oneCase['input'] = oneTest.stdin;
       oneCase['stdOutput'] = oneTest.standard_stdout || "";
       oneCase['yourOutput'] = oneTest.stdout;
@@ -202,7 +202,8 @@ function toReportObject(body) {
       if (oneCase['yourOutput'].length == 0) oneCase['yourOutput'] = 'No Output.';
       curPhase['report'].push(oneCase);
     }
-    curPhase['pass'] = pass;
+    curPhase['failedCaseNum'] = failedCaseNum;
+    curPhase['pass'] = !failedCaseNum;
   }
   var refactorCompileMsg = function(phaseName, info) {
     var curPhase = reportObject[phaseName];

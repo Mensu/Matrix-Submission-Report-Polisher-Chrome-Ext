@@ -9,14 +9,18 @@
 
 # Install
 
-- go to [``chrome://extensions``](chrome://extensions), have ``Developer Mode`` checked and click ``load an unpacked directory``
+- go to [``chrome://extensions``](chrome://extensions), check the ``developer mode`` box and click ``load an unpacked directory``
 
-![1](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-1.png)
+![load an unpacked directory](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-load-directory.png)
 
 - select the downloaded folder
 
-![2](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-2.png)
+![select the downloaded folder](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-select-folder.png)
 
-- It is suggested that you keep "auto polish" checked
+- It is suggested that you check the "auto polish" box
 
-![3](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-3.png)
+![check the auto polish box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto-polish.png)
+
+- If you meet this problem, you may want to revisit [``chrome://extensions``](chrome://extensions) and simply clear the ``developer mode`` box
+
+![clear developer mode box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-clear-box.png)
