@@ -6,7 +6,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
       var tabId = details.tabId;
       tabArray.forEach(function(oneTab, index, self) {
         if (oneTab.id == tabId) {
-          return httpRequest('https://eden.sysu.edu.cn:8000/app-angular/courses/exams/home/views/home.client.view.html', function(err) {
+          return httpRequest(matrix.rootUrl + '/app-angular/courses/exams/home/views/home.client.view.html', function(err) {
             chrome.pageAction.setIcon({
               "tabId": tabId,
               "path": {
@@ -25,6 +25,6 @@ chrome.webRequest.onCompleted.addListener(function(details) {
   }, 5000);
 }, {
   "urls": [
-    'https://eden.sysu.edu.cn/app-angular/login-register/views/login-register.client.view.html'
+    matrix.rootUrl + '/app-angular/login-register/views/login-register.client.view.html'
   ]
 });

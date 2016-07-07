@@ -10,39 +10,45 @@
 
 pre.full-score {
   white-space: pre-wrap;
+
 }
-.polished-report-success .success {
-  font-family: Arial;
-  font-size: 1em;
-  font-weight: bold;
+.polished-report-success pre.success {
+  font-family: Courier, Arial;
+  font-size: 1.7em !important;
 }
-.polished-report-success .report-section .score {
-  font-family: Arial;
-  font-size: 0.8em;
-  font-weight: bold;
+.polished-report-success .report-section div.score {
+  font-family: "Heiti SC", Arial;
+  font-size: 1.5em !important;
+  font-weight: bold !important;
 }
 .test-content .report-detail > pre,
 .report-section .test-content .report-detail > div {
-  font-family: Arial;
+  font-family: Courier, Arial;
   font-size: 1.2em;
+  font-weight: bold;
 }
 
-.tests-check-summary pre.index,
-div.failed-cases-summary {
-  font-family: Arial;
+.tests-check-summary pre.index {
+  font-family: Courier, Arial;
   font-size: 1.2em !important;
   font-weight: bold !important;
 }
 
+.report-section .test-content .report-detail > div.failed-cases-summary {
+  font-family: Courier, Arial;
+  font-size: 1.6em;
+  font-weight: bold;
+}
+
 .tests-check-summary pre.result-code,
 .tests-check-summary pre.limit-use {
-  font-family: Arial;
+  font-family: Courier, Arial;
   font-size: 1em !important;
   font-weight: bold !important;
 }
 
 .report-detail pre.label {
-  font-family: Arial;
+  font-family: Courier, Arial;
   font-size: 1.2em !important;
   font-weight: bold !important;
 }

@@ -319,10 +319,10 @@ function getPolishedReport(reportObject, configs) {
   var report = createElementWith('div', ['report-success', 'polished-report-success']);
   var submitTimeText = reportObject.submitTime ? '(submitted at ' + reportObject.submitTime + ')' : '';
   if (reportObject.msg !== null) {
-    report.appendChild(createElementWith('pre', 'success', reportObject.msg + '    ' + submitTimeText));
+    report.appendChild(createElementWith('pre', 'success', reportObject.msg + '  ' + submitTimeText));
     return report;
   } else {
-    report.appendChild(createElementWith('pre', 'success', 'Your Grade: ' + reportObject.grade + '    ' + submitTimeText));
+    report.appendChild(createElementWith('pre', 'success', 'Your Grade: ' + reportObject.grade + '  ' + submitTimeText));
   }
   
   var resultCode2Result = {
@@ -559,9 +559,9 @@ function getPolishedReport(reportObject, configs) {
   }
   return report;
 }
-
+var matrixRootUrl = document.baseURI.replace(/\/$/, '');
 function sendRequestToGetSubmission() {
-  return httpRequest('https://eden.sysu.edu.cn:8000/one-submission?submissionId=' + this.submissionId, function(err, response) {});
+  return httpRequest(matrixRootUrl + '/one-submission?submissionId=' + this.submissionId, function(err, response) {});
 }
 
 function updateSubmissionsTab(submissionsTab, submissionsId) {
@@ -596,7 +596,7 @@ try {
             gradeTab['problemInfo'] = body.problemInfo;
       } else {
           if (gradeTab.problemInfo) {
-              httpRequest('https://eden.sysu.edu.cn:8000' + '/problem-submissions?position=' + 0 + '&problemId=' + gradeTab.problemInfo.problemId + '&userId=' + gradeTab.problemInfo.userId, function(err, body) {
+              httpRequest(matrixRootUrl + '/problem-submissions?position=' + 0 + '&problemId=' + gradeTab.problemInfo.problemId + '&userId=' + gradeTab.problemInfo.userId, function(err, body) {
                   body = JSON.parse(body);
                   if (body.data) {
                       var submissionsId = body.data.map(function(oneSubmission, index, self) {

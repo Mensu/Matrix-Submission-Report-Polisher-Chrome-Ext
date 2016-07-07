@@ -338,7 +338,7 @@ function toReportObject(body) {
   for (var i in phases) refactorPhase(phases[i].id, phases[i].func);
   return reportObject;
 }
-var matrix = new MatrixObject('https://eden.sysu.edu.cn:8000');
+var matrix = new MatrixObject('https://eden.sysu.edu.cn');
 
 
 function updateUserId(details) {
