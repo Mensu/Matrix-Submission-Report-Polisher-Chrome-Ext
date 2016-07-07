@@ -361,9 +361,14 @@ function getPolishedReport(reportObject, configs) {
     var getSummary = function(caseInfo) {
       var summary = createElementWith('div', 'tests-check-summary');
       summary.appendChild(createElementWith('pre', 'index', 'Test [' + index + ']'));
-      summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultCode2Result[caseInfo.resultCode]));
-      summary.appendChild(createElementWith('br'));
-      summary.appendChild(createElementWith('pre', 'limit-use', 'Memory Used: ' + caseInfo.memoryused + 'KB / ' + memoryLimit + '\n\nTime Used: ' + caseInfo.timeused + 'ms / ' + timeLimit));
+      if (caseInfo.error) {
+        summary.appendChild(createElementWith('br'));
+        summary.appendChild(createElementWith('pre', 'result-code', 'Error: ' + caseInfo.error));
+      } else {
+        summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultCode2Result[caseInfo.resultCode]));
+        summary.appendChild(createElementWith('br'));
+        summary.appendChild(createElementWith('pre', 'limit-use', 'Memory Used: ' + caseInfo.memoryused + 'KB / ' + memoryLimit + '\n\nTime Used: ' + caseInfo.timeused + 'ms / ' + timeLimit));
+      }
       return summary;
     };
     var breakFromInner = false;
@@ -371,7 +376,6 @@ function getPolishedReport(reportObject, configs) {
       for (var i in cases) {
         if ((cases[i].resultCode == 'CR') ^ cr) continue;
         var caseOuterWrapper = createElementWith('div', 'case-outer-wrapper');
-        if (cr) caseOuterWrapper.id = 'cr-case' + crCaseIndex++;
         var caseInnerWrapper = createElementWith('div', 'case-inner-wrapper');
         caseInnerWrapper.appendChild(getSummary(cases[i]));
         var inoutTests = null;
@@ -402,11 +406,18 @@ function getPolishedReport(reportObject, configs) {
             }
           ];
         }
-        for (var j in inoutTests) {
-          caseInnerWrapper.appendChild(createElementWith('pre', 'label', inoutTests[j].label));
-          var content = inoutTests[j].content(i);
-          caseInnerWrapper.appendChild(createHideButton(content));
-          caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+        if (cases[i].error) {
+            caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
+            var content = getLinenumPreWithText(cases[i].input);
+            caseInnerWrapper.appendChild(createHideButton(content));
+            caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+        } else {
+          for (var j in inoutTests) {
+            caseInnerWrapper.appendChild(createElementWith('pre', 'label', inoutTests[j].label));
+            var content = inoutTests[j].content(i);
+            caseInnerWrapper.appendChild(createHideButton(content));
+            caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+          }
         }
         if (!cr && cases[i].diff) {
            caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Difference'));
@@ -448,10 +459,9 @@ function getPolishedReport(reportObject, configs) {
       for (var i in cases) {
         if ((cases[i]['memory errors'].length == 0 && cases[i].error === null) ^ cr) continue;
         var caseOuterWrapper = createElementWith('div', 'case-outer-wrapper');
-        if (cr) caseOuterWrapper.id = 'cr-case' + index;
         var caseInnerWrapper = createElementWith('div', 'case-inner-wrapper');
         caseInnerWrapper.appendChild(getSummary(cases[i]));
-        if (cases[i].error) continue;
+        
         var inoutTests = null;
         if (cr) {
           inoutTests = [
@@ -481,12 +491,19 @@ function getPolishedReport(reportObject, configs) {
             }
           ];
         }
-        for (var j in inoutTests) {
-          caseInnerWrapper.appendChild(createElementWith('pre', 'label', inoutTests[j].label));
-          var content = inoutTests[j].content(i);
+        if (cases[i].error) {
+          caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
+          var content = getLinenumPreWithText(cases[i].input);
           caseInnerWrapper.appendChild(createHideButton(content));
-          if (j) content.classList.add('error-content');
-          caseInnerWrapper.appendChild(content);
+          caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+        } else {
+          for (var j in inoutTests) {
+            caseInnerWrapper.appendChild(createElementWith('pre', 'label', inoutTests[j].label));
+            var content = inoutTests[j].content(i);
+            caseInnerWrapper.appendChild(createHideButton(content));
+            if (j) content.classList.add('error-content');
+            caseInnerWrapper.appendChild(content);
+          }
         }
         caseOuterWrapper.appendChild(caseInnerWrapper), detail.appendChild(caseOuterWrapper);
         if (index == maxCaseNum) {

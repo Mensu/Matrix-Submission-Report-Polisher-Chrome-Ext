@@ -186,13 +186,22 @@ function toReportObject(body) {
     for (i in info) {
       var oneCase = {};
       var oneTest = info[i];
-      oneCase['memoryused'] = wrap(oneTest.memoryused);
-      oneCase['timeused'] = wrap(oneTest.timeused);
+      
+      if ((oneTest.error || (oneTest.message && oneTest.message != 'Program finished running.'))) {
+        var msg = (oneTest.error) ? oneTest.error : oneTest.message;
+        oneCase['error'] = msg;
+        oneCase['input'] = oneTest.stdin || 'No Input.';
+        curPhase['report'].push(oneCase);
+        ++failedCaseNum;
+        continue;
+      }
       oneCase['resultCode'] = oneTest.result;
       if (oneTest.result != 'CR') ++failedCaseNum;
-      oneCase['input'] = oneTest.stdin;
-      oneCase['stdOutput'] = oneTest.standard_stdout || "";
-      oneCase['yourOutput'] = oneTest.stdout;
+      oneCase['memoryused'] = wrap(oneTest.memoryused);
+      oneCase['timeused'] = wrap(oneTest.timeused);
+      oneCase['input'] = oneTest.stdin || 'No Input.';
+      oneCase['stdOutput'] = oneTest.standard_stdout || '';
+      oneCase['yourOutput'] = oneTest.stdout || '';
       if (oneCase.stdOutput.length && oneCase.yourOutput.length) {
         oneCase['diff'] = JsDiff.diffLines(oneCase.stdOutput, oneCase.yourOutput);
       } else {
