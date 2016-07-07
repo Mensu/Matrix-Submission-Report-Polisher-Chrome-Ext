@@ -505,7 +505,7 @@ function getPolishedReport(reportObject, configs) {
     var nodesToBeAppended = [phase + " : You've got " + score + ' of the total of ' + total + ' points'];
     if (typeof(url) == 'string' && score != total) {
       var link = createElementWith('a', 'link', 'Why did it go wrong?');
-      link.href = url;
+      link.href = url, link.target = '_blank';
       nodesToBeAppended.push(link);
     }
     return createElementWith('div', [phases[i].id.replace(/ /g, '-').replace(/-tests/, '-tests-check') + '-score', 'score'], nodesToBeAppended);
@@ -520,7 +520,7 @@ function getPolishedReport(reportObject, configs) {
                   "id": 'static check',
                   "getDetail": staticCheckDetail,
                   "description": 'Static Check',
-                  "url": 'http://oclint.org/',
+                  "url": 'http://docs.oclint.org/en/stable/rules/index.html',
                   "canShowCR": false
                 },
                 {
@@ -539,7 +539,7 @@ function getPolishedReport(reportObject, configs) {
                   "id": 'memory check',
                   "getDetail": memoryCheckDetail,
                   "description": 'Memory Check',
-                  "url": 'http://valgrind.org/',
+                  "url": 'http://valgrind.org/docs/manual/mc-manual.html',
                   "canShowCR": true
                 }];
 
