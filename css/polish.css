@@ -27,6 +27,7 @@
   border-top: 1.5px solid;
   border-bottom: 1px solid;
   padding: 0.3em;
+  cursor: pointer;
 }
 .report-nav-section-cases {
   max-height: 5em;
@@ -35,6 +36,7 @@
 .report-nav-section-one-case {
   border-top: 1px solid;
   padding-left: 2.3em;
+  cursor: pointer;
 }
 pre.full-score {
   white-space: pre-wrap;
