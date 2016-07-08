@@ -13,7 +13,29 @@
 .hiding {
   display: none;
 }
+.report-nav {
+  width: 9em;
+  border: 0.2em solid;
 
+  position: fixed;
+  z-index: 104;
+  right: 1em;
+
+  background-color: rgba(226, 136, 190, 0.15);
+}
+.report-nav-section-title {
+  border-top: 1.5px solid;
+  border-bottom: 1px solid;
+  padding: 0.3em;
+}
+.report-nav-section-cases {
+  max-height: 5em;
+  overflow-x: auto;
+}
+.report-nav-section-one-case {
+  border-top: 1px solid;
+  padding-left: 2.3em;
+}
 pre.full-score {
   white-space: pre-wrap;
 

@@ -81,27 +81,13 @@ function getPreWithText(text) {
 
 /** 
  * get a pre decorated with two columns of line numbers using the diffResult provided
- * @param {Object[]} diffResult - a possibly modified array of JsDiff.diffLines(oldString, newString)
+ * @param {Object[]} diffResult
  * @return {Node} the created pre
  * dependent of
  *   {function} createElementWith
  *   {function} toLinenumString
  */
 function getDiffPre(diffResult) {
-  // var formatASCII = function(acsii) {
-  //   return ('0' + acsii.toString(16)).slice(-2);
-  // };
-  // var generateBinary = function() {
-  //   diffResult.forEach(function(oneDiff, index, self) {
-  //     oneDiff['binary'] = oneDiff.value.split('\n').map(function(oneLine, index1, self1) {
-  //       var binary = '';
-  //       for (var i = 0; i < oneLine.length; ++i) binary += formatASCII(oneLine.charCodeAt(i)) + ((i == oneLine.length - 1) ? '' : ' ');
-  //       return binary + (index1 == self1.length - 1 ? '' : ((oneLine.length) ? ' 0a' : '0a'));
-  //     }).join('\n');
-  //   });
-  // };
-  // generateBinary();
-
   var diffPre = createElementWith('pre', ['plain-text-wrapper', 'line-numbers-wrapper', 'diffPre'],
     createElementWith('span', 'diffPre-leading-newline', '\n'));
   var linenumRowsLeft = createElementWith('span', 'line-numbers-rows');
@@ -341,7 +327,17 @@ function getPolishedReport(reportObject, configs) {
   } else {
     report.appendChild(createElementWith('pre', 'success', 'Your Grade: ' + reportObject.grade + '  ' + submitTimeText));
   }
-  
+  var nav = createElementWith('nav', 'report-nav');
+  report.appendChild(nav);
+  var toScrollTo = function() {
+    document.body.scrollTop = this.elementToScrollTo.offsetTop - 90;
+  }
+  var createNavItem = function(scrollTo, classList, text) {
+    var navItem = createElementWith('div', classList, text);
+    navItem['elementToScrollTo'] = scrollTo;
+    navItem.addEventListener('click', toScrollTo, false);
+    return navItem;
+  }
   var resultCode2Result = {
     "CR": 'Correct',
     "WA": 'Wrong Answer',
@@ -351,7 +347,7 @@ function getPolishedReport(reportObject, configs) {
     "OL": 'Output Limit Exceeded',
     "RE": 'Runtime Error'
   };
-  var crCaseIndex = 1;
+  
   var diffIndex = 1;
 
   var compileCheckDetail = function(phaseInfo) {
@@ -448,6 +444,7 @@ function getPolishedReport(reportObject, configs) {
            caseInnerWrapper.appendChild(errorContent);
         }
         caseOuterWrapper.appendChild(caseInnerWrapper), detail.appendChild(caseOuterWrapper);
+        if (nav.lastElementChild) nav.lastElementChild.lastElementChild.appendChild(createNavItem(caseOuterWrapper, 'report-nav-section-one-case', 'Test [' + index + ']'));
         if (index == maxCaseNum) {
           breakFromInner = true;
           break;
@@ -524,6 +521,7 @@ function getPolishedReport(reportObject, configs) {
           }
         }
         caseOuterWrapper.appendChild(caseInnerWrapper), detail.appendChild(caseOuterWrapper);
+        if (nav.lastElementChild) nav.lastElementChild.lastElementChild.appendChild(createNavItem(caseOuterWrapper, 'report-nav-section-one-case', 'Test [' + index + ']'));
         if (index == maxCaseNum) {
           breakFromInner = true;
           break;
@@ -582,6 +580,7 @@ function getPolishedReport(reportObject, configs) {
     if (reportObject[phases[i].id] === null) continue;
     var reportSection = createElementWith('div', [phases[i].id.replace(/ /g, '-'), 'report-section'],
       getScoreDiv(phases[i].id, phases[i].description, reportObject[phases[i].id].grade, totalPoints[phases[i].id], phases[i].url));
+    nav.appendChild(createElementWith('div', 'report-nav-section', [createNavItem(reportSection, 'report-nav-section-title', phases[i].description), createElementWith('div', 'report-nav-section-cases')]));
     var testContent = createElementWith('div', 'test-content');
     var detail = null;
     if (reportObject[phases[i].id].error) detail = createElementWith('div', 'not-executing-check', reportObject[phases[i].id].error);
