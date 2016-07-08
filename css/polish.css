@@ -42,6 +42,9 @@ pre.full-score {
   white-space: pre-wrap;
 
 }
+.polished-report-success {
+  padding-right: 8em;
+}
 .polished-report-success pre.success {
   font-family: Courier, Arial;
   font-size: 1.7em !important;
