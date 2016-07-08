@@ -1,26 +1,34 @@
 #### Please feel free to fork the repository, open new issues as well as make pull requests. Thanks in advance for all your participation!
 
 
-# Download
+# Downloads
 
-[``Unpacked Ext.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.3.zip)
+[``v0-1-4.crx``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/releases/download/v0.1.4/Matrix-Submission-Report-Polisher-Chrome-Ext-v0-1-4.crx)
 
-[``Unpacked Ext.tar.gz``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.3.tar.gz)
+# Installation
 
-# Install
+- go to [``chrome://extensions``](chrome://extensions), drag the downloaded ``.crx`` file into chrome before dropping it
 
-- go to [``chrome://extensions``](chrome://extensions), check the ``developer mode`` box and click ``load an unpacked directory``
+![drag](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-drag.png)
 
-![load an unpacked directory](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-load-directory.png)
+- confirm to add the extension
 
-- select the downloaded folder
-
-![select the downloaded folder](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-select-folder.png)
+![add](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-add.png)
 
 - It is suggested that you check the "auto polish" box
 
-![check the auto polish box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto-polish.png)
+![check auto polish box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto.png)
 
-- If you encounter this problem, you may want to revisit [``chrome://extensions``](chrome://extensions) and simply clear the ``developer mode`` box
+# demo
 
-![clear developer mode box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-clear-box.png)
+![compile check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-compile.png)
+
+![static check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-static.png)
+
+![standard/random tests](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-tests.png)
+
+![difference](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff1.png)
+
+![difference](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff2.png)
+
+![memory check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-memory.png)

@@ -1,6 +1,6 @@
 #backtotop {
   position: fixed;
-  bottom: 4em;
+  bottom: 15%;
   right: 2em;
   z-index: 104;
 }

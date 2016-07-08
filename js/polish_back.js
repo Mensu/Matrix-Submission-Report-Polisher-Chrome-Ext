@@ -183,7 +183,7 @@ function toReportObject(body) {
     curPhase['error'] = null;
     curPhase['report'] = [];
     var failedCaseNum = 0;
-    for (i in info) {
+    for (var i in info) {
       var oneCase = {};
       var oneTest = info[i];
       
@@ -204,6 +204,42 @@ function toReportObject(body) {
       oneCase['yourOutput'] = oneTest.stdout || '';
       if (oneCase.stdOutput.length && oneCase.yourOutput.length) {
         oneCase['diff'] = JsDiff.diffLines(oneCase.stdOutput, oneCase.yourOutput);
+        var formatASCII = function(acsii) {
+          return ('0' + acsii.toString(16)).slice(-2);
+        };
+        oneCase['diff'].forEach(function(oneDiff, index, self) {
+          oneDiff['binary'] = oneDiff.value.split('\n').map(function(oneLine, index1, self1) {
+            var binary = '';
+            for (var i = 0; i < oneLine.length; ++i) binary += formatASCII(oneLine.charCodeAt(i)) + ((i == oneLine.length - 1) ? '' : ' ');
+            return binary + (index1 == self1.length - 1 ? '' : ((oneLine.length) ? ' 0a' : '0a'));
+          });
+          if (index && self[index - 1].removed && self[index].added) {
+            var removedLines = self[index - 1].value.split('\n');
+            var removedLinesBinary = self[index - 1].binary.split('\n');
+            var addedLines = self[index].value.split('\n');
+            var addedLinesBinary = self[index].binary;
+            self[index - 1]['inlineDiff'] = [], self[index]['inlineDiff'] = [];
+            self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
+            for (var j in removedLines) {
+              var inlineDiff = JsDiff.diffChars(removedLines[j], addedLines[j]);
+              var inlineBinaryDiff = JsDiff.diffChars(removedLinesBinary[j], addedLinesBinary[j]);
+              var oneRemovedLine = [], oneAddedLine = [];
+              for (var k in inlineDiff) {
+                if (inlineDiff[k].added === undefined) oneRemovedLine.push(inlineDiff[k]);
+                if (inlineDiff[k].removed === undefined) oneAddedLine.push(inlineDiff[k]);
+              }
+              self[index - 1]['inlineDiff'].push(oneRemovedLine), self[index]['inlineDiff'].push(oneAddedLine);
+              oneRemovedLine = [], oneAddedLine = [];
+              for (var k in inlineBinaryDiff) {
+                if (inlineBinaryDiff[k].added === undefined) oneRemovedLine.push(inlineBinaryDiff[k]);
+                if (inlineBinaryDiff[k].removed === undefined) oneAddedLine.push(inlineBinaryDiff[k]);
+              }
+              self[index - 1]['inlineBinaryDiff'].push(oneRemovedLine), self[index]['inlineBinaryDiff'].push(oneAddedLine);
+            }
+          }
+          oneDiff['binary'] = oneDiff['binary'].join('\n');
+        });
+
       } else {
         oneCase['diff'] = null;
       }
@@ -237,7 +273,7 @@ function toReportObject(body) {
       return;
     }
     curPhase['pass'] = false;
-    for (i in violation) {
+    for (var i in violation) {
       var oneViolation = violation[i];
       var range = function(begin, end) {
         if (begin == end) return begin;
@@ -265,12 +301,12 @@ function toReportObject(body) {
       if (test.error || test.message) {
         var msg = (test.error) ? test.error : test.message;
         oneCase['error'] = msg;
-        oneCase['input'] = wrap(stdin);
+        oneCase['input'] = stdin || 'No Input.';
         curPhase['report'].push(oneCase);
         pass = false;
         continue;
       }
-      oneCase['input'] = wrap(stdin);
+      oneCase['input'] = stdin || 'No Input.';
       var errors = test.valgrindoutput.error;
       if (!errors) {
         curPhase['report'].push(oneCase);

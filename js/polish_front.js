@@ -81,26 +81,26 @@ function getPreWithText(text) {
 
 /** 
  * get a pre decorated with two columns of line numbers using the diffResult provided
- * @param {Object[]} diffResult - a resulted array of JsDiff.diffLines(oldString, newString)
+ * @param {Object[]} diffResult - a possibly modified array of JsDiff.diffLines(oldString, newString)
  * @return {Node} the created pre
  * dependent of
  *   {function} createElementWith
  *   {function} toLinenumString
  */
 function getDiffPre(diffResult) {
-  var formatASCII = function(acsii) {
-    return ('0' + acsii.toString(16)).slice(-2);
-  };
-  var generateBinary = function() {
-    diffResult.forEach(function(oneDiff, index, self) {
-      oneDiff['binary'] = oneDiff.value.split('\n').map(function(oneLine, index1, self1) {
-        var binary = '';
-        for (var i = 0; i < oneLine.length; ++i) binary += formatASCII(oneLine.charCodeAt(i)) + ((i == oneLine.length - 1) ? '' : ' ');
-        return binary + (index1 == self1.length - 1 ? '' : ((oneLine.length) ? ' 0a' : '0a'));
-      }).join('\n');
-    });
-  };
-  generateBinary();
+  // var formatASCII = function(acsii) {
+  //   return ('0' + acsii.toString(16)).slice(-2);
+  // };
+  // var generateBinary = function() {
+  //   diffResult.forEach(function(oneDiff, index, self) {
+  //     oneDiff['binary'] = oneDiff.value.split('\n').map(function(oneLine, index1, self1) {
+  //       var binary = '';
+  //       for (var i = 0; i < oneLine.length; ++i) binary += formatASCII(oneLine.charCodeAt(i)) + ((i == oneLine.length - 1) ? '' : ' ');
+  //       return binary + (index1 == self1.length - 1 ? '' : ((oneLine.length) ? ' 0a' : '0a'));
+  //     }).join('\n');
+  //   });
+  // };
+  // generateBinary();
 
   var diffPre = createElementWith('pre', ['plain-text-wrapper', 'line-numbers-wrapper', 'diffPre'],
     createElementWith('span', 'diffPre-leading-newline', '\n'));
@@ -223,10 +223,27 @@ function getDiffPre(diffResult) {
     };
     assignConfig();
     oneDiffContentSpan.classList.add(bgcolorClass), oneDiffContentPre.classList.add(bgcolorClass);
-
+    var getOneDiffTextArray = function(oneDiff, binary) {
+      var value = binary ? 'binary' : 'value';
+      var inlineDiff = binary ? 'inlineBinaryDiff' : 'inlineDiff';
+      if (oneDiff.inlineDiff === undefined) return oneDiff[value].split('\n');
+      var spansArray = [], oneLineSpans = null;
+      oneDiff[inlineDiff].forEach(function(oneLine, index, self) {
+        oneLineSpans = [];
+        for (var i in oneLine) {
+          var inlineColor = oneLine[i].added ? 'inline-added-bg' : (oneLine[i].removed ? 'inline-removed-bg' : 'inline-common-bg');
+          oneLineSpans.push(createElementWith('span', inlineColor, oneLine[i].value));
+        }
+        spansArray.push(oneLineSpans);
+      });
+      return spansArray;
+    }
       // main work: pushing texts and linenums to diffPre
     var oneDiffConfig = {
-      "textArray": [oneDiff.value.split('\n'), oneDiff.binary.split('\n')],
+      "textArray": [
+        (function() { return getOneDiffTextArray(oneDiff, false); }),
+        (function() { return getOneDiffTextArray(oneDiff, true); })
+      ],
       "textRowClass": ['one-diff-content-one-row-text', 'one-diff-content-one-row-binary'],
       "textRowNewLineClass": [
         ['one-diff-content-newline'],
@@ -247,7 +264,7 @@ function getDiffPre(diffResult) {
     };
     for (var i = 0; i != (oneDiff.count || 1); ++i) {  // i: the i th line of oneDiff
       for (var j = 0; j != 2; ++j) {  // j = 0: text, j = 1: binary
-        oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowClass[j], oneDiffConfig.textArray[j][i]));
+        oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowClass[j], oneDiffConfig.textArray[j]()[i]));
         oneLeftRow = createElementWith('div', oneDiffConfig.linenumRowClassList[j], oneDiffConfig.linenumRowContents[j][0]());
         oneRightRow = createElementWith('div', oneDiffConfig.linenumRowClassList[j], oneDiffConfig.linenumRowContents[j][1]());
         oneLeftRow.classList.add(bgcolorClass), oneRightRow.classList.add(bgcolorClass);
@@ -363,7 +380,7 @@ function getPolishedReport(reportObject, configs) {
       summary.appendChild(createElementWith('pre', 'index', 'Test [' + index + ']'));
       if (caseInfo.error) {
         summary.appendChild(createElementWith('br'));
-        summary.appendChild(createElementWith('pre', 'result-code', 'Error: ' + caseInfo.error));
+        summary.appendChild(createElementWith('pre', 'not-executing-check', 'Error: ' + caseInfo.error));
       } else {
         summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultCode2Result[caseInfo.resultCode]));
         summary.appendChild(createElementWith('br'));
@@ -450,6 +467,7 @@ function getPolishedReport(reportObject, configs) {
       var summary = createElementWith('div', 'tests-check-summary');
       summary.appendChild(createElementWith('pre', 'index', 'Test [' + index + ']'));
       if (caseInfo.error) {
+        summary.appendChild(createElementWith('br'));
         summary.appendChild(createElementWith('pre', 'not-executing-check', 'Error:' + caseInfo.error));
       }
       return summary;

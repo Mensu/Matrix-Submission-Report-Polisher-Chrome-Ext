@@ -4,6 +4,12 @@
 .diff-added-bg {
   background-color: darkseagreen;
 }
+.inline-removed-bg {
+  background-color: rgb(255, 113, 142);
+}
+.inline-added-bg {
+  background-color: chartreuse;
+}
 .hiding {
   display: none;
 }
@@ -25,7 +31,6 @@ pre.full-score {
 .report-section .test-content .report-detail > div {
   font-family: Courier, Arial;
   font-size: 1.2em;
-  font-weight: bold;
 }
 
 .tests-check-summary pre.index {
@@ -69,7 +74,7 @@ pre.full-score {
 pre.plain-text-wrapper, pre.plain-text-wrapper pre.one-diff-wrapper {
   font-family: Courier;
   font-size: 1.05em;
-  font-weight: bold;
+  font-weight: normal;
 }
 
 .polished-report-success div.report-detail pre.error-content {
