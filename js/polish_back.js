@@ -223,7 +223,7 @@ function toReportObject(body) {
               self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
               for (var j in removedLines) {
                 var inlineDiff = JsDiff.diffChars(removedLines[j], addedLines[j]);
-                var inlineBinaryDiff = JsDiff.diffChars(removedLinesBinary[j], addedLinesBinary[j]);
+                var inlineBinaryDiff = JsDiff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);
                 var oneRemovedLine = [], oneAddedLine = [];
                 for (var k in inlineDiff) {
                   if (inlineDiff[k].added === undefined) oneRemovedLine.push(inlineDiff[k]);
