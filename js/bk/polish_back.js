@@ -1,3 +1,5 @@
+var JsDiff = new diff_match_patch();
+JsDiff.Diff_Timeout = 0;
 function httpRequest(url, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('get', url, true);
@@ -178,6 +180,44 @@ function toReportObject(body) {
   var wrap = function(str, append) {
     return ((typeof(str) != 'undefined') ? (str + ((typeof(append) != 'undefined') ? append : '')) : 'missing');
   };
+  /** 
+   * modify a Case object by adding to it some diff information
+   * @param {Case} oneCase - a Case object containing property "stdOutput" end "yourOutput"
+   * @return {undefined} no return value should be expected
+   * independent
+   */
+  function getDiff(oneCase) {
+    if (typeof(oneCase.stdOutput) != 'string' || typeof(oneCase.yourOutput) != 'string') return;
+    oneCase['diff'] = JsDiff.diffLines(oneCase.stdOutput, oneCase.yourOutput);
+    oneCase.diff.forEach(function(oneDiff, index, self) {   
+      if (index && self[index - 1].removed && self[index].added) {
+        var removedLines = self[index - 1].value;
+        var removedLinesBinary = self[index - 1].binary;
+        var addedLines = self[index].value;
+        var addedLinesBinary = self[index].binary;
+        if (removedLines.length == addedLines.length) {
+          self[index - 1]['inlineDiff'] = [], self[index]['inlineDiff'] = [];
+          self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
+          for (var j in removedLines) {
+            var inlineDiff = JsDiff.diffChars(removedLines[j], addedLines[j]);
+            var inlineBinaryDiff = JsDiff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);;
+            var oneRemovedLine = [], oneAddedLine = [];
+            for (var k in inlineDiff) {
+              if (inlineDiff[k].added === undefined) oneRemovedLine.push(inlineDiff[k]);
+              if (inlineDiff[k].removed === undefined) oneAddedLine.push(inlineDiff[k]);
+            }
+            self[index - 1].inlineDiff.push(oneRemovedLine), self[index].inlineDiff.push(oneAddedLine);
+            oneRemovedLine = [], oneAddedLine = [];
+            for (var k in inlineBinaryDiff) {
+              if (inlineBinaryDiff[k].added === undefined) oneRemovedLine.push(inlineBinaryDiff[k]);
+              if (inlineBinaryDiff[k].removed === undefined) oneAddedLine.push(inlineBinaryDiff[k]);
+            }
+            self[index - 1].inlineBinaryDiff.push(oneRemovedLine), self[index].inlineBinaryDiff.push(oneAddedLine);
+          }
+        }
+      }
+    });
+  }
   var refactorTests = function(phaseName, info) {
     var curPhase = reportObject[phaseName];
     curPhase['error'] = null;
@@ -203,45 +243,7 @@ function toReportObject(body) {
       oneCase['stdOutput'] = oneTest.standard_stdout || '';
       oneCase['yourOutput'] = oneTest.stdout || '';
       if (oneCase.stdOutput.length && oneCase.yourOutput.length) {
-        oneCase['diff'] = JsDiff.diffLines(oneCase.stdOutput, oneCase.yourOutput);
-        var formatASCII = function(acsii) {
-          return ('0' + acsii.toString(16)).slice(-2);
-        };
-        oneCase['diff'].forEach(function(oneDiff, index, self) {
-          oneDiff['binary'] = oneDiff.value.split('\n').map(function(oneLine, index1, self1) {
-            var binary = '';
-            for (var i = 0; i < oneLine.length; ++i) binary += formatASCII(oneLine.charCodeAt(i)) + ((i == oneLine.length - 1) ? '' : ' ');
-            return binary + (index1 == self1.length - 1 ? '' : ((oneLine.length) ? ' 0a' : '0a'));
-          });
-          if (index && self[index - 1].removed && self[index].added) {
-            var removedLines = self[index - 1].value.split('\n');
-            var removedLinesBinary = self[index - 1].binary.split('\n');
-            var addedLines = self[index].value.split('\n');
-            var addedLinesBinary = self[index].binary;
-            if (removedLines.length == addedLines.length) {
-              self[index - 1]['inlineDiff'] = [], self[index]['inlineDiff'] = [];
-              self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
-              for (var j in removedLines) {
-                var inlineDiff = JsDiff.diffChars(removedLines[j], addedLines[j]);
-                var inlineBinaryDiff = JsDiff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);
-                var oneRemovedLine = [], oneAddedLine = [];
-                for (var k in inlineDiff) {
-                  if (inlineDiff[k].added === undefined) oneRemovedLine.push(inlineDiff[k]);
-                  if (inlineDiff[k].removed === undefined) oneAddedLine.push(inlineDiff[k]);
-                }
-                self[index - 1]['inlineDiff'].push(oneRemovedLine), self[index]['inlineDiff'].push(oneAddedLine);
-                oneRemovedLine = [], oneAddedLine = [];
-                for (var k in inlineBinaryDiff) {
-                  if (inlineBinaryDiff[k].added === undefined) oneRemovedLine.push(inlineBinaryDiff[k]);
-                  if (inlineBinaryDiff[k].removed === undefined) oneAddedLine.push(inlineBinaryDiff[k]);
-                }
-                self[index - 1]['inlineBinaryDiff'].push(oneRemovedLine), self[index]['inlineBinaryDiff'].push(oneAddedLine);
-              }
-            }
-          }
-          oneDiff['binary'] = oneDiff['binary'].join('\n');
-        });
-
+        getDiff(oneCase);
       } else {
         oneCase['diff'] = null;
       }

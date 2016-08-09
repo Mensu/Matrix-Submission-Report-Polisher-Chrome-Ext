@@ -1,0 +1,112 @@
+.side-nav {
+  display: block;
+  padding-bottom: 40px;
+  color: #808080;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding-left: 4px;
+  border-radius: 3px;
+  width: 195px;
+  height: 500px;
+  position: fixed;
+  top: 30px;
+  right: 30px;
+}
+.side-nav.fold {
+  background-color: rgba(255, 255, 255, 0);
+}
+.side-nav a {
+  color: rgb(130, 130, 130);
+}
+.side-nav a:hover {
+  color: #0085a1;
+}
+.side-nav .nav-toggle-wrapper {
+  margin-top: 10px;
+  margin-bottom: 0;
+  margin-left: 17px;
+  cursor: pointer;
+}
+.side-nav.fold .nav-toggle::before {
+  content: "+";
+}
+.side-nav.fold .nav-body {
+  display: none;
+}
+.side-nav .nav-toggle {
+  padding-left: 10px;
+  border-radius: 3px;
+}
+.side-nav.fold .nav-toggle {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+.side-nav .nav-toggle::before {
+  content: "−";
+  position: relative;
+  margin-right: 5px;
+  bottom: 1px;
+}
+.side-nav .nav-body {
+  position: relative;
+  list-style: none;
+  height: 460px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-left: 0px;
+  padding-right: 5px;
+  text-indent: 0;
+}
+.side-nav .nav-body li {
+  position: relative;
+  list-style: none;
+}
+.side-nav .nav-body li a {
+  padding-left: 10px;
+  max-width: 180px;
+  display: inline-block;
+  vertical-align: middle;
+  height: 30px;
+  line-height: 30px;
+  overflow: hidden;
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.side-nav .nav-body .h1_nav {
+  margin-left: 0;
+  font-size: 15px;
+  font-weight: bold;
+}
+.side-nav .nav-body .h2_nav {
+  margin-left: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+.side-nav .nav-body .h3_nav {
+  margin-left: 18px;
+  font-size: 13px;
+  font-weight: bold;
+}
+.side-nav .nav-body .h4_nav {
+  margin-left: 25px;
+  font-size: 12px;
+}
+.side-nav .nav-body .h5_nav {
+  margin-left: 33px;
+  font-size: 11px;
+}
+.side-nav .nav-body .h6_nav {
+  margin-left: 40px;
+  font-size: 10px;
+}
+.side-nav .nav-body .h4_nav a,
+.side-nav .nav-body .h5_nav a,
+.side-nav .nav-body .h6_nav a {
+  max-width: 170px;
+}
+.side-nav .nav-body .active {
+  border-radius: 4px;
+  background-color: #F5F5F5;
+}
+.side-nav .nav-body .active a {
+  color: #0085a1!important;
+}

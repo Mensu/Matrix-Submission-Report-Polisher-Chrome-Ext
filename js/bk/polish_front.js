@@ -88,8 +88,8 @@ function getPreWithText(text) {
  *   {function} toLinenumString
  */
 function getDiffPre(diffResult) {
-  var diffPre = createElementWith('pre', ['plain-text-wrapper', 'line-numbers-wrapper', 'diffPre'],
-    createElementWith('span', 'diffPre-leading-newline', '\n'));
+  var leadingNewLine = createElementWith('span', 'diffPre-leading-newline', '\n');
+  var diffPre = createElementWith('pre', ['plain-text-wrapper', 'line-numbers-wrapper', 'diffPre'], leadingNewLine);
   var linenumRowsLeft = createElementWith('span', 'line-numbers-rows');
   var linenumRowsRight = createElementWith('span', ['line-numbers-rows', 'line-numbers-rows-right']);
   
@@ -124,64 +124,6 @@ function getDiffPre(diffResult) {
       "bgcolorClass": 'diff-removed-bg'
     }
   };
-
-  var diffResLen = diffResult.length;
-  var lastDiffEndsWithNewLine = diffResult[diffResLen - 1].value.endsWith('\n');
-  var appendNewLineForOneDiff = function(index) {
-    diffResult[index].value += '\n', diffResult[index].binary += '\n', ++diffResult[index].count;
-  };
-
-    // modify diffResult in order to highlight the new lines at the end
-    // by appending additional '\n' at the end of oneDiffs
-  var modifyDiffResult = function() {
-    if (diffResLen == 1) {
-        if (lastDiffEndsWithNewLine) appendNewLineForOneDiff(diffResLen - 1);
-    } else {
-        var secondLastDiffEndsWithNewLine = diffResult[diffResLen - 2].value.endsWith('\n');
-        if (diffResult[diffResLen - 2].added === undefined
-          && diffResult[diffResLen - 2].removed === undefined) {
-        // ... [common] [added] or ... [common] [removed]
-          // in this case [common] must end with a '\n'
-            diffResult[diffResLen] = {
-              "count": 1,
-              "value": '\n',
-              "binary": '\n'
-            };
-                // the last [added] or [removed] does not end with a '\n'
-            if (!lastDiffEndsWithNewLine) {  // to result: ... [common] [added] [removed (content: '\n' from [common])]
-                                                     // or ... [common] [removed] [added (content: '\n' from [common])]
-                diffResult[diffResLen]['added'] = diffResult[diffResLen - 1].removed;
-                diffResult[diffResLen]['removed'] = diffResult[diffResLen - 1].added;
-            }
-              // else resulting: ... [common] [added] [common (content: '\n' from both)]
-              //             or: ... [common] [removed] [common (content: '\n' from both)]
-            ++diffResLen;
-        } else if (lastDiffEndsWithNewLine
-                && diffResult[diffResLen - 1].added === undefined
-                && diffResult[diffResLen - 1].removed === undefined) {
-              // ... [added] [common] or ... [removed] [common]
-              // and [common] ends with a '\n'
-            appendNewLineForOneDiff(diffResLen - 1);
-            
-            // ... [removed] [added]
-              // both end with a '\n'
-        } else if (secondLastDiffEndsWithNewLine && lastDiffEndsWithNewLine) {
-            diffResult[diffResLen] = {  // to result: ... [removed] [added] [common (content: '\n' from both)]
-              "count": 1,
-              "value": '\n',
-              'binary': '\n'
-            };
-            ++diffResLen;
-        } else if (secondLastDiffEndsWithNewLine) {
-              // [removed] with a '\n' => ... [removed + '\n'] [added]
-            appendNewLineForOneDiff(diffResLen - 2);
-        } else if (lastDiffEndsWithNewLine) {
-              // [added] with a '\n' => ... [removed] [added + '\n']
-            appendNewLineForOneDiff(diffResLen - 1);
-        }
-    }
-  };
-  modifyDiffResult();
   
   linenumRowsLeft.appendChild(createElementWith('div', 'line-numbers-one-row-std-heading', linenumRowConfig.stdHeading()));
   linenumRowsRight.appendChild(createElementWith('div', 'line-numbers-one-row-your-heading', linenumRowConfig.yourHeading()));
@@ -192,44 +134,36 @@ function getDiffPre(diffResult) {
 
     leftLinenumStr = null, rightLinenumStr = null, bgcolorClass = null;
       // assign values to leftLinenumStr, rightLinenumStr, bgcolorClass;
-    var assignConfig = function() {
+    (function assignConfig() {
       for (typeName in diffTypeConfig) {
-        if (oneDiff[typeName]) {  // for added or removed
+        if (oneDiff[typeName]) {
           leftLinenumStr = diffTypeConfig[typeName].leftLinenumStr;
           rightLinenumStr = diffTypeConfig[typeName].rightLinenumStr;
           bgcolorClass = diffTypeConfig[typeName].bgcolorClass;
           break;
         }
       }
-      if (leftLinenumStr === null) {  // for common
-        leftLinenumStr = diffTypeConfig.common.leftLinenumStr;
-        rightLinenumStr = diffTypeConfig.common.rightLinenumStr;
-        bgcolorClass = diffTypeConfig.common.bgcolorClass;
-      }
-    };
-    assignConfig();
+    })();
     oneDiffContentSpan.classList.add(bgcolorClass), oneDiffContentPre.classList.add(bgcolorClass);
-    var getOneDiffTextArray = function(oneDiff, binary) {
+    var getOneDiffText = function(oneDiff, index, binary) {
       var value = binary ? 'binary' : 'value';
       var inlineDiff = binary ? 'inlineBinaryDiff' : 'inlineDiff';
-      if (oneDiff.inlineDiff === undefined) return oneDiff[value].split('\n');
-      var spansArray = [], oneLineSpans = null;
-      oneDiff[inlineDiff].forEach(function(oneLine, index, self) {
-        oneLineSpans = [];
-        for (var i in oneLine) {
-          var inlineColor = oneLine[i].added ? 'inline-added-bg' : (oneLine[i].removed ? 'inline-removed-bg' : 'inline-common-bg');
-          oneLineSpans.push(createElementWith('span', inlineColor, oneLine[i].value));
-        }
-        spansArray.push(oneLineSpans);
-      });
-      return spansArray;
+      if (oneDiff.inlineDiff === undefined) {
+        if (binary) return oneDiff[value][index].slice(0, -1);
+        else return oneDiff[value][index];
+      }
+      var oneLineSpans = [], inlineDiffs = oneDiff[inlineDiff][index];
+      for (var i in inlineDiffs) {
+        var oneInlineDiff = inlineDiffs[i];
+        if (0 == oneInlineDiff.value.length) continue;
+        var inlineColor = oneInlineDiff.added ? 'inline-added-bg' : (oneInlineDiff.removed ? 'inline-removed-bg' : 'inline-common-bg');
+        oneLineSpans.push(createElementWith('span', inlineColor, oneInlineDiff.value));
+        if (binary && i != inlineDiffs.length - 1) oneLineSpans.push(createElementWith('span', 'inline-common-bg', ' '));
+      }
+      return oneLineSpans;
     }
       // main work: pushing texts and linenums to diffPre
     var oneDiffConfig = {
-      "textArray": [
-        (function() { return getOneDiffTextArray(oneDiff, false); }),
-        (function() { return getOneDiffTextArray(oneDiff, true); })
-      ],
       "textRowClass": ['one-diff-content-one-row-text', 'one-diff-content-one-row-binary'],
       "textRowNewLineClass": [
         ['one-diff-content-newline'],
@@ -248,9 +182,9 @@ function getDiffPre(diffResult) {
         ]
       ]
     };
-    for (var i = 0; i != (oneDiff.count || 1); ++i) {  // i: the i th line of oneDiff
+    for (var i = 0; i != oneDiff.value.length; ++i) {  // i: the i th line of oneDiff
       for (var j = 0; j != 2; ++j) {  // j = 0: text, j = 1: binary
-        oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowClass[j], oneDiffConfig.textArray[j]()[i]));
+        oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowClass[j], getOneDiffText(oneDiff, i, j)));
         oneLeftRow = createElementWith('div', oneDiffConfig.linenumRowClassList[j], oneDiffConfig.linenumRowContents[j][0]());
         oneRightRow = createElementWith('div', oneDiffConfig.linenumRowClassList[j], oneDiffConfig.linenumRowContents[j][1]());
         oneLeftRow.classList.add(bgcolorClass), oneRightRow.classList.add(bgcolorClass);
@@ -261,9 +195,11 @@ function getDiffPre(diffResult) {
     oneDiffContentPre.appendChild(oneDiffContentSpan);
     diffPre.appendChild(oneDiffContentPre);
   });
-  diffPre.appendChild(linenumRowsLeft), diffPre.appendChild(linenumRowsRight);
+  diffPre.insertBefore(linenumRowsLeft, leadingNewLine), diffPre.insertBefore(linenumRowsRight, leadingNewLine);
   return diffPre;
 }
+
+
 
 function getPolishedReport(reportObject, configs) {
   var showCR = (configs.showCR === undefined) ? false : Boolean(configs.showCR);
@@ -534,9 +470,9 @@ function getPolishedReport(reportObject, configs) {
   }
   var standardTestsDetail = function(phaseInfo) { return testsDetail(phaseInfo, true); };
   var randomTestsDetail = function(phaseInfo) { return testsDetail(phaseInfo, false); };
-  var getScoreDiv = function(phaseId, phase, score, total, url) {
+  var getScoreDiv = function(phaseId, phase, score, total, pass, url) {
     var nodesToBeAppended = [phase + " : You've got " + score + ' of the total of ' + total + ' points'];
-    if (typeof(url) == 'string' && score != total) {
+    if (typeof(url) == 'string' && !pass) {
       var link = createElementWith('a', 'link', 'Why did it go wrong?');
       link.href = url, link.target = '_blank';
       nodesToBeAppended.push(link);
@@ -579,8 +515,8 @@ function getPolishedReport(reportObject, configs) {
   for (var i in phases) {
     if (reportObject[phases[i].id] === null) continue;
     var reportSection = createElementWith('div', [phases[i].id.replace(/ /g, '-'), 'report-section'],
-      getScoreDiv(phases[i].id, phases[i].description, reportObject[phases[i].id].grade, totalPoints[phases[i].id], phases[i].url));
-    nav.appendChild(createElementWith('div', 'report-nav-section', [createNavItem(reportSection, 'report-nav-section-title', phases[i].description), createElementWith('div', 'report-nav-section-cases')]));
+      getScoreDiv(phases[i].id, phases[i].description, reportObject[phases[i].id].grade, totalPoints[phases[i].id], reportObject[phases[i].id].pass, phases[i].url));
+    nav.appendChild(createElementWith('div', 'report-nav-section', [createNavItem(reportSection, ['report-nav-section-title', reportObject[phases[i].id].pass ? 'full-score' : 'not-executing-check'], phases[i].description), createElementWith('div', 'report-nav-section-cases')]));
     var testContent = createElementWith('div', 'test-content');
     var detail = null;
     if (reportObject[phases[i].id].error) detail = createElementWith('div', 'not-executing-check', reportObject[phases[i].id].error);

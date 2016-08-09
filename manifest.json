@@ -26,30 +26,31 @@
   // },
   "background": {
     "scripts": [
-      "./js/diff.js",
-      "./js/polish_back.js",
-      "./js/checkIsOnline.js"
+      "./js/outputs/polish_back.js",
+      "./js/components/checkIsOnline.js"
     ]
   },
   "content_scripts": [
     {
       "matches": [  // 需要注入代码（修改）的网站
-        "https://eden.sysu.edu.cn:*/*"
+        "https://vmatrix.org.cn:*/*"
         // "file://mac/Home/Desktop/*"
       ],
       "css": [
         "./css/polish.css",
+        // "./css/CustomElements.css",
+        "./css/SideNav.css",
         "./css/backToTop.css"
       ],
       "js": [
-        "./js/polish_front.js",
-        "./js/backToTop.js"
+        "./js/outputs/polish_front.js"
+        // "./js/backToTop.js"
       ]
     }
   ],
   "options_page": "options.html",  // 右键图标，选项，时弹出的页面
   "permissions": [
-    "https://eden.sysu.edu.cn:*/*",  // 可以向这个网站请求
+    "https://vmatrix.org.cn:*/*",  // 可以向这个网站请求
     "tabs",
     "webRequest"
   ]
