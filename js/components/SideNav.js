@@ -21,9 +21,10 @@ SideNav.prototype = {
     return this.wrapper;
   },
   "getInitialized": function(endSelector, unbindSelector) {
+    var self = this;
     $(this.toggle).click(function(e){
         e.preventDefault();
-        $(this.wrapper).toggleClass('fold');
+        $(self.wrapper).toggleClass('fold');
     });
     this.onePageNav = $(this.body).onePageNav({
         currentClass: "active",

@@ -5,15 +5,33 @@
   
   position: relative;
 
+  word-wrap: normal;
   overflow-x: auto;
+  &, & .one-diff-wrapper {
+    font-family: Courier;
+    font-size: 1.05em;
+    font-weight: normal;
+  }
+}
+
+.polished-report-success div.report-detail pre.error-content {
+  max-height: none !important;
 }
 .line-numbers-wrapper {
   padding-left: 4em;
+  & > pre {
+    margin: 0 0;
+    padding-left: 1em;
+  }
 }
-.line-numbers-wrapper > pre {
-  margin: 0 0;
-  padding-left: 1em;
+.diffPre {
+  padding-left: 6.7em;
 }
+.one-diff-content-one-row-binary {
+  color: rgba(95, 95, 95, 1);
+  font-size: 0.75em;
+}
+
 .line-numbers-rows {
   position: absolute;
   pointer-events: none;
@@ -23,23 +41,16 @@
   width: 3.3em;
   letter-spacing: -1px;
   border-right: 1px solid #999;
-}
-.line-numbers-rows > div {
-  display: block;
-  color: rgba(107, 107, 107, 1);
-  padding-right: .5em;
-  text-align: right;
-}
 
-.diffPre {
-  padding-left: 6.7em;
-}
-.line-numbers-rows-right {
-  left: 3.4em;
-}
-.one-diff-content-one-row-binary {
-  color: rgba(95, 95, 95, 1);
-  font-size: 14px;
+  & > div {
+    display: block;
+    color: rgba(107, 107, 107, 1);
+    padding-right: .5em;
+    text-align: right;
+  }
+  &.line-numbers-rows-right {
+    left: 3.4em;
+  }
 }
 
 .diff-removed-bg {
@@ -48,11 +59,9 @@
 .diff-added-bg {
   background-color: darkseagreen;
 }
-
 .inline-removed-bg {
   background-color: rgb(255, 113, 142);
 }
 .inline-added-bg {
   background-color: chartreuse;
 }
-

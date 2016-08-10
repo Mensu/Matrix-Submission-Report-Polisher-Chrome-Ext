@@ -1,11 +1,9 @@
 var genDiffInfo = require('./genDiffInfo.js');
-var toSubmitAt = require('./toSubmitAt.js');
 
-function toReportObject(body) {
+function genReportObj(body) {
   var reportObject = {
     "msg": null,
     "grade": null,
-    "submitTime": null,
     "compile check": null,
     "static check": null,
     "standard tests": null,
@@ -17,7 +15,7 @@ function toReportObject(body) {
   if (body.err) {
     reportObject.msg = 'Error: ' + body.msg;
     reportObject.grade = 0;
-    console.log('body');
+    console.log('body:');
     console.log(body);
     return reportObject;
   }
@@ -27,14 +25,14 @@ function toReportObject(body) {
   if (body.status == 'SUBMISSION_NOT_FOUND') {
       reportObject.msg = 'no submissions yet';
       reportObject.grade = null;
-      console.log('body');
+      console.log('body:');
       console.log(body);
       return reportObject;
   }
-  if (data === undefined) {
+  if (data === undefined || data === null) {
     reportObject.msg = 'Error: body.data is empty';
     reportObject.grade = 0;
-    console.log('body');
+    console.log('body:');
     console.log(body);
     return reportObject;
   }
@@ -46,7 +44,6 @@ function toReportObject(body) {
     console.log(body.data);
     // return reportObject;
   }
-  if (data.submitAt) reportObject.submitTime = toSubmitAt(data.submitAt, true);
   if (data.report === null) {
     reportObject.msg = 'report is empty';
     reportObject.grade = 0;
@@ -260,9 +257,9 @@ function toReportObject(body) {
     });
   */
   else if (typeof(exports) === 'object')
-    exports['toReportObject'] = factory();
+    exports['genReportObj'] = factory();
   else
-    root['toReportObject'] = factory();
+    root['genReportObj'] = factory();
 })(this, function factory() {
-  return toReportObject;
+  return genReportObj;
 });

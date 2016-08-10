@@ -45,123 +45,58 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var componentsPath = './components/';
-	var polisher = __webpack_require__(11)(componentsPath + 'Polisher.js');
-	var customElements = __webpack_require__(22)(componentsPath + 'CustomElements.js');
-	// var report = polisher.getReport();
-	// var reportObject = report.reportObject;
-	// var outputDiv = report.outputDiv;
-	var backToTop = __webpack_require__(23)(componentsPath + 'backToTop.js');
-	// chrome.runtime.sendMessage(reportObject, function(response) {
-	//   if (outputDiv) {
-	//     var parent = outputDiv.parentNode.parentNode;
-	//     var newOutputDiv = polisher.genOutputDiv(response.body), oldOutputDiv = parent.children[0];
-	//     var switchBtn = customElements.createSwitchBtn(newOutputDiv, oldOutputDiv, {
-	//       "show": 'show polished report',
-	//       "hide": 'show original report'
-	//     });
-	//     parent.insertBefore(switchBtn, oldOutputDiv);
-	//     parent.insertBefore(newOutputDiv, oldOutputDiv);
-	//     newOutputDiv.sideNav.getInitialized(newOutputDiv.endSelector);
-	//   }
-	// });
+	var polisher = __webpack_require__(12)(componentsPath + 'Polisher.js');
+	var createPolishedReportDiv = polisher.getPolishedReportDiv;
+	var customElements = __webpack_require__(23)(componentsPath + 'CustomElements.js');
+	document.body.appendChild(__webpack_require__(24)(componentsPath + 'backToTop.js'));
 
-
-	// function httpRequest(url, callback) {
-	//   var xhr = new XMLHttpRequest();
-	//   xhr.open('get', url, true);
-	//   xhr.onreadystatechange = function() {
-	//     if (xhr.readyState == 4) return callback(false, this.response);
-	//   }
-	//   xhr.onerror = function() { return callback(true); }
-	//   xhr.send();
-	// }
-
-
-
-	var getPolishedReport = polisher.getPolishedReportDiv;
-
-	// var matrixRootUrl = document.baseURI.replace(/\/$/, '');
-	// function sendRequestToGetSubmission() {
-	//   return httpRequest(matrixRootUrl + '/one-submission?submissionId=' + this.submissionId, function(err, response) {});
-	// }
-
-	// function updateSubmissionsTab(submissionsTab, submissionsId) {
-	//   if (submissionsTab === null || !submissionsId) return;
-	//   var submissionRows = submissionsTab.querySelector('table tbody').childNodes;
-	//   var index = 0;
-	//   for (var i in submissionRows) {
-	//     if (submissionRows[i].nodeName == 'TR') {
-	//       submissionRows[i]['submissionId'] = submissionsId[index++];
-	//       submissionRows[i].removeEventListener("click", sendRequestToGetSubmission, false);
-	//       submissionRows[i].addEventListener("click", sendRequestToGetSubmission, false);
-	//     }
-	//   }
-	// }
 
 	chrome.runtime.onMessage.addListener(function(body, sender, callback) {
 	try {
 	  if (body.signal == 'start') {
-	    var toWait = (body.wait === undefined) ? true : body.wait;
-	    // setTimeout(function() {
 	    var reportObject = body.reportObject;
-	    var gradeTab = document.querySelector('.matrix-content[ng-show*="grade"] .matrix-content-wrapper')
-	    if (gradeTab === null) return callback("front couldn't find the grade Tab.");
-	    var oldPolished = gradeTab.querySelector('.polished-report-success'), oldSwitch = gradeTab.querySelector('.switch-btn');
-	    var oldReport = gradeTab.querySelector('.report-success:not(.polished-report-success)');
-	    if (body.problemInfo.limits) gradeTab['problemInfo'] = body.problemInfo;
-
-	    // var submissionsTab = document.querySelector('.grade + .submissions');
-	    // if (body.submissionsId) {
-	    //     updateSubmissionsTab(submissionsTab, body.submissionsId);
-	    //     if (body.problemInfo.problemId)
-	    //       
-	    // } else {
-	    //     if (gradeTab.problemInfo) {
-	    //         httpRequest(matrixRootUrl + '/problem-submissions?position=' + 0 + '&problemId=' + gradeTab.problemInfo.problemId + '&userId=' + gradeTab.problemInfo.userId, function(err, body) {
-	    //             body = JSON.parse(body);
-	    //             if (body.data) {
-	    //                 var submissionsId = body.data.map(function(oneSubmission, index, self) {
-	    //                   return oneSubmission.id;
-	    //                 });
-	    //                 updateSubmissionsTab(submissionsTab, submissionsId);
-	    //             }
-	    //         });
-	    //     }
-	    // }
-
-	    var newReport = getPolishedReport(reportObject, {
-	      "showCR": body.configs.showCR,
-	      "maxStdCaseNum": body.configs.maxStdCaseNum,
-	      "maxRanCaseNum": body.configs.maxRanCaseNum,
-	      "maxMemCaseNum": body.configs.maxMemCaseNum,
-	      "limits": gradeTab.problemInfo.limits,
-	      "totalPoints": gradeTab.problemInfo.totalPoints,
-	    });
-
-	    var switchBtn = customElements.createSwitchBtn(newReport, oldReport, {
-	      "show": 'show polished report',
-	      "hide": 'show original report'
-	    });
-	    gradeTab.insertBefore(switchBtn, oldReport);
-	    // gradeTab.insertBefore(newReport, oldReport);
-	    gradeTab.appendChild(newReport);
-	    if (newReport.sideNav) newReport.sideNav.getInitialized(newReport.endSelector, 'ui-view.ng-scope');
-
-	    // gradeTab.insertBefore(switchBtn, oldReport);
-	    // oldReport.classList.add('hiding');
-
-	    
-	    if (oldPolished) {
-	      if (oldPolished.sideNav) {
-	        oldPolished.sideNav.remove();
-	      }
-	      gradeTab.removeChild(oldPolished);
+	    var reportWrapper = document.querySelector('.matrix-content[ng-show*="grade"] .matrix-content-wrapper')
+	    if (reportWrapper === null){
+	      return callback("front couldn't find the grade Tab.");
 	    }
-	    if (oldSwitch) gradeTab.removeChild(oldSwitch);
+	    if (body.problemInfo) {
+	      reportWrapper['problemInfo'] = body.problemInfo;
+	    }
+	      // get div components
+	    var oldPolishedReport = reportWrapper.querySelector('.polished-report-success'),
+	        oldSwitchBtn = reportWrapper.querySelector('.switch-btn'),
+	        originalReport = reportWrapper.querySelector('.report-success:not(.polished-report-success)'),
+	        polishedReport = createPolishedReportDiv(reportObject, {
+	            "showCR": body.configs.showCR,
+	            "maxStdCaseNum": body.configs.maxStdCaseNum,
+	            "maxRanCaseNum": body.configs.maxRanCaseNum,
+	            "maxMemCaseNum": body.configs.maxMemCaseNum,
+	            "limits": reportWrapper.problemInfo.limits,
+	            "totalPoints": reportWrapper.problemInfo.totalPoints,
+	          }),
+	        switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
+	            "show": 'show polished report',
+	            "hide": 'show original report'
+	          });
+
+	      // insert newly created div and perform initialzation
+	    reportWrapper.insertBefore(switchBtn, originalReport);
+	    reportWrapper.appendChild(polishedReport);
+	    if (polishedReport.sideNav) {
+	      polishedReport.sideNav.getInitialized(polishedReport.endSelector, 'ui-view.ng-scope');
+	    }
+	    
+	      // rid the wrapper of the old divs
+	    if (oldPolishedReport) {
+	      if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
+	      reportWrapper.removeChild(oldPolishedReport);
+	    }
+	    if (oldSwitchBtn) reportWrapper.removeChild(oldSwitchBtn);
+
+	      // auto polish
 	    if (!body.configs.autoPolish) switchBtn.click();
 	    
 	    return callback('front has got the reportObject and attached the polished report to the grade tab!');
-	    // }, 500 * toWait + 1);
 	  }
 	} catch (e) {
 	  callback('the following error occurred at front:\n\n' + e.stack);
@@ -182,11 +117,12 @@
 /* 8 */,
 /* 9 */,
 /* 10 */,
-/* 11 */
+/* 11 */,
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/Polisher.js": 12
+		"./components/Polisher.js": 13
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -199,14 +135,14 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 11;
+	webpackContext.id = 12;
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var customElements = __webpack_require__(13);
+	var customElements = __webpack_require__(14);
 	var createElementWith = customElements.createElementWith;
 	var createLinenumPreWithText = customElements.createLinenumPreWithText;
 	var createPreWithText = customElements.createPreWithText;
@@ -214,8 +150,8 @@
 	var createHideElementBtn = customElements.createHideElementBtn;
 	var createViewInHexSpan = customElements.createViewInHexSpan;
 	var createHexHidingStyle = customElements.createHexHidingStyle;
-	var $ = __webpack_require__(19);
-	var SideNav = __webpack_require__(20);
+	var $ = __webpack_require__(20);
+	var SideNav = __webpack_require__(21);
 
 	var polisher = {
 
@@ -280,7 +216,7 @@
 	        } else {
 	          summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultCodeToResult[caseInfo.resultCode]));
 	          summary.appendChild(createElementWith('br'));
-	          summary.appendChild(createElementWith('pre', 'limit-use', 'Memory Used: ' + caseInfo.memoryused + 'KB / ' + memoryLimit + '\n\nTime Used: ' + caseInfo.timeused + 'ms / ' + timeLimit));
+	          summary.appendChild(createElementWith('pre', 'limit-use', '\nMemory Used: ' + caseInfo.memoryused + 'KB / ' + memoryLimit + '\nTime Used: ' + caseInfo.timeused + 'ms / ' + timeLimit));
 	        }
 	        return summary;
 	      };
@@ -664,20 +600,20 @@
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var CustomPre = __webpack_require__(14);
-	var createHideElementBtn = __webpack_require__(16);
-	var ViewInHexSpan = __webpack_require__(17);
-	var createSwitchBtn = __webpack_require__(18);
+	var CustomPre = __webpack_require__(15);
+	var createHideElementBtn = __webpack_require__(17);
+	var ViewInHexSpan = __webpack_require__(18);
+	var createSwitchBtn = __webpack_require__(19);
 	function CustomElements() {}
 	CustomElements.extendFrom = function(parent) {
 	  for (var name in parent) this.prototype[name] = parent[name];
 	}
 	CustomElements.extendFrom(CustomPre);
 	CustomElements.extendFrom({
-	  "createElementWith": __webpack_require__(15),
+	  "createElementWith": __webpack_require__(16),
 	  "createHideElementBtn": createHideElementBtn,
 	  "createViewInHexSpan": ViewInHexSpan.createViewInHexSpan,
 	  "createHexHidingStyle": ViewInHexSpan.createHexHidingStyle,
@@ -707,12 +643,11 @@
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(15);
-	function CustomPre() {}
-	CustomPre.prototype = {
+	var createElementWith = __webpack_require__(16);
+	var CustomPre = {
 
 	  /** 
 	   * formatting rules:
@@ -734,7 +669,7 @@
 	   * @return {Node} the created pre
 	   * dependent of 
 	   *   {function} createElementWith
-	   *   {function} CustomPre.prototype.toLinenumString
+	   *   {function} CustomPre.toLinenumString
 	   */
 	  "createLinenumPreWithText": function(text) {
 	    var lineCnt = text.split('\n').length;
@@ -742,7 +677,7 @@
 	    var linenumRows = createElementWith('span', 'line-numbers-rows');
 	    var oneRow = null;
 	    for (var linenum = 1; linenum != lineCnt + 1; ++linenum) {
-	      oneRow = createElementWith('div', 'line-numbers-one-row', CustomPre.prototype.toLinenumString(linenum));
+	      oneRow = createElementWith('div', 'line-numbers-one-row', CustomPre.toLinenumString(linenum));
 	      linenumRows.appendChild(oneRow);
 	    }
 	    newPre.appendChild(linenumRows);
@@ -779,8 +714,8 @@
 	    var stdLinenum = 1, yourLinenum = 1;
 
 	    var linenumRowConfig = {
-	      "stdLinenum": (function() { return CustomPre.prototype.toLinenumString(stdLinenum++); }),
-	      "yourLinenum": (function() { return CustomPre.prototype.toLinenumString(yourLinenum++); }),
+	      "stdLinenum": (function() { return CustomPre.toLinenumString(stdLinenum++); }),
+	      "yourLinenum": (function() { return CustomPre.toLinenumString(yourLinenum++); }),
 	      "stdHeading": (function() { return '  std'; }),
 	      "yourHeading": (function() { return 'your'; }),
 	      "added": (function() { return '    +'; }),
@@ -806,26 +741,28 @@
 	      }
 	    };
 	    
+	      // headings on the left top corner
 	    linenumRowsLeft.appendChild(createElementWith('div', 'line-numbers-one-row-std-heading', linenumRowConfig.stdHeading()));
 	    linenumRowsRight.appendChild(createElementWith('div', 'line-numbers-one-row-your-heading', linenumRowConfig.yourHeading()));
 
+	      // for each diff (which may contain several lines): create a block
 	    diffResult.forEach(function(oneDiff, index, self) {
 	      oneDiffContentPre = createElementWith('pre', 'one-diff-wrapper');
 	      oneDiffContentSpan = createElementWith('span', 'one-diff-content');
-
 	      leftLinenumStr = null, rightLinenumStr = null, bgcolorClass = null;
+
 	        // assign values to leftLinenumStr, rightLinenumStr, bgcolorClass;
-	      (function assignConfig() {
-	        for (typeName in diffTypeConfig) {
-	          if (oneDiff[typeName]) {
-	            leftLinenumStr = diffTypeConfig[typeName].leftLinenumStr;
-	            rightLinenumStr = diffTypeConfig[typeName].rightLinenumStr;
-	            bgcolorClass = diffTypeConfig[typeName].bgcolorClass;
-	            break;
-	          }
+	      for (var typeName in diffTypeConfig) {
+	        if (oneDiff[typeName]) {
+	          leftLinenumStr = diffTypeConfig[typeName].leftLinenumStr;
+	          rightLinenumStr = diffTypeConfig[typeName].rightLinenumStr;
+	          bgcolorClass = diffTypeConfig[typeName].bgcolorClass;
+	          break;
 	        }
-	      })();
+	      }
+	        // set bg color of one diff block (which may contain several lines)
 	      oneDiffContentSpan.classList.add(bgcolorClass), oneDiffContentPre.classList.add(bgcolorClass);
+
 	      function getOneDiffText(oneDiff, index, binary) {
 	        var value = binary ? 'binary' : 'value';
 	        var inlineDiff = binary ? 'inlineBinaryDiff' : 'inlineDiff';
@@ -834,16 +771,15 @@
 	          else return oneDiff[value][index];
 	        }
 	        var oneLineSpans = [], inlineDiffs = oneDiff[inlineDiff][index];
-	        for (var i in inlineDiffs) {
-	          var oneInlineDiff = inlineDiffs[i];
-	          if (0 == oneInlineDiff.value.length) continue;
+	        inlineDiffs.forEach(function(oneInlineDiff, i, self) {
+	          if (0 == oneInlineDiff.value.length) return;
 	          var inlineColor = oneInlineDiff.added ? 'inline-added-bg' : (oneInlineDiff.removed ? 'inline-removed-bg' : 'inline-common-bg');
 	          oneLineSpans.push(createElementWith('span', inlineColor, oneInlineDiff.value));
 	          if (binary && i != inlineDiffs.length - 1) oneLineSpans.push(createElementWith('span', 'inline-common-bg', ' '));
-	        }
+	        });
 	        return oneLineSpans;
 	      }
-	        // main work: pushing texts and linenums to diffPre
+
 	      var oneDiffConfig = {
 	        "textRowClass": ['one-diff-content-one-row-text', 'one-diff-content-one-row-binary'],
 	        "textRowNewLineClass": [
@@ -863,16 +799,26 @@
 	          ]
 	        ]
 	      };
-	      for (var lineIndex = 0; lineIndex != oneDiff.value.length; ++lineIndex) {  // lineIndex: the n th line of oneDiff
-	        for (var i = 0; i != 2; ++i) {  // i = 0: text, i = 1: binary
+
+	      // main work
+	        // for each line in one diff block
+	      for (var lineIndex = 0; lineIndex != oneDiff.value.length; ++lineIndex) {
+	        for (var i = 0; i != 2; ++i) {  // i = 0: text,
+	                                        // i = 1: binary
+	            // text or binary content
 	          oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowClass[i], getOneDiffText(oneDiff, lineIndex, i)));
+	          
+	            // linenum
 	          oneLeftRow = createElementWith('div', oneDiffConfig.linenumRowClassList[i], oneDiffConfig.linenumRowContents[i][0]());
 	          oneRightRow = createElementWith('div', oneDiffConfig.linenumRowClassList[i], oneDiffConfig.linenumRowContents[i][1]());
 	          oneLeftRow.classList.add(bgcolorClass), oneRightRow.classList.add(bgcolorClass);
 	          linenumRowsLeft.appendChild(oneLeftRow), linenumRowsRight.appendChild(oneRightRow);
+	          
+	            // a newline character
 	          oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowNewLineClass[i], '\n'));
 	        }
 	      }
+
 	      oneDiffContentPre.appendChild(oneDiffContentSpan);
 	      diffPre.appendChild(oneDiffContentPre);
 	    });
@@ -880,7 +826,6 @@
 	    return diffPre;
 	  }
 	};
-	CustomPre.prototype.constructor = CustomPre;
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
 	    module.exports = factory();
@@ -899,12 +844,12 @@
 	  else
 	    root['CustomPre'] = factory();
 	})(this, function factory() {
-	  return new CustomPre();
+	  return CustomPre;
 	});
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/** 
@@ -954,10 +899,10 @@
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(15);
+	var createElementWith = __webpack_require__(16);
 	function toHide() {
 	  var btn = this;
 	  if (btn.elementIsHiding) {
@@ -1004,10 +949,10 @@
 
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(15);
+	var createElementWith = __webpack_require__(16);
 	function createHexHidingStyle(diffId) {
 	  return createElementWith('style', 'hexHidingStyle',
 	    '#' + diffId + ' .line-numbers-rows .line-numbers-one-row-binary {display: none;}'
@@ -1056,10 +1001,10 @@
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(15);
+	var createElementWith = __webpack_require__(16);
 	function toSwitch() {
 	  var button = this;
 	  if (button.elementIsHiding) {
@@ -1107,7 +1052,7 @@
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*eslint-disable no-unused-vars*/
@@ -11187,12 +11132,12 @@
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var $ = __webpack_require__(19);
-	__webpack_require__(21)(this, $);
-	var createElementWith = __webpack_require__(15);
+	var $ = __webpack_require__(20);
+	__webpack_require__(22)(this, $);
+	var createElementWith = __webpack_require__(16);
 	function SideNav() {
 	  this.wrapper = createElementWith('div', 'side-nav');
 	  this.toggle = createElementWith('h5', 'nav-toggle-wrapper', createElementWith('div', 'nav-toggle', 'Navigation'));
@@ -11213,9 +11158,10 @@
 	    return this.wrapper;
 	  },
 	  "getInitialized": function(endSelector, unbindSelector) {
+	    var self = this;
 	    $(this.toggle).click(function(e){
 	        e.preventDefault();
-	        $(this.wrapper).toggleClass('fold');
+	        $(self.wrapper).toggleClass('fold');
 	    });
 	    this.onePageNav = $(this.body).onePageNav({
 	        currentClass: "active",
@@ -11261,7 +11207,7 @@
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -11292,10 +11238,10 @@
 	        // that require this pattern but the window provided is a noop
 	        // if it's defined (how jquery works)
 	        if ( typeof window !== 'undefined' ) {
-	          jQuery = __webpack_require__(19);
+	          jQuery = __webpack_require__(20);
 	        }
 	        else {
-	          jQuery = __webpack_require__(19)(root);
+	          jQuery = __webpack_require__(20)(root);
 	        }
 	      }
 	      factory(jQuery);
@@ -11303,7 +11249,7 @@
 	    };
 	  } if (true) {
 	    // AMD. Register as an anonymous module.
-	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(19)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(20)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  } else {
 	    // Browser globals
 	    factory(jQuery);
@@ -11545,34 +11491,11 @@
 	}));
 
 /***/ },
-/* 22 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/CustomElements.js": 13
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 22;
-
-
-/***/ },
 /* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./bk/backToTop.js": 24,
-		"./bk副本/backToTop.js": 25,
-		"./components/backToTop.js": 26
+		"./components/CustomElements.js": 14
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -11590,68 +11513,32 @@
 
 /***/ },
 /* 24 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	(function () {
-	  var body = document.body;
-	  var backToTopOuterHTML = "\
-	<div id=\"backtotop\">\
-	  <div class=\"backtotop-btn\">\
-	    <div class=\"arrow-upward\"></div>\
-	    <div class=\"vertical-stick\"></div>\
-	  </div>\
-	</div>";
-	  body.lastElementChild.outerHTML += backToTopOuterHTML;
-	  backToTop = document.getElementById("backtotop");
-	  backToTop.addEventListener('click', function () {
-	    var documentBody = document.body;
-	    var distanceFromTop = documentBody.scrollTop;
-	    var pace = distanceFromTop / 12.5;
-	    window.requestAnimationFrame((function () {
-	      var calculatedScrollTop = parseInt(documentBody.scrollTop) - pace;
-	      documentBody.scrollTop = ((calculatedScrollTop < 0) ? 0 : calculatedScrollTop);
-	      if (parseInt(documentBody.scrollTop) > 0) window.requestAnimationFrame(arguments.callee);
-	    }));
-	  }, false);
-	})();
+	var map = {
+		"./components/backToTop.js": 25
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 24;
 
 
 /***/ },
 /* 25 */
-/***/ function(module, exports) {
-
-	(function () {
-	  var body = document.body;
-	  var backToTopOuterHTML = "\
-	<div id=\"backtotop\">\
-	  <div class=\"backtotop-btn\">\
-	    <div class=\"arrow-upward\"></div>\
-	    <div class=\"vertical-stick\"></div>\
-	  </div>\
-	</div>";
-	  body.lastElementChild.outerHTML += backToTopOuterHTML;
-	  backToTop = document.getElementById("backtotop");
-	  backToTop.addEventListener('click', function () {
-	    var documentBody = document.body;
-	    var distanceFromTop = documentBody.scrollTop;
-	    var pace = distanceFromTop / 12.5;
-	    window.requestAnimationFrame((function () {
-	      var calculatedScrollTop = parseInt(documentBody.scrollTop) - pace;
-	      documentBody.scrollTop = ((calculatedScrollTop < 0) ? 0 : calculatedScrollTop);
-	      if (parseInt(documentBody.scrollTop) > 0) window.requestAnimationFrame(arguments.callee);
-	    }));
-	  }, false);
-	})();
-
-
-/***/ },
-/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(15);
+	var createElementWith = __webpack_require__(16);
 	var backToTop = createElementWith('div', 'backToTop-wrapper',
-	  createElementWith('div', 'backToTop-btn',
-	    [
+	  createElementWith('div', 'backToTop-btn', [
 	      createElementWith('div', 'arrow-upward'),
 	      createElementWith('div', 'vertical-stick')
 	    ]
@@ -11667,7 +11554,6 @@
 	    if (parseInt(document.body.scrollTop) > 0) window.requestAnimationFrame(arguments.callee);
 	  }));
 	}, false);
-	document.body.appendChild(backToTop);
 	backToTop.toShow = function() {
 	  this.classList.remove('hiding');
 	};

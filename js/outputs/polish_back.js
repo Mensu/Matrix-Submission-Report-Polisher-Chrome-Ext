@@ -46,29 +46,23 @@
 
 	var componentsPath = './components/';
 
-	var httpRequest = __webpack_require__(1)(componentsPath + 'httpRequest.js');
-	var MatrixObject = __webpack_require__(3)(componentsPath + 'MatrixObject.js');
-	var toReportObject = __webpack_require__(5)(componentsPath + 'toReportObject.js');
-	var toSubmitAt = __webpack_require__(10)(componentsPath + 'toSubmitAt.js');
+	var MatrixObject = __webpack_require__(1)(componentsPath + 'MatrixObject.js');
+	var genReportObj = __webpack_require__(4)(componentsPath + 'genReportObj.js');
+	var toSubmitAt = __webpack_require__(8)(componentsPath + 'toSubmitAt.js');
+
 	var matrix = new MatrixObject('https://vmatrix.org.cn');
+	__webpack_require__(10)(componentsPath + 'checkIsOnline.js')(matrix);
 
-	var ReportObjSent = false;
-
-	function sendReportObjectToFront(err, body, otherInfo) {
-	  var reportObject = toReportObject(body);
+	function sendReportObjToFront(err, body, otherInfo) {
+	  var reportObject = genReportObj(body);
 	  reportObject.submitTime = otherInfo.submitTime;
 
 	  // console.log(reportObject);
 
 	  chrome.tabs.sendMessage(otherInfo.tabId, {
 	    "signal": 'start',
-	    "wait": otherInfo.wait,
 	    "reportObject": reportObject,
-	    "problemInfo": {
-	      "problemId": otherInfo.problemId,
-	      "limits": otherInfo.limits,
-	      "totalPoints": otherInfo.grading
-	    },
+	    "problemInfo": otherInfo.problemInfo,
 	    "configs": {
 	      "showCR": localStorage.showCR,
 	      "autoPolish": localStorage.autoPolish,
@@ -77,72 +71,68 @@
 	      "maxMemCaseNum": localStorage.maxMemCaseNum
 	    }
 	  }, function(response) {
-	    ReportObjSent = true;
 	    console.log(response);
 	  });
+
 	}
+	  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
 	chrome.webRequest.onCompleted.addListener(function(details) {
-	  if (details.tabId == -1) return;
-	  ReportObjSent = false;
-	  if (/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url) || /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url));
-	  else return;
+	  var requiringLatest = false;
+	  if (details.tabId == -1
+	    || (!/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url)
+	      && !(requiringLatest = /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url)) )) return;
+
 	  var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'];
-	  matrix.getSubmissionsInfo({
-	      "courseId": courseId,
-	      "problemId": problemId
-	    }, {
+	  var param = {
 	      "tabId": details.tabId,
 	      "courseId": courseId,
 	      "problemId": problemId,
 	      "submissionId": submissionId
-	    }, function(err, body, otherInfo) {
-	        body = JSON.parse(body);
-	        if (body.data.length) {
-	          var isRequiringLatest = !body.data.some(function(oneSubmission, index, self) {
-	            if (otherInfo.submissionId == oneSubmission.sub_ca_id) {
-	              otherInfo['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
-	              return true;
-	            } else {
-	              return false;
-	            }
-	          });
-	          if (isRequiringLatest) {
-	            otherInfo['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
+	    };
+	  matrix.getSubmissionsInfo(param, param, function(err, body, otherInfo) {
+	      body = JSON.parse(body);
+
+	        // get submission time
+	      if (body.data.length) {
+	          if (requiringLatest) {
+	              otherInfo['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
+	          } else {
+	              body.data.some(function(oneSubmission, index, self) {
+	                  if (otherInfo.submissionId == oneSubmission.sub_ca_id) {
+	                    otherInfo['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
+	                    return true;
+	                  } else {
+	                    return false;
+	                  }
+	              });
 	          }
-	        }
-	        
-	        if (isNaN(parseInt(otherInfo.submissionId))) {
-	            matrix.getProblemInfo({
-	              "courseId": otherInfo.courseId,
-	              "problemId": otherInfo.problemId
-	            }, otherInfo, function(err, body, otherInfo) {
-	              body = JSON.parse(body);
-	              var config = body.data.ca.config;
-	              otherInfo['limits'] = config.limits;
-	              otherInfo['grading'] = config.grading;
+	      }
+	      
+	      if (requiringLatest) {
+	          // get limits and total points of each section 
+	        matrix.getProblemInfo(otherInfo, otherInfo, function(err, body, otherInfo) {
+	          body = JSON.parse(body);
+	          var config = body.data.ca.config;
+	          otherInfo['problemInfo'] = config;
+	          otherInfo.problemInfo['totalPoints'] = config.grading;
 
-	              // console.log(otherInfo);
+	          // console.log(otherInfo);
 
-	              matrix.getLatestReport({
-	                "courseId": otherInfo.courseId,
-	                "problemId": otherInfo.problemId
-	              }, otherInfo, sendReportObjectToFront);
-	          });
-	        } else {
-	            matrix.getSubmission({
-	              "courseId": otherInfo.courseId,
-	              "problemId": otherInfo.problemId,
-	              "submissionId": otherInfo.submissionId
-	            }, otherInfo, sendReportObjectToFront);
-	        }
-	      });
-
+	            // get and send the latest report to the front
+	          matrix.getLatestReport(otherInfo, otherInfo, sendReportObjToFront);
+	        });
+	      } else {
+	          // get and send the specific report to the front
+	        matrix.getSubmission(otherInfo, otherInfo, sendReportObjToFront);
+	      }
+	    });
 
 	}, {
 	  "urls": [
-	    matrix.rootUrl + '/api/courses/*/assignments/*'
+	    matrix.rootUrl + '/api/courses/*/assignments/*/submissions/*'
 	  ]
 	});
+
 
 
 
@@ -153,7 +143,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/httpRequest.js": 2
+		"./components/MatrixObject.js": 2
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -173,64 +163,7 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	function httpRequest(url, callback) {
-	  var xhr = new XMLHttpRequest();
-	  xhr.open('get', url, true);
-	  xhr.onreadystatechange = function() {
-	    if (xhr.readyState == 4) return callback(false, this.response);
-	  }
-	  xhr.onerror = function() { return callback(true); }
-	  xhr.send();
-	}
-
-	(function exportModuleUniversally(root, factory) {
-	  if (true)
-	    module.exports = factory();
-	  else if (typeof(define) === 'function' && define.amd)
-	    define(factory);
-	  /* amd  // module name: diff
-	    define([other dependent modules, ...], function(other dependent modules, ...)) {
-	      return exported object;
-	    });
-	    usage: require([required modules, ...], function(required modules, ...) {
-	      // codes using required modules
-	    });
-	  */
-	  else if (typeof(exports) === 'object')
-	    exports['httpRequest'] = factory();
-	  else
-	    root['httpRequest'] = factory();
-	})(this, function factory() {
-	  return httpRequest;
-	});
-
-
-/***/ },
-/* 3 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/MatrixObject.js": 4
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 3;
-
-
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var httpRequest = __webpack_require__(2);
+	var httpRequest = __webpack_require__(3);
 	function MatrixObject(newConfigs) {
 	  this.configs = ['rootUrl', 'tabInfo'];
 	  for (var i in this.configs) {
@@ -309,11 +242,47 @@
 
 
 /***/ },
-/* 5 */
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	function httpRequest(url, callback) {
+	  var xhr = new XMLHttpRequest();
+	  xhr.open('get', url, true);
+	  xhr.onreadystatechange = function() {
+	    if (xhr.readyState == 4) return callback(false, this.response);
+	  }
+	  xhr.onerror = function() { return callback(true); }
+	  xhr.send();
+	}
+
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['httpRequest'] = factory();
+	  else
+	    root['httpRequest'] = factory();
+	})(this, function factory() {
+	  return httpRequest;
+	});
+
+
+/***/ },
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/toReportObject.js": 6
+		"./components/genReportObj.js": 5
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -326,21 +295,19 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 5;
+	webpackContext.id = 4;
 
 
 /***/ },
-/* 6 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var genDiffInfo = __webpack_require__(7);
-	var toSubmitAt = __webpack_require__(9);
+	var genDiffInfo = __webpack_require__(6);
 
-	function toReportObject(body) {
+	function genReportObj(body) {
 	  var reportObject = {
 	    "msg": null,
 	    "grade": null,
-	    "submitTime": null,
 	    "compile check": null,
 	    "static check": null,
 	    "standard tests": null,
@@ -352,7 +319,7 @@
 	  if (body.err) {
 	    reportObject.msg = 'Error: ' + body.msg;
 	    reportObject.grade = 0;
-	    console.log('body');
+	    console.log('body:');
 	    console.log(body);
 	    return reportObject;
 	  }
@@ -362,14 +329,14 @@
 	  if (body.status == 'SUBMISSION_NOT_FOUND') {
 	      reportObject.msg = 'no submissions yet';
 	      reportObject.grade = null;
-	      console.log('body');
+	      console.log('body:');
 	      console.log(body);
 	      return reportObject;
 	  }
-	  if (data === undefined) {
+	  if (data === undefined || data === null) {
 	    reportObject.msg = 'Error: body.data is empty';
 	    reportObject.grade = 0;
-	    console.log('body');
+	    console.log('body:');
 	    console.log(body);
 	    return reportObject;
 	  }
@@ -381,7 +348,6 @@
 	    console.log(body.data);
 	    // return reportObject;
 	  }
-	  if (data.submitAt) reportObject.submitTime = toSubmitAt(data.submitAt, true);
 	  if (data.report === null) {
 	    reportObject.msg = 'report is empty';
 	    reportObject.grade = 0;
@@ -595,19 +561,19 @@
 	    });
 	  */
 	  else if (typeof(exports) === 'object')
-	    exports['toReportObject'] = factory();
+	    exports['genReportObj'] = factory();
 	  else
-	    root['toReportObject'] = factory();
+	    root['genReportObj'] = factory();
 	})(this, function factory() {
-	  return toReportObject;
+	  return genReportObj;
 	});
 
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var diff_match_patch = __webpack_require__(8);
+	var diff_match_patch = __webpack_require__(7);
 	var Diff = new diff_match_patch();
 	Diff.Diff_Timeout = 0;
 	/** 
@@ -619,7 +585,8 @@
 	function genDiffInfo(oneCase) {
 	  if (typeof(oneCase.stdOutput) != 'string' || typeof(oneCase.yourOutput) != 'string') return;
 	  oneCase['diff'] = Diff.diffLines(oneCase.stdOutput, oneCase.yourOutput);
-	  oneCase.diff.forEach(function(oneDiff, index, self) {   
+	  oneCase.diff.forEach(function(oneDiff, index, self) {
+	      // if the case is [removed] [added] and the two blocks contain the same number of lines
 	    if (index && self[index - 1].removed && self[index].added) {
 	      var removedLines = self[index - 1].value;
 	      var removedLinesBinary = self[index - 1].binary;
@@ -628,26 +595,31 @@
 	      if (removedLines.length == addedLines.length) {
 	        self[index - 1]['inlineDiff'] = [], self[index]['inlineDiff'] = [];
 	        self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
-	        for (var j in removedLines) {
+	        
+	          // perform diff on every two corresponding lines (diff by char)
+	        removedLines.forEach(function(one, j) {
 	          var inlineDiff = Diff.diffChars(removedLines[j], addedLines[j]);
-	          var inlineBinaryDiff = Diff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);;
+	          var inlineBinaryDiff = Diff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);
+
 	          var oneRemovedLine = [], oneAddedLine = [];
-	          for (var k in inlineDiff) {
-	            if (inlineDiff[k].added === undefined) oneRemovedLine.push(inlineDiff[k]);
-	            if (inlineDiff[k].removed === undefined) oneAddedLine.push(inlineDiff[k]);
-	          }
+	          inlineDiff.forEach(function(oneLine) {
+	            if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
+	            if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
+	          });
 	          self[index - 1].inlineDiff.push(oneRemovedLine), self[index].inlineDiff.push(oneAddedLine);
+
 	          oneRemovedLine = [], oneAddedLine = [];
-	          for (var k in inlineBinaryDiff) {
-	            if (inlineBinaryDiff[k].added === undefined) oneRemovedLine.push(inlineBinaryDiff[k]);
-	            if (inlineBinaryDiff[k].removed === undefined) oneAddedLine.push(inlineBinaryDiff[k]);
-	          }
+	          inlineBinaryDiff.forEach(function(oneLine) {
+	            if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
+	            if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
+	          });
 	          self[index - 1].inlineBinaryDiff.push(oneRemovedLine), self[index].inlineBinaryDiff.push(oneAddedLine);
-	        }
+	        });
 	      }
 	    }
 	  });
 	}
+
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
 	    module.exports = factory();
@@ -671,7 +643,7 @@
 
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -3051,6 +3023,27 @@
 	});
 
 /***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var map = {
+		"./components/toSubmitAt.js": 9
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 8;
+
+
+/***/ },
 /* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -3103,7 +3096,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/toSubmitAt.js": 9
+		"./components/checkIsOnline.js": 11
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -3117,6 +3110,65 @@
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
 	webpackContext.id = 10;
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	(function(factory) {
+	  if (typeof module === 'object' && module.exports) {
+	    // Node/CommonJS
+	    module.exports = function(matrixObj) {
+	      factory(matrixObj);
+	      return matrixObj;
+	    };
+	  // } else if (typeof define === 'function' && define.amd) {
+	  //   // AMD. Register as an anonymous module.
+	  //   define([], factory);
+	  } else {
+	    // Browser globals
+	    factory(matrixObj);
+	  }
+	})(function(matrix) {
+	  var intervalId = null;
+	  chrome.webRequest.onCompleted.addListener(function(details) {
+	    if (details.tabId == -1) return;
+	    chrome.pageAction.show(details.tabId);
+	    var httpRequest = __webpack_require__(3);
+	    if (intervalId === null) {
+	      intervalId = setInterval(function() {
+	          chrome.tabs.query({}, function(tabArray) {
+	            var tabId = details.tabId;
+	            tabArray.some(function(oneTab, index, self) {
+	              if (oneTab.id == tabId) {
+	                httpRequest(matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', function(err) {
+	                  chrome.pageAction.setIcon({
+	                    "tabId": tabId,
+	                    "path": {
+	                      "19": './img/' + ((err) ? 'offline.png' : 'online.png'),
+	                      "38": './img/' + ((err) ? 'offline.png' : 'online.png')
+	                    }
+	                  });
+	                  chrome.pageAction.setTitle({
+	                    "tabId": tabId,
+	                    "title": (err) ? 'disconnected to Matrix' : 'click to change settings'
+	                  });
+	                });
+	                return true;
+	              } else {
+	                return false;
+	              }
+	            });
+	          });
+	      }, 5000);
+	    }
+	  }, {
+	    "urls": [
+	      matrix.rootUrl + '/*'
+	    ]
+	  });
+	});
 
 
 /***/ }

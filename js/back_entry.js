@@ -1,28 +1,22 @@
 var componentsPath = './components/';
 
-var httpRequest = require(componentsPath + 'httpRequest.js');
 var MatrixObject = require(componentsPath + 'MatrixObject.js');
-var toReportObject = require(componentsPath + 'toReportObject.js');
+var genReportObj = require(componentsPath + 'genReportObj.js');
 var toSubmitAt = require(componentsPath + 'toSubmitAt.js');
+
 var matrix = new MatrixObject('https://vmatrix.org.cn');
+require(componentsPath + 'checkIsOnline.js')(matrix);
 
-var ReportObjSent = false;
-
-function sendReportObjectToFront(err, body, otherInfo) {
-  var reportObject = toReportObject(body);
+function sendReportObjToFront(err, body, otherInfo) {
+  var reportObject = genReportObj(body);
   reportObject.submitTime = otherInfo.submitTime;
 
   // console.log(reportObject);
 
   chrome.tabs.sendMessage(otherInfo.tabId, {
     "signal": 'start',
-    "wait": otherInfo.wait,
     "reportObject": reportObject,
-    "problemInfo": {
-      "problemId": otherInfo.problemId,
-      "limits": otherInfo.limits,
-      "totalPoints": otherInfo.grading
-    },
+    "problemInfo": otherInfo.problemInfo,
     "configs": {
       "showCR": localStorage.showCR,
       "autoPolish": localStorage.autoPolish,
@@ -31,72 +25,68 @@ function sendReportObjectToFront(err, body, otherInfo) {
       "maxMemCaseNum": localStorage.maxMemCaseNum
     }
   }, function(response) {
-    ReportObjSent = true;
     console.log(response);
   });
+
 }
+  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
 chrome.webRequest.onCompleted.addListener(function(details) {
-  if (details.tabId == -1) return;
-  ReportObjSent = false;
-  if (/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url) || /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url));
-  else return;
+  var requiringLatest = false;
+  if (details.tabId == -1
+    || (!/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url)
+      && !(requiringLatest = /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url)) )) return;
+
   var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'];
-  matrix.getSubmissionsInfo({
-      "courseId": courseId,
-      "problemId": problemId
-    }, {
+  var param = {
       "tabId": details.tabId,
       "courseId": courseId,
       "problemId": problemId,
       "submissionId": submissionId
-    }, function(err, body, otherInfo) {
-        body = JSON.parse(body);
-        if (body.data.length) {
-          var isRequiringLatest = !body.data.some(function(oneSubmission, index, self) {
-            if (otherInfo.submissionId == oneSubmission.sub_ca_id) {
-              otherInfo['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
-              return true;
-            } else {
-              return false;
-            }
-          });
-          if (isRequiringLatest) {
-            otherInfo['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
+    };
+  matrix.getSubmissionsInfo(param, param, function(err, body, otherInfo) {
+      body = JSON.parse(body);
+
+        // get submission time
+      if (body.data.length) {
+          if (requiringLatest) {
+              otherInfo['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
+          } else {
+              body.data.some(function(oneSubmission, index, self) {
+                  if (otherInfo.submissionId == oneSubmission.sub_ca_id) {
+                    otherInfo['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
+                    return true;
+                  } else {
+                    return false;
+                  }
+              });
           }
-        }
-        
-        if (isNaN(parseInt(otherInfo.submissionId))) {
-            matrix.getProblemInfo({
-              "courseId": otherInfo.courseId,
-              "problemId": otherInfo.problemId
-            }, otherInfo, function(err, body, otherInfo) {
-              body = JSON.parse(body);
-              var config = body.data.ca.config;
-              otherInfo['limits'] = config.limits;
-              otherInfo['grading'] = config.grading;
+      }
+      
+      if (requiringLatest) {
+          // get limits and total points of each section 
+        matrix.getProblemInfo(otherInfo, otherInfo, function(err, body, otherInfo) {
+          body = JSON.parse(body);
+          var config = body.data.ca.config;
+          otherInfo['problemInfo'] = config;
+          otherInfo.problemInfo['totalPoints'] = config.grading;
 
-              // console.log(otherInfo);
+          // console.log(otherInfo);
 
-              matrix.getLatestReport({
-                "courseId": otherInfo.courseId,
-                "problemId": otherInfo.problemId
-              }, otherInfo, sendReportObjectToFront);
-          });
-        } else {
-            matrix.getSubmission({
-              "courseId": otherInfo.courseId,
-              "problemId": otherInfo.problemId,
-              "submissionId": otherInfo.submissionId
-            }, otherInfo, sendReportObjectToFront);
-        }
-      });
-
+            // get and send the latest report to the front
+          matrix.getLatestReport(otherInfo, otherInfo, sendReportObjToFront);
+        });
+      } else {
+          // get and send the specific report to the front
+        matrix.getSubmission(otherInfo, otherInfo, sendReportObjToFront);
+      }
+    });
 
 }, {
   "urls": [
-    matrix.rootUrl + '/api/courses/*/assignments/*'
+    matrix.rootUrl + '/api/courses/*/assignments/*/submissions/*'
   ]
 });
+
 
 
 

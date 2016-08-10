@@ -72,7 +72,7 @@ var polisher = {
         } else {
           summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultCodeToResult[caseInfo.resultCode]));
           summary.appendChild(createElementWith('br'));
-          summary.appendChild(createElementWith('pre', 'limit-use', 'Memory Used: ' + caseInfo.memoryused + 'KB / ' + memoryLimit + '\n\nTime Used: ' + caseInfo.timeused + 'ms / ' + timeLimit));
+          summary.appendChild(createElementWith('pre', 'limit-use', '\nMemory Used: ' + caseInfo.memoryused + 'KB / ' + memoryLimit + '\nTime Used: ' + caseInfo.timeused + 'ms / ' + timeLimit));
         }
         return summary;
       };

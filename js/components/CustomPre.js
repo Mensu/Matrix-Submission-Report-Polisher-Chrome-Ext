@@ -1,6 +1,5 @@
 var createElementWith = require('./createElementWith.js');
-function CustomPre() {}
-CustomPre.prototype = {
+var CustomPre = {
 
   /** 
    * formatting rules:
@@ -22,7 +21,7 @@ CustomPre.prototype = {
    * @return {Node} the created pre
    * dependent of 
    *   {function} createElementWith
-   *   {function} CustomPre.prototype.toLinenumString
+   *   {function} CustomPre.toLinenumString
    */
   "createLinenumPreWithText": function(text) {
     var lineCnt = text.split('\n').length;
@@ -30,7 +29,7 @@ CustomPre.prototype = {
     var linenumRows = createElementWith('span', 'line-numbers-rows');
     var oneRow = null;
     for (var linenum = 1; linenum != lineCnt + 1; ++linenum) {
-      oneRow = createElementWith('div', 'line-numbers-one-row', CustomPre.prototype.toLinenumString(linenum));
+      oneRow = createElementWith('div', 'line-numbers-one-row', CustomPre.toLinenumString(linenum));
       linenumRows.appendChild(oneRow);
     }
     newPre.appendChild(linenumRows);
@@ -67,8 +66,8 @@ CustomPre.prototype = {
     var stdLinenum = 1, yourLinenum = 1;
 
     var linenumRowConfig = {
-      "stdLinenum": (function() { return CustomPre.prototype.toLinenumString(stdLinenum++); }),
-      "yourLinenum": (function() { return CustomPre.prototype.toLinenumString(yourLinenum++); }),
+      "stdLinenum": (function() { return CustomPre.toLinenumString(stdLinenum++); }),
+      "yourLinenum": (function() { return CustomPre.toLinenumString(yourLinenum++); }),
       "stdHeading": (function() { return '  std'; }),
       "yourHeading": (function() { return 'your'; }),
       "added": (function() { return '    +'; }),
@@ -94,26 +93,28 @@ CustomPre.prototype = {
       }
     };
     
+      // headings on the left top corner
     linenumRowsLeft.appendChild(createElementWith('div', 'line-numbers-one-row-std-heading', linenumRowConfig.stdHeading()));
     linenumRowsRight.appendChild(createElementWith('div', 'line-numbers-one-row-your-heading', linenumRowConfig.yourHeading()));
 
+      // for each diff (which may contain several lines): create a block
     diffResult.forEach(function(oneDiff, index, self) {
       oneDiffContentPre = createElementWith('pre', 'one-diff-wrapper');
       oneDiffContentSpan = createElementWith('span', 'one-diff-content');
-
       leftLinenumStr = null, rightLinenumStr = null, bgcolorClass = null;
+
         // assign values to leftLinenumStr, rightLinenumStr, bgcolorClass;
-      (function assignConfig() {
-        for (typeName in diffTypeConfig) {
-          if (oneDiff[typeName]) {
-            leftLinenumStr = diffTypeConfig[typeName].leftLinenumStr;
-            rightLinenumStr = diffTypeConfig[typeName].rightLinenumStr;
-            bgcolorClass = diffTypeConfig[typeName].bgcolorClass;
-            break;
-          }
+      for (var typeName in diffTypeConfig) {
+        if (oneDiff[typeName]) {
+          leftLinenumStr = diffTypeConfig[typeName].leftLinenumStr;
+          rightLinenumStr = diffTypeConfig[typeName].rightLinenumStr;
+          bgcolorClass = diffTypeConfig[typeName].bgcolorClass;
+          break;
         }
-      })();
+      }
+        // set bg color of one diff block (which may contain several lines)
       oneDiffContentSpan.classList.add(bgcolorClass), oneDiffContentPre.classList.add(bgcolorClass);
+
       function getOneDiffText(oneDiff, index, binary) {
         var value = binary ? 'binary' : 'value';
         var inlineDiff = binary ? 'inlineBinaryDiff' : 'inlineDiff';
@@ -122,16 +123,15 @@ CustomPre.prototype = {
           else return oneDiff[value][index];
         }
         var oneLineSpans = [], inlineDiffs = oneDiff[inlineDiff][index];
-        for (var i in inlineDiffs) {
-          var oneInlineDiff = inlineDiffs[i];
-          if (0 == oneInlineDiff.value.length) continue;
+        inlineDiffs.forEach(function(oneInlineDiff, i, self) {
+          if (0 == oneInlineDiff.value.length) return;
           var inlineColor = oneInlineDiff.added ? 'inline-added-bg' : (oneInlineDiff.removed ? 'inline-removed-bg' : 'inline-common-bg');
           oneLineSpans.push(createElementWith('span', inlineColor, oneInlineDiff.value));
           if (binary && i != inlineDiffs.length - 1) oneLineSpans.push(createElementWith('span', 'inline-common-bg', ' '));
-        }
+        });
         return oneLineSpans;
       }
-        // main work: pushing texts and linenums to diffPre
+
       var oneDiffConfig = {
         "textRowClass": ['one-diff-content-one-row-text', 'one-diff-content-one-row-binary'],
         "textRowNewLineClass": [
@@ -151,16 +151,26 @@ CustomPre.prototype = {
           ]
         ]
       };
-      for (var lineIndex = 0; lineIndex != oneDiff.value.length; ++lineIndex) {  // lineIndex: the n th line of oneDiff
-        for (var i = 0; i != 2; ++i) {  // i = 0: text, i = 1: binary
+
+      // main work
+        // for each line in one diff block
+      for (var lineIndex = 0; lineIndex != oneDiff.value.length; ++lineIndex) {
+        for (var i = 0; i != 2; ++i) {  // i = 0: text,
+                                        // i = 1: binary
+            // text or binary content
           oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowClass[i], getOneDiffText(oneDiff, lineIndex, i)));
+          
+            // linenum
           oneLeftRow = createElementWith('div', oneDiffConfig.linenumRowClassList[i], oneDiffConfig.linenumRowContents[i][0]());
           oneRightRow = createElementWith('div', oneDiffConfig.linenumRowClassList[i], oneDiffConfig.linenumRowContents[i][1]());
           oneLeftRow.classList.add(bgcolorClass), oneRightRow.classList.add(bgcolorClass);
           linenumRowsLeft.appendChild(oneLeftRow), linenumRowsRight.appendChild(oneRightRow);
+          
+            // a newline character
           oneDiffContentSpan.appendChild(createElementWith('span', oneDiffConfig.textRowNewLineClass[i], '\n'));
         }
       }
+
       oneDiffContentPre.appendChild(oneDiffContentSpan);
       diffPre.appendChild(oneDiffContentPre);
     });
@@ -168,7 +178,6 @@ CustomPre.prototype = {
     return diffPre;
   }
 };
-CustomPre.prototype.constructor = CustomPre;
 (function exportModuleUniversally(root, factory) {
   if (typeof(exports) === 'object' && typeof(module) === 'object')
     module.exports = factory();
@@ -187,5 +196,5 @@ CustomPre.prototype.constructor = CustomPre;
   else
     root['CustomPre'] = factory();
 })(this, function factory() {
-  return new CustomPre();
+  return CustomPre;
 });

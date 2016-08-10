@@ -1,7 +1,6 @@
 var createElementWith = require('./createElementWith.js');
 var backToTop = createElementWith('div', 'backToTop-wrapper',
-  createElementWith('div', 'backToTop-btn',
-    [
+  createElementWith('div', 'backToTop-btn', [
       createElementWith('div', 'arrow-upward'),
       createElementWith('div', 'vertical-stick')
     ]
@@ -17,7 +16,6 @@ backToTop.addEventListener('click', function () {
     if (parseInt(document.body.scrollTop) > 0) window.requestAnimationFrame(arguments.callee);
   }));
 }, false);
-document.body.appendChild(backToTop);
 backToTop.toShow = function() {
   this.classList.remove('hiding');
 };

@@ -13,7 +13,7 @@
       "19": "img/online.png",  // 初始图标
       "38": "img/avatar.png"
     },
-    "default_title": "click to change settings",  // 鼠标放到图标上
+    "default_title": "Matrix Submission Report Polisher",  // 鼠标放到图标上
     "default_popup": "popup.html"  // 点击弹出的小窗口
   },
   // "page_action": {
@@ -26,8 +26,7 @@
   // },
   "background": {
     "scripts": [
-      "./js/outputs/polish_back.js",
-      "./js/components/checkIsOnline.js"
+      "./js/outputs/polish_back.js"
     ]
   },
   "content_scripts": [
@@ -37,14 +36,10 @@
         // "file://mac/Home/Desktop/*"
       ],
       "css": [
-        "./css/polish.css",
-        // "./css/CustomElements.css",
-        "./css/SideNav.css",
-        "./css/backToTop.css"
+        "./css/polish.css"
       ],
       "js": [
         "./js/outputs/polish_front.js"
-        // "./js/backToTop.js"
       ]
     }
   ],
