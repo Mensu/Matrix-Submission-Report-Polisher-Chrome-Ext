@@ -4,7 +4,7 @@
 
 - [``Chan Hsu``](https://github.com/chenxu2048) without whose generously lending me his netID, this extension wouldn't have come out this soon.
 
-- [``Neil Fraser``](https://github.com/NeilFraser) whose famous diff implementation (https://code.google.com/p/google-diff-match-patch/) lays a foundation for this extension
+- [``Neil Fraser``](https://github.com/NeilFraser) whose famous [diff implementation](https://code.google.com/p/google-diff-match-patch/) lays a foundation for this extension
 
 # Downloads (unavailable)
 
