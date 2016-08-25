@@ -409,7 +409,7 @@
 	          if ((oneCase.pass) ^ cr) continue;
 	          var caseWrapper = createElementWith('div', 'google-test-case-wrapper');
 	          caseWrapper.appendChild(createElementWith('pre', 'index', 'Test [' + (index + 1) + ']'));
-	          caseWrapper.id = 'google-test-' + (index + 1);
+	          caseWrapper.id = 'report-google-test-' + (index + 1);
 	          sideNav.add('Test ' + (index + 1), caseWrapper.id, 3);
 	          var itemsWrapper = createElementWith('div', 'google-tests-items');
 	          for (var cr2 = 0; cr2 < 2; ++cr2) {
@@ -11395,13 +11395,15 @@
 				var returnValue = null;
 				var windowHeight = Math.round(this.$win.height() * this.config.scrollThreshold);
 				var endPos = this.config.endSelector ? $(this.config.endSelector).offset().top + $(this.config.endSelector).height() : null;
+				var allZero = true;
 				for(var section in this.sections) {
+					if (this.sections[section]) allZero = false;
 					if((this.sections[section] - this.config.scrollOffset - windowHeight) < windowPos && (null === endPos || windowPos < endPos)) {
 						returnValue = section;
 					}
 				}
-	
-				return returnValue;
+				if (allZero) return null;
+				else return returnValue;
 			},
 	
 			handleClick: function(e) {

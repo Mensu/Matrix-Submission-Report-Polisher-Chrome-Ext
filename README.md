@@ -27,11 +27,11 @@
 
 - (new) google tests (on 2016-08-25)
 
-![google tests](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-google-tests.png)
+![google tests](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-google-tests-1.png)
 
-- compile check (on 2016-08-10)
+- compile check (on 2016-08-25)
 
-![compile check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-compile.png)
+![compile check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-compile-1.png)
 
 - static check (on 2016-08-10)
 

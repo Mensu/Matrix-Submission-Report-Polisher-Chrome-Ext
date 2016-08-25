@@ -157,13 +157,15 @@
 			var returnValue = null;
 			var windowHeight = Math.round(this.$win.height() * this.config.scrollThreshold);
 			var endPos = this.config.endSelector ? $(this.config.endSelector).offset().top + $(this.config.endSelector).height() : null;
+			var allZero = true;
 			for(var section in this.sections) {
+				if (this.sections[section]) allZero = false;
 				if((this.sections[section] - this.config.scrollOffset - windowHeight) < windowPos && (null === endPos || windowPos < endPos)) {
 					returnValue = section;
 				}
 			}
-
-			return returnValue;
+			if (allZero) return null;
+			else return returnValue;
 		},
 
 		handleClick: function(e) {
