@@ -1,3 +1,12 @@
+/** 
+ * switch string's format between "2015-11-11 11:11:11" (Normal) and "2015-11-11T03:11:11.000Z"(000Z)
+ * @param {string} str - a string in format "Normal" or "000Z"
+ * @param {boolean} [toReadable] - true: to Normal;
+ *                                 false: to 000Z;
+ *                                 omitted: toggle between Normal and 000Z
+ * @return {string} resulted string representing time
+ * independent
+ */
 function toSubmitAt(str, toReadable) {
   var date = new Date();
   function prefixZero(str) {

@@ -1,4 +1,4 @@
-var createElementWith = require('./createElementWith.js');
+var createElementWith = require('../lib/createElementWith.js');
 var CustomPre = {
 
   /** 
@@ -49,11 +49,11 @@ var CustomPre = {
 
   /** 
    * create a pre decorated with two columns of line numbers using the diffResult provided
-   * @param {Object[]} diffResult
+   * @param {object[]} diffResult
    * @return {Node} the created pre
    * dependent of
    *   {function} createElementWith
-   *   {function} CustomPre.prototype.toLinenumString
+   *   {function} CustomPre.toLinenumString
    */
   "createDiffPre": function(diffResult) {
     var leadingNewLine = createElementWith('span', 'diffPre-leading-newline', '\n');

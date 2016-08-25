@@ -1,3 +1,16 @@
+/** 
+ * make a simple http GET request
+ * @param {string} url
+ * @param {function} callback - a function that looks like this:
+ *      @param {boolean} error
+ *      @param {object} [response] - present when no error occurred
+ *   function(error, response) {
+ * 
+ *   }
+ * @return {undefined}
+ * independent
+ */
+
 function httpRequest(url, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('get', url, true);

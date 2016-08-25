@@ -1,6 +1,6 @@
-var $ = require('./jquery.js');
+var $ = require('../jquery.js');
 require('./jquery.nav.js')(this, $);
-var createElementWith = require('./createElementWith.js');
+var createElementWith = require('../lib/createElementWith.js');
 function SideNav() {
   this.wrapper = createElementWith('div', 'side-nav');
   this.toggle = createElementWith('h5', 'nav-toggle-wrapper', createElementWith('div', 'nav-toggle', 'Navigation'));
@@ -20,7 +20,7 @@ SideNav.prototype = {
   "getNode": function() {
     return this.wrapper;
   },
-  "getInitialized": function(endSelector, unbindSelector) {
+  "init": function(endSelector, unbindSelector) {
     var self = this;
     $(this.toggle).click(function(e){
         e.preventDefault();
@@ -32,7 +32,7 @@ SideNav.prototype = {
         easing: "swing",
         filter: "",
         scrollSpeed: 700,
-        scrollOffset: 200,
+        scrollOffset: 100,
         scrollThreshold: 0,
         begin: null,
         end: null,
@@ -40,6 +40,9 @@ SideNav.prototype = {
         endSelector: endSelector,
         unbindSelector: unbindSelector
     });
+    this.onePageNav.disabled = true;
+    if (this.body.querySelector('a')) this.body.querySelector('a').click();
+    this.onePageNav.disabled = false;
   },
   "remove": function() {
     this.onePageNav.unbindInterval();

@@ -9,19 +9,27 @@
 function createElementWith(tagName, classList, children) {
   var newElement = document.createElement(tagName);
   if (classList === undefined) return newElement;
-  if (typeof(classList) === 'string') classList = new Array(classList);
-  classList.forEach(function(oneClass, index, self) {
+
+    // wrap to an array
+  if (typeof(classList) === 'string') {
+    classList = new Array(classList);
+  }
+  classList.forEach(function(oneClass) {
     newElement.classList.add(oneClass);
   });
   if (children === undefined) return newElement;
-  if (Object.prototype.toString.apply(children) != '[object Array]'
-    || typeof(children) === 'string') children = new Array(children);
-  children.forEach(function(oneChild, index, self) {
+
+    // wrap to an array
+  if ( ({}).toString.apply(children) != '[object Array]' || typeof(children) === 'string' ) {
+    children = new Array(children);
+  }
+  children.forEach(function(oneChild) {
     if (typeof(oneChild) === 'string') oneChild = document.createTextNode(oneChild);
     newElement.appendChild(oneChild);
   });
   return newElement;
 }
+
 (function exportModuleUniversally(root, factory) {
   if (typeof(exports) === 'object' && typeof(module) === 'object')
     module.exports = factory();

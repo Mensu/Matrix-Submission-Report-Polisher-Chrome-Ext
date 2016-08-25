@@ -26,10 +26,10 @@
         // that require this pattern but the window provided is a noop
         // if it's defined (how jquery works)
         if ( typeof window !== 'undefined' ) {
-          jQuery = require('./jquery.js');
+          jQuery = require('../jquery.js');
         }
         else {
-          jQuery = require('./jquery.js')(root);
+          jQuery = require('../jquery.js')(root);
         }
       }
       factory(jQuery);
@@ -37,7 +37,7 @@
     };
   } if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    define(['./jquery.js'], factory);
+    define(['../jquery.js'], factory);
   } else {
     // Browser globals
     factory(jQuery);
@@ -54,6 +54,7 @@
 		this.didScroll = false;
 		this.$doc = $(document);
 		this.docHeight = this.$doc.height();
+		this.disabled = false;
 	};
 
 	// the plugin prototype
@@ -69,7 +70,8 @@
 			scrollThreshold: 0.5,
 			begin: false,
 			end: false,
-			scrollChange: false
+			scrollChange: false,
+			navScrollSpeed: 300
 		},
 
 		init: function() {
@@ -165,6 +167,7 @@
 		},
 
 		handleClick: function(e) {
+			e.preventDefault();
 			var self = this;
 			var $link = $(e.currentTarget);
 			var $parent = $link.parent();
@@ -182,7 +185,29 @@
 
 				//Removing the auto-adjust on scroll
 				self.unbindInterval();
+				if (this.disabled) {
 
+					return $('html, body').animate({
+						scrollTop: this.$win.scrollTop()
+					}, this.config.scrollSpeed, this.config.easing, function() {
+						//Do we need to change the hash?
+						if(self.config.changeHash) {
+							window.location.hash = newLoc;
+						}
+						var backup = self.config.navScrollSpeed;
+						self.config.navScrollSpeed = 1;
+						self.scrollChange();
+						self.config.navScrollSpeed = backup;
+						//Add the auto-adjust on scroll back in
+						self.bindInterval();
+
+						//End callback
+						if(self.config.end) {
+							self.config.end();
+						}
+					});
+
+				}
 				//Scroll to the correct position
 				self.scrollTo(newLoc, function() {
 					//Do we need to change the hash?
@@ -192,7 +217,7 @@
 
 					self.$elem.animate({
 						scrollTop: navInternalOffset
-					}, 300, 'swing', undefined);
+					}, self.config.navScrollSpeed, 'swing', undefined);
 
 					//Add the auto-adjust on scroll back in
 					self.bindInterval();
@@ -204,7 +229,7 @@
 				});
 			}
 
-			e.preventDefault();
+			
 		},
 
 		scrollChange: function() {
@@ -223,7 +248,7 @@
 					var navInternalOffset = $parent[0].offsetTop - (this.$elem.height() / 2 - 50);
 					this.$elem.animate({
 						scrollTop: navInternalOffset
-					}, 300, 'swing', undefined);
+					}, this.config.navScrollSpeed, 'swing', undefined);
 
 					//Change the highlighted nav item
 					this.adjustNav(this, $parent);
@@ -241,7 +266,7 @@
 				if (endPos !== null && windowTop > endPos) navInternalOffset = this.$nav.last().parent()[0].offsetTop;
 				if (navInternalOffset != this.$elem.scrollTop() + this.$elem.height() - this.$nav.last().parent().height()) this.$elem.animate({
 					scrollTop: navInternalOffset
-				}, 300, 'swing', undefined);
+				}, this.config.navScrollSpeed, 'swing', undefined);
 			}
 		},
 
@@ -266,7 +291,8 @@
 		this.each(function() {
 			ret = new OnePageNav(this, options).init();
 		});
-		$(options.unbindSelector).bind('DOMNodeRemoved', function(objEvent) {
+		if (options.unbindSelector) {
+			$(options.unbindSelector).bind('DOMNodeRemoved', function(objEvent) {
           if (objEvent.target.nodeName == 'UI-VIEW') {
           	ret.unbindInterval();
           	$(options.unbindSelector).unbind('DOMNodeRemoved', arguments.callee);
@@ -274,6 +300,8 @@
           
         }
       );
+		}
+			
 		return ret;
 	};
 }));

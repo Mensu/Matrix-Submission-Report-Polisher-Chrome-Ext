@@ -2,20 +2,32 @@ pre.full-score {
   white-space: pre-wrap;
 
 }
+input.switch-btn {
+  margin-bottom: 10px;
+}
 .polished-report-success {
   padding-right: 8em;
   pre.success {
     font-family: Courier, Arial;
   }
-  .report-section {
+  #matrix-programming-report .report-section {
     div.score {
       font-family: "Heiti SC", Arial;
     }
-    .test-content .report-detail {
+    .test-content {
+      max-height: none;
+      .report-detail {
+        max-height: none;
         & > div.failed-cases-summary {
-        font-family: Courier, Arial;
-        font-size: 20px;
+          font-family: Courier, Arial;
+          font-size: 20px;
+        }
+        .error-detail {
+          max-height: none;   
+          margin-top: 10px;     
+        }
       }
+      
     }
   }
 }
@@ -43,10 +55,16 @@ pre.full-score {
     font-family: Courier, Arial;
     margin-top: 0;
     margin-bottom: 0;
-  }
-  .index {
     font-size: 25px !important;
   }
 }
 
+.google-test-case-wrapper {
+  .index {
+    font-family: Courier, Arial;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 25px !important;
+  }
+}
 

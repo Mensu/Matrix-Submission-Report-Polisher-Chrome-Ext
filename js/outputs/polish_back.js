@@ -1,64 +1,71 @@
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
-
+/******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
-
+/******/
 /******/ 		// Check if module is in cache
 /******/ 		if(installedModules[moduleId])
 /******/ 			return installedModules[moduleId].exports;
-
+/******/
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			exports: {},
 /******/ 			id: moduleId,
 /******/ 			loaded: false
 /******/ 		};
-
+/******/
 /******/ 		// Execute the module function
 /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
+/******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.loaded = true;
-
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-
-
+/******/
+/******/
 /******/ 	// expose the modules object (__webpack_modules__)
 /******/ 	__webpack_require__.m = modules;
-
+/******/
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
-
+/******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "";
-
+/******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(0);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
+/*!**************************!*\
+  !*** ./js/back_entry.js ***!
+  \**************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var componentsPath = './components/';
-
-	var MatrixObject = __webpack_require__(1)(componentsPath + 'MatrixObject.js');
-	var genReportObj = __webpack_require__(4)(componentsPath + 'genReportObj.js');
-	var toSubmitAt = __webpack_require__(8)(componentsPath + 'toSubmitAt.js');
-
+	
+	var MatrixObject = __webpack_require__(/*! . */ 1)(componentsPath + 'MatrixObject.js');
+	var ReportObject = __webpack_require__(/*! . */ 4)(componentsPath + 'ReportObject.js');
+	var toSubmitAt = __webpack_require__(/*! . */ 8)(componentsPath + 'lib/toSubmitAt.js');
+	
 	var matrix = new MatrixObject('https://vmatrix.org.cn');
-	__webpack_require__(10)(componentsPath + 'checkIsOnline.js')(matrix);
-
+	__webpack_require__(/*! . */ 10)(componentsPath + 'checkIsOnline.js')(matrix);
+	
+	
+	  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
+	
+	
 	function sendReportObjToFront(err, body, otherInfo) {
-	  var reportObject = genReportObj(body);
+	  var reportObject = new ReportObject(body);
 	  reportObject.submitTime = otherInfo.submitTime;
-
+	
 	  // console.log(reportObject);
-
+	
 	  chrome.tabs.sendMessage(otherInfo.tabId, {
 	    "signal": 'start',
 	    "reportObject": reportObject,
@@ -73,7 +80,7 @@
 	  }, function(response) {
 	    console.log(response);
 	  });
-
+	
 	}
 	  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
 	chrome.webRequest.onCompleted.addListener(function(details) {
@@ -81,7 +88,7 @@
 	  if (details.tabId == -1
 	    || (!/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url)
 	      && !(requiringLatest = /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url)) )) return;
-
+	
 	  var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'];
 	  var param = {
 	      "tabId": details.tabId,
@@ -91,7 +98,7 @@
 	    };
 	  matrix.getSubmissionsInfo(param, param, function(err, body, otherInfo) {
 	      body = JSON.parse(body);
-
+	
 	        // get submission time
 	      if (body.data.length) {
 	          if (requiringLatest) {
@@ -115,9 +122,9 @@
 	          var config = body.data.ca.config;
 	          otherInfo['problemInfo'] = config;
 	          otherInfo.problemInfo['totalPoints'] = config.grading;
-
+	
 	          // console.log(otherInfo);
-
+	
 	            // get and send the latest report to the front
 	          matrix.getLatestReport(otherInfo, otherInfo, sendReportObjToFront);
 	        });
@@ -126,20 +133,24 @@
 	        matrix.getSubmission(otherInfo, otherInfo, sendReportObjToFront);
 	      }
 	    });
-
+	
 	}, {
 	  "urls": [
 	    matrix.rootUrl + '/api/courses/*/assignments/*/submissions/*'
 	  ]
 	});
-
-
-
-
+	
+	
+	
+	
+	
 
 
 /***/ },
 /* 1 */
+/*!*********************************!*\
+  !*** ./js ^.*MatrixObject\.js$ ***!
+  \*********************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
@@ -161,15 +172,30 @@
 
 /***/ },
 /* 2 */
+/*!***************************************!*\
+  !*** ./js/components/MatrixObject.js ***!
+  \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var httpRequest = __webpack_require__(3);
+	var httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 3);
+	/** 
+	 * MatrixObject
+	 * create a span that can toggle to view the text in hex
+	 * @param {string|object} newConfigs - Matrix's root url(string) or config object that looks like this:
+	 * {
+	 *   "rootUrl": Matrix's root url
+	 * }
+	 * 
+	 * dependent of 
+	 *   {function} httpRequest
+	 */
 	function MatrixObject(newConfigs) {
-	  this.configs = ['rootUrl', 'tabInfo'];
-	  for (var i in this.configs) {
+	  this.configs = ['rootUrl'];
+	  for (var i = 0; i != this.configs.length; ++i) {
 	    var oneConfig = this.configs[i];
 	    this[oneConfig] = null;
 	  }
+	    // wrap to config object
 	  if (typeof(newConfigs) == 'string') {
 	    newConfigs = {"rootUrl": newConfigs};
 	  }
@@ -178,47 +204,133 @@
 	MatrixObject.prototype = {
 	  "constructor": MatrixObject,
 	  "configsSetter": function(newConfigs) {
-	    for (var i in this.configs) {
+	    for (var i = 0; i != this.configs.length; ++i) {
 	      var oneConfig = this.configs[i];
 	      if (newConfigs[oneConfig] !== undefined) this[oneConfig] = newConfigs[oneConfig];
 	    }
 	  },
-	  "updateTabInfo": function(newTabInfo) {
-	    if (this.tabInfo === null) this.tabInfo = {};
-	    for (var tabId in newTabInfo) {
-	      if (this.tabInfo[tabId] === undefined) this.tabInfo[tabId] = {};
-	      for (var infoType in newTabInfo[tabId]) {
-	        this.tabInfo[tabId][infoType] = newTabInfo[tabId][infoType];
-	      }
-	    }
-	  },
+	  /** 
+	   * get one submission by courseId, problemId and submissionId (sub_ca_id)
+	   * @param {object} param - object that looks like this
+	   *   {
+	   *     "courseId": the course's id,
+	   *     "problemId": the assignment's id,
+	   *     "submissionId": the submission's id,
+	   *   }
+	   * @param {anything} otherInfo - any other infomation that will send to callback function
+	   * @param {function} callback - function that looks like this
+	   *      @param {boolean} error
+	   *      @param {string} response - the response when no error occurred, or undefined otherwise
+	   *      @param {anything} otherInfo - any other infomation from user
+	   *   function(error, response, otherInfo) {
+	   *
+	   *   }
+	   * dependent of 
+	   *   {function} httpRequest
+	   */
 	  "getSubmission": function(param, otherInfo, callback) {
 	    httpRequest(this.rootUrl + '/api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId, function(err, body) {
 	      return callback(err, body, otherInfo);
 	    });
 	  },
+	
+	  /** 
+	   * get the latest report by courseId and problemId
+	   * @param {object} param - object that looks like this
+	   *   {
+	   *     "courseId": the course's id,
+	   *     "problemId": the assignment's id
+	   *   }
+	   * @param {anything} otherInfo - any other infomation that will send to callback function
+	   * @param {function} callback - function that looks like this
+	   *      @param {boolean} error
+	   *      @param {string} response - the response when no error occurred, or undefined otherwise
+	   *      @param {anything} otherInfo - any other infomation from user
+	   *   function(error, response, otherInfo) {
+	   *
+	   *   }
+	   * dependent of 
+	   *   {function} httpRequest
+	   */
 	  "getLatestReport": function(param, otherInfo, callback) {
 	    httpRequest(this.rootUrl + '/api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last/feedback', function(err, body) {
 	      return callback(err, body, otherInfo);
 	    });
 	  },
+	
+	  /** 
+	   * get the latest submission by courseId and problemId
+	   * @param {object} param - object that looks like this
+	   *   {
+	   *     "courseId": the course's id,
+	   *     "problemId": the assignment's id
+	   *   }
+	   * @param {anything} otherInfo - any other infomation that will send to callback function
+	   * @param {function} callback - function that looks like this
+	   *      @param {boolean} error
+	   *      @param {string} response - the response when no error occurred, or undefined otherwise
+	   *      @param {anything} otherInfo - any other infomation from user
+	   *   function(error, response, otherInfo) {
+	   *
+	   *   }
+	   * dependent of 
+	   *   {function} httpRequest
+	   */
 	  "getLatestSubmission": function(problemId, userId, otherInfo, callback) {
 	    httpRequest(this.rootUrl + '/api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last', function(err, body) {
 	      return callback(err, body, otherInfo);
 	    });
 	  },
+	
+	  /** 
+	   * get one problem's information by courseId and problemId
+	   * @param {object} param - object that looks like this
+	   *   {
+	   *     "courseId": the course's id,
+	   *     "problemId": the assignment's id
+	   *   }
+	   * @param {anything} otherInfo - any other infomation that will send to callback function
+	   * @param {function} callback - function that looks like this
+	   *      @param {boolean} error
+	   *      @param {string} response - the response when no error occurred, or undefined otherwise
+	   *      @param {anything} otherInfo - any other infomation from user
+	   *   function(error, response, otherInfo) {
+	   *
+	   *   }
+	   * dependent of 
+	   *   {function} httpRequest
+	   */
 	  "getProblemInfo": function(param, otherInfo, callback) {
 	    httpRequest(this.rootUrl + '/api/courses/' + param.courseId + '/assignments/' + param.problemId, function(err, body) {
 	      return callback(err, body, otherInfo);
 	    });
 	  },
+	
+	  /** 
+	   * get the all submissions' information of a problem by courseId and problemId
+	   * @param {object} param - object that looks like this
+	   *   {
+	   *     "courseId": the course's id,
+	   *     "problemId": the assignment's id
+	   *   }
+	   * @param {anything} otherInfo - any other infomation that will send to callback function
+	   * @param {function} callback - function that looks like this
+	   *      @param {boolean} error
+	   *      @param {string} response - the response when no error occurred, or undefined otherwise
+	   *      @param {anything} otherInfo - any other infomation from user
+	   *   function(error, response, otherInfo) {
+	   *
+	   *   }
+	   * dependent of 
+	   *   {function} httpRequest
+	   */
 	  "getSubmissionsInfo": function(param, otherInfo, callback) {
 	    httpRequest(this.rootUrl + '/api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions', function(err, body) {
 	      return callback(err, body, otherInfo);
 	    });
 	  }
 	};
-
+	
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
 	    module.exports = factory();
@@ -243,8 +355,24 @@
 
 /***/ },
 /* 3 */
+/*!******************************************!*\
+  !*** ./js/components/lib/httpRequest.js ***!
+  \******************************************/
 /***/ function(module, exports, __webpack_require__) {
 
+	/** 
+	 * make a simple http GET request
+	 * @param {string} url
+	 * @param {function} callback - a function that looks like this:
+	 *      @param {boolean} error
+	 *      @param {object} [response] - present when no error occurred
+	 *   function(error, response) {
+	 * 
+	 *   }
+	 * @return {undefined}
+	 * independent
+	 */
+	
 	function httpRequest(url, callback) {
 	  var xhr = new XMLHttpRequest();
 	  xhr.open('get', url, true);
@@ -254,7 +382,7 @@
 	  xhr.onerror = function() { return callback(true); }
 	  xhr.send();
 	}
-
+	
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
 	    module.exports = factory();
@@ -279,10 +407,13 @@
 
 /***/ },
 /* 4 */
+/*!*********************************!*\
+  !*** ./js ^.*ReportObject\.js$ ***!
+  \*********************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/genReportObj.js": 5
+		"./components/ReportObject.js": 5
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -300,253 +431,336 @@
 
 /***/ },
 /* 5 */
+/*!***************************************!*\
+  !*** ./js/components/ReportObject.js ***!
+  \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var genDiffInfo = __webpack_require__(6);
-
-	function genReportObj(body) {
-	  var reportObject = {
-	    "msg": null,
-	    "grade": null,
-	    "compile check": null,
-	    "static check": null,
-	    "standard tests": null,
-	    "random tests": null,
-	    "memory check": null,
-	  };
-
-	  body = JSON.parse(body);
-	  if (body.err) {
-	    reportObject.msg = 'Error: ' + body.msg;
-	    reportObject.grade = 0;
-	    console.log('body:');
-	    console.log(body);
-	    return reportObject;
-	  }
-
-	  var data = body.data;
-
-	  if (body.status == 'SUBMISSION_NOT_FOUND') {
-	      reportObject.msg = 'no submissions yet';
-	      reportObject.grade = null;
-	      console.log('body:');
-	      console.log(body);
-	      return reportObject;
-	  }
-	  if (data === undefined || data === null) {
-	    reportObject.msg = 'Error: body.data is empty';
-	    reportObject.grade = 0;
-	    console.log('body:');
-	    console.log(body);
-	    return reportObject;
-	  }
-	  
-	  if (data.grade == -1 || data.grade === null) {
-	    // reportObject.msg = 'grading';
-	    reportObject.grade = 'being judged';
-	    console.log('body.data (submission being judged)');
-	    console.log(body.data);
-	    // return reportObject;
-	  }
-	  if (data.report === null) {
-	    reportObject.msg = 'report is empty';
-	    reportObject.grade = 0;
-	    console.log('body.data');
-	    console.log(body.data);
-	    return reportObject;
-	  }
-	  var report = data.report;
-	  if (report.error) {
-	    reportObject.msg = 'Error: ' + report.error;
-	    reportObject.grade = 0;
-	    console.log('report');
-	    console.log(report);
-	    return reportObject;
-	  }
-
-	  /** 
-	   * @param {string | undefined} str - the string to be wrapped
-	   * @param {string | undefined} append - append itself, if defined, after str
-	   * @return {string}
-	   * 
-	   * private but independent
-	   */
-	  function wrap(str, append) {
-	    return ((typeof(str) != 'undefined') ? (str + ((typeof(append) != 'undefined') ? append : '')) : 'missing');
-	  };
-
-	  function refactorTests(phaseName, info) {
-	    var curPhase = reportObject[phaseName];
-	    curPhase['error'] = null;
-	    curPhase['report'] = [];
-	    var failedCaseNum = 0;
-	    for (var i in info) {
-	      var oneCase = {};
-	      var oneTest = info[i];
-	      
-	      if ((oneTest.error || (oneTest.message && oneTest.message != 'Program finished running.'))) {
-	        var msg = (oneTest.error) ? oneTest.error : oneTest.message;
-	        oneCase['error'] = msg;
-	        oneCase['input'] = oneTest.stdin || 'No Input.';
-	        curPhase['report'].push(oneCase);
-	        ++failedCaseNum;
-	        continue;
-	      }
-	      oneCase['resultCode'] = oneTest.result;
-	      if (oneTest.result != 'CR') ++failedCaseNum;
-	      oneCase['memoryused'] = wrap(oneTest.memoryused);
-	      oneCase['timeused'] = wrap(oneTest.timeused);
-	      oneCase['input'] = oneTest.stdin || 'No Input.';
-	      oneCase['stdOutput'] = oneTest.standard_stdout || '';
-	      oneCase['yourOutput'] = oneTest.stdout || '';
-	      if (oneCase.stdOutput.length && oneCase.yourOutput.length) {
-	        genDiffInfo(oneCase);
-	      } else {
-	        oneCase['diff'] = null;
-	      }
-	      if (oneCase['stdOutput'].length == 0) oneCase['stdOutput'] = 'No Output.';
-	      if (oneCase['yourOutput'].length == 0) oneCase['yourOutput'] = 'No Output.';
-	      curPhase['report'].push(oneCase);
-	    }
-	    curPhase['failedCaseNum'] = failedCaseNum;
-	    curPhase['pass'] = !failedCaseNum;
-	  }
-	  function refactorCompileMsg(phaseName, info) {
-	    var curPhase = reportObject[phaseName];
-	    curPhase['report'] = info;
-	    curPhase['error'] = null;
-	    if (info == 'pass') curPhase['pass'] = true;
-	    else curPhase['pass'] = false;
-	  }
-	  function refactorStaticCheckMsg(phaseName, info) {
-	    var curPhase = reportObject[phaseName];
-	    if (info == "static parse error") {
-	      curPhase['report'] = null;
-	      curPhase['error'] = info;
-	      curPhase['pass'] = false;
-	      return;
-	    }
-	    curPhase['error'] = null;
-	    curPhase['report'] = [];
-	    var violation = info.violation;
-	    if (violation.length == 0) {
-	      curPhase['pass'] = true;
-	      return;
-	    }
-	    curPhase['pass'] = false;
-	    for (var i in violation) {
-	      var oneViolation = violation[i];
-	      var range = function(begin, end) {
-	        if (begin == end) return begin;
-	        else return begin + ' ~ ' + end;
-	      };
-	      var content = '';
-	      content += 'File: ' + oneViolation.path.substr(5) + '\n';
-	      content += 'Line: ' + range(oneViolation.startLine, oneViolation.endLine) + '\n';
-	      content += 'Column: ' + oneViolation.startColumn + ' ~ ' + oneViolation.endColumn + '\n';
-	      content += 'Rule: ' + oneViolation.rule + ' [priority=' + oneViolation.priority + ']\n';
-	      content += (oneViolation.message) ? 'Detail: ' + oneViolation.message + '\n' : '';
-	      curPhase['report'].push(content);
-	    }
-	  }
-	  function refactorMemoryCheck(phaseName, info) {
-	    var curPhase = reportObject[phaseName];
-	    curPhase['report'] = [];
-	    curPhase['error'] = null;
-	    var pass = true;
-	    for (i in info) {
-	      var oneCase = {};
-	      var test = info[i], stdin = test.stdin;
-	      oneCase['error'] = null;
-	      oneCase['memory errors'] = [];
-	      if (test.error || test.message) {
-	        var msg = (test.error) ? test.error : test.message;
-	        oneCase['error'] = msg;
-	        oneCase['input'] = stdin || 'No Input.';
-	        curPhase['report'].push(oneCase);
-	        pass = false;
-	        continue;
-	      }
-	      oneCase['input'] = stdin || 'No Input.';
-	      var errors = test.valgrindoutput.error;
-	      if (!errors) {
-	        curPhase['report'].push(oneCase);
-	        continue;
-	      }
-	      else pass = false;
-
-	      if (typeof(errors.length) == 'undefined') errors = new Array(errors);
-	      for (j in errors) {
-	        var oneError = errors[j], behavior = oneError.what;
-	        var content = '';
-	        var auxwhat = oneError.auxwhat, stack = oneError.stack;
-	        
-	        if (!behavior) {
-	          if (oneError.kind == 'Leak_DefinitelyLost') {
-	            behavior = 'Memory leak';
-	            auxwhat = oneError.xwhat.text;
-	          } else if (oneError.kind == 'Leak_PossiblyLost') {
-	            behavior = 'Possible memory leak';
-	            auxwhat = oneError.xwhat.text;
-	          } else {
-	            content += 'Behavior: ' + wrap(behavior) + '\n';
-	            content += '\n' + oneError + '\n';
-	            continue;
-	          }
-	        }
-
-	        if (typeof(auxwhat) == 'string') auxwhat = new Array(auxwhat);
-	        content += 'Behavior: ' + wrap(behavior) + '\n';
-	        if (typeof(stack.length) == 'undefined') stack = new Array(stack);
-
-	        for (k in stack) {
-	          var frame = stack[k].frame;
-	          if (typeof(frame.length) == 'undefined') frame = new Array(frame);
-	          if (k == 0) content += '  ';
-	          else content += ' ' + auxwhat[k - 1] + ':\n  ';
-	          for (l in frame) {
-	            var funcInfo = frame[l];
-	            if (l != 0) content += 'by:';
-	            else content += 'at:';
-	            if (funcInfo.file && funcInfo.line) content += ' ' + funcInfo.file + ' Line ' + funcInfo.line + '\n  ' + '  ' + funcInfo.fn + '\n  ';
-	            else content += ' ' + (funcInfo.fn || 'some func') + ' precompiled in ' + funcInfo.obj + '\n  ';
-	          }
-	          content += '\n';
-	        }
-	        oneCase['memory errors'].push(content);
-	      }
-	      curPhase['report'].push(oneCase);
-	    }
-	    curPhase['pass'] = pass;
-	  }
-
-	  var toContinue = true;
-
-	  function refactorPhase(phase, func) {
-	    if (toContinue && report[phase] && report[phase][phase]) {
-	      toContinue = report[phase]['continue'];
-	      reportObject[phase] = {};
-	      reportObject[phase]['grade'] = report[phase].grade;
-	      return func(phase, report[phase][phase]);
-	    } else {
-	      return;
-	    }
-	  }
-	  var phases = [{'id': 'compile check',
-	                 'func': refactorCompileMsg},
-	                {'id': 'static check',
-	                'func': refactorStaticCheckMsg},
-	                {'id': 'standard tests',
-	                'func': refactorTests},
-	                {'id': 'random tests',
-	                'func': refactorTests},
-	                {'id': 'memory check',
-	                'func': refactorMemoryCheck}];
-	  reportObject.grade = data.grade;
-	  for (var i in phases) refactorPhase(phases[i].id, phases[i].func);
-	  return reportObject;
+	var CaseObject = __webpack_require__(/*! ./CaseObject.js */ 6);
+	/** 
+	 * ReportObject
+	 * refactored version of the original report object from Matrix
+	 * @param {string | object} body - object or stringified object representing report from Matrix
+	 * 
+	 * dependent of
+	 *   {function} genDiffInfo
+	 */
+	function ReportObject(body) {
+	  this.extendFrom(this.genReportObj(body));
 	}
-
+	ReportObject.prototype = {
+	  "constructor": ReportObject,
+	  "extendFrom": function(parent) {
+	    for (var name in parent) this[name] = parent[name];
+	  },
+	  /** 
+	   * refactor the original report object from Matrix
+	   * @param {string | object} body - object or stringified object representing report from Matrix
+	   * @return {object} refactored report object
+	   *
+	   * dependent of
+	   *   {function} genDiffInfo
+	   */
+	  "genReportObj": function(body) {
+	    var reportObject = {
+	      "msg": null,
+	      "grade": null,
+	      "submitTime": null,
+	      "compile check": null,
+	      "static check": null,
+	      "standard tests": null,
+	      "random tests": null,
+	      "memory check": null,
+	      "google tests": null
+	    };
+	
+	      // wrap to an object
+	    if (typeof(body) == 'string') {
+	      body = JSON.parse(body);
+	    }
+	
+	    var data = body.data;
+	    if (body.err) {
+	      reportObject.msg = 'Error: ' + body.msg;
+	      reportObject.grade = -2;
+	      console.log('body:', body);
+	
+	    } else if (body.status == 'SUBMISSION_NOT_FOUND') {
+	      reportObject.msg = 'no submissions yet';
+	      reportObject.grade = -2;
+	      console.log('body:', body);
+	
+	    } else if (data === undefined || data === null) {
+	      reportObject.msg = 'Error: body.data is empty';
+	      reportObject.grade = -2;
+	      console.log('body:', body);
+	
+	    } else if (data.grade == -1 || data.grade === null) {
+	      reportObject.grade = 'under judging';
+	      console.log('body.data: (submission under judging)', body.data);
+	
+	    } else if (data.report === undefined || data.report === null) {
+	      reportObject.msg = 'Error: data.report is empty';
+	      reportObject.grade = -2;
+	      console.log('body.data:', body.data);
+	
+	    } else if (data.report.error) {
+	      reportObject.msg = 'Error: ' + data.report.error;
+	      reportObject.grade = -2;
+	      console.log('report', data.report);
+	    }
+	
+	    var report = null;
+	    if (-2 == reportObject.grade) {
+	      return reportObject;
+	    } else {
+	      report = data.report;
+	    }
+	
+	    reportObject.submitTime = data.submitTime;
+	
+	    /** 
+	     * return a string 'missing' if str is undefined, or return str itself otherwise
+	     * @param {string | undefined} str - the string to be wrapped
+	     * @param {string} [append] - string to be appended after str
+	     * @return {string}
+	     * 
+	     * independent
+	     */
+	    function wrapWithMissing(str, append) {
+	      return (typeof(str) != 'undefined' ? (str + (typeof(append) != 'undefined' ? append : '') ) : 'missing');
+	    };
+	
+	    /** 
+	     * refactor standard/random tests
+	     * @param {string} phaseName - the type of the tests (standard or random)
+	     * @param {object} info - 
+	     * @return {undefined}
+	     * 
+	     * private and dependent of 
+	     *     {object} reportObject
+	     */
+	    function refactorTests(phaseName, info) {
+	      var curPhase = reportObject[phaseName];
+	      curPhase['error'] = null;
+	      curPhase['report'] = [];
+	      var failedCaseNum = 0;
+	      // for (var i = 0, oneTest = info[i]; i < info.length; ++i, oneTest = info[i]) {
+	      info.forEach(function(oneTest, i, self) {
+	        var oneCase = new CaseObject();
+	        
+	        if ((oneTest.error || (oneTest.message && oneTest.message != 'Program finished running.'))) {
+	          var msg = (oneTest.error) ? oneTest.error : oneTest.message;
+	          oneCase.extendFrom({
+	            "error": msg,
+	            "input": oneTest.stdin || 'No Input.'
+	          });
+	          curPhase['report'].push(oneCase);
+	          ++failedCaseNum;
+	          return;
+	        }
+	        if (oneTest.result != 'CR') ++failedCaseNum;
+	        oneCase.extendFrom({
+	          "resultCode": oneTest.result,
+	          "input": oneTest.stdin || 'No Input.',
+	          "stdOutput": oneTest.standard_stdout || '',
+	          "yourOutput": oneTest.stdout || '',
+	          "memoryused": wrapWithMissing(oneTest.memoryused),
+	          "timeused": wrapWithMissing(oneTest.timeused)
+	        });
+	        oneCase.genDiffInfo();
+	        if (oneCase.stdOutput.length == 0) oneCase.stdOutput = 'No Output.';
+	        if (oneCase.yourOutput.length == 0) oneCase.yourOutput = 'No Output.';
+	        curPhase['report'].push(oneCase);
+	      });
+	      curPhase['failedCaseNum'] = failedCaseNum;
+	      curPhase['pass'] = !failedCaseNum;
+	    }
+	    function refactorCompileMsg(phaseName, info) {
+	      var curPhase = reportObject[phaseName];
+	      curPhase['report'] = info;
+	      curPhase['error'] = null;
+	      if (info == 'pass') curPhase['pass'] = true;
+	      else curPhase['pass'] = false;
+	    }
+	    function refactorStaticCheckMsg(phaseName, info) {
+	      var curPhase = reportObject[phaseName];
+	      if (info == "static parse error") {
+	        curPhase['report'] = null;
+	        curPhase['error'] = info;
+	        curPhase['pass'] = false;
+	        return;
+	      }
+	      curPhase['error'] = null;
+	      curPhase['report'] = [];
+	      var violation = info.violation;
+	      if (violation.length == 0) {
+	        curPhase['pass'] = true;
+	        return;
+	      }
+	      curPhase['pass'] = false;
+	      // for (var i in violation) {
+	      violation.forEach(function(oneViolation, i, self) {
+	        // var oneViolation = violation[i];
+	        var range = function(begin, end) {
+	          if (begin == end) return begin;
+	          else return begin + ' ~ ' + end;
+	        };
+	        var content = '';
+	        content += 'File: ' + oneViolation.path.substr(5) + '\n';
+	        content += 'Line: ' + range(oneViolation.startLine, oneViolation.endLine) + '\n';
+	        content += 'Column: ' + oneViolation.startColumn + ' ~ ' + oneViolation.endColumn + '\n';
+	        content += 'Rule: ' + oneViolation.rule + ' [priority=' + oneViolation.priority + ']\n';
+	        content += (oneViolation.message) ? 'Detail: ' + oneViolation.message + '\n' : '';
+	        curPhase['report'].push(content);
+	      });
+	    }
+	    function refactorMemoryCheck(phaseName, info) {
+	      var curPhase = reportObject[phaseName];
+	      curPhase['report'] = [];
+	      curPhase['error'] = null;
+	
+	      var pass = true;
+	      var failedCaseNum = 0;
+	      // for (i in info) {
+	      info.forEach(function(test, i) {
+	        var oneCase = {};
+	        // var test = info[i];
+	        var stdin = test.stdin;
+	        oneCase['error'] = null;
+	        oneCase['memory errors'] = [];
+	        if (test.error || test.message) {
+	          var msg = (test.error) ? test.error : test.message;
+	          oneCase['error'] = msg;
+	          oneCase['input'] = stdin || 'No Input.';
+	          curPhase['report'].push(oneCase);
+	          pass = false;
+	          return;
+	        }
+	        oneCase['input'] = stdin || 'No Input.';
+	        var errors = test.valgrindoutput.error;
+	        if (!errors) {
+	          curPhase['report'].push(oneCase);
+	          return;
+	        } else {
+	          // pass = false;
+	          ++failedCaseNum;
+	        }
+	
+	        if ( ({}).toString.apply(errors) != '[object Array]') errors = new Array(errors);
+	        // for (j in errors) {
+	        errors.forEach(function(oneError, j) {
+	          // var oneError = errors[j];
+	          var behavior = oneError.what;
+	          var content = '';
+	          var auxwhat = oneError.auxwhat, stack = oneError.stack;
+	          
+	          if (!behavior) {
+	            if (oneError.kind == 'Leak_DefinitelyLost') {
+	              behavior = 'Memory leak';
+	              auxwhat = oneError.xwhat.text;
+	            } else if (oneError.kind == 'Leak_PossiblyLost') {
+	              behavior = 'Possible memory leak';
+	              auxwhat = oneError.xwhat.text;
+	            } else {
+	              content += 'Behavior: ' + wrapWithMissing(behavior) + '\n';
+	              content += '\n' + oneError + '\n';
+	              return;
+	            }
+	          }
+	
+	          if ( ({}).toString.apply(auxwhat) != '[object Array]' ) auxwhat = [auxwhat];
+	          content += 'Behavior: ' + wrapWithMissing(behavior) + '\n';
+	          if ( ({}).toString.apply(stack) != '[object Array]' ) stack = [stack];
+	
+	          // for (k in stack) {
+	          stack.forEach(function(frame, index) {
+	            // var frame = stack[k].frame;
+	            frame = frame.frame;
+	            if ( ({}).toString.apply(frame) != '[object Array]' ) frame = [frame];
+	            if (index == 0) content += '  ';
+	            else content += ' ' + auxwhat[index - 1] + ':\n  ';
+	            // for (l in frame) {
+	            frame.forEach(function(funcInfo, funcIndex) {
+	              // var funcInfo = frame[l];
+	              if (funcIndex) content += 'by:';
+	              else content += 'at:';
+	              if (funcInfo.file && funcInfo.line) content += ' ' + funcInfo.file + ' Line ' + funcInfo.line + '\n  ' + '  ' + funcInfo.fn + '\n  ';
+	              else content += ' ' + (funcInfo.fn || 'some func') + ' precompiled in ' + funcInfo.obj + '\n  ';
+	            });
+	            content += '\n';
+	          });
+	          oneCase['memory errors'].push(content);
+	        });
+	        curPhase['report'].push(oneCase);
+	      });
+	      curPhase['failedCaseNum'] = failedCaseNum;
+	      curPhase['pass'] = !failedCaseNum;
+	    }
+	    function refactorGoogleTests(phaseName, info) {
+	      var curPhase = reportObject[phaseName];
+	      curPhase['report'] = [];
+	      curPhase['error'] = null;
+	
+	      var pass = true;
+	      var failedCaseNum = 0;
+	      info.forEach(function(oneTest, index, self) {
+	        oneTest = oneTest.gtest;
+	        var oneCase = {};
+	        oneCase['grade'] = oneTest.grade;
+	        oneCase['info'] = oneTest.info;
+	        for (var name in oneCase.info) {
+	          var description = oneCase.info[name];
+	          oneCase.info[name] = {};
+	          oneCase.info[name]['pass'] = true;
+	          oneCase.info[name]['description'] = description;
+	        }
+	        if (oneTest.failure != null) {
+	          oneTest.failure.forEach(function(oneFailure) {
+	            for (var name in oneFailure) {
+	              oneCase.info[name]['pass'] = false;
+	            }
+	          });
+	          ++failedCaseNum;
+	        } else {
+	          
+	        }
+	        curPhase.report.push(oneCase);
+	      });
+	      // curPhase.report = JSON.stringify(curPhase.report);
+	      curPhase['failedCaseNum'] = failedCaseNum;
+	      curPhase['pass'] = !failedCaseNum;
+	    }
+	    var toContinue = true;
+	
+	    function refactorPhase(phase, func) {
+	      if (toContinue && report[phase] && report[phase][phase]) {
+	        toContinue = report[phase]['continue'];
+	        reportObject[phase] = {};
+	        reportObject[phase]['grade'] = report[phase].grade;
+	        return func(phase, report[phase][phase]);
+	      } else {
+	        return;
+	      }
+	    }
+	    var phases = [{'id': 'compile check',
+	                   'func': refactorCompileMsg},
+	                  {'id': 'static check',
+	                  'func': refactorStaticCheckMsg},
+	                  {'id': 'standard tests',
+	                  'func': refactorTests},
+	                  {'id': 'random tests',
+	                  'func': refactorTests},
+	                  {'id': 'memory check',
+	                  'func': refactorMemoryCheck},
+	                  {'id': 'google tests',
+	                  'func': refactorGoogleTests}];
+	    if (reportObject.grade === null) reportObject.grade = data.grade;
+	    for (var i in phases) refactorPhase(phases[i].id, phases[i].func);
+	    return reportObject;
+	  }
+	};
+	
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
 	    module.exports = factory();
@@ -561,65 +775,95 @@
 	    });
 	  */
 	  else if (typeof(exports) === 'object')
-	    exports['genReportObj'] = factory();
+	    exports['ReportObject'] = factory();
 	  else
-	    root['genReportObj'] = factory();
+	    root['ReportObject'] = factory();
 	})(this, function factory() {
-	  return genReportObj;
+	  return ReportObject;
 	});
 
 
 /***/ },
 /* 6 */
+/*!*************************************!*\
+  !*** ./js/components/CaseObject.js ***!
+  \*************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var diff_match_patch = __webpack_require__(7);
+	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 7);
 	var Diff = new diff_match_patch();
 	Diff.Diff_Timeout = 0;
-	/** 
-	 * modify a Case object by adding to it some diff information
-	 * @param {Case} oneCase - a Case object containing property "stdOutput" end "yourOutput"
-	 * @return {undefined} no return value should be expected
-	 * independent
-	 */
-	function genDiffInfo(oneCase) {
-	  if (typeof(oneCase.stdOutput) != 'string' || typeof(oneCase.yourOutput) != 'string') return;
-	  oneCase['diff'] = Diff.diffLines(oneCase.stdOutput, oneCase.yourOutput);
-	  oneCase.diff.forEach(function(oneDiff, index, self) {
-	      // if the case is [removed] [added] and the two blocks contain the same number of lines
-	    if (index && self[index - 1].removed && self[index].added) {
-	      var removedLines = self[index - 1].value;
-	      var removedLinesBinary = self[index - 1].binary;
-	      var addedLines = self[index].value;
-	      var addedLinesBinary = self[index].binary;
-	      if (removedLines.length == addedLines.length) {
-	        self[index - 1]['inlineDiff'] = [], self[index]['inlineDiff'] = [];
-	        self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
-	        
-	          // perform diff on every two corresponding lines (diff by char)
-	        removedLines.forEach(function(one, j) {
-	          var inlineDiff = Diff.diffChars(removedLines[j], addedLines[j]);
-	          var inlineBinaryDiff = Diff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);
-
-	          var oneRemovedLine = [], oneAddedLine = [];
-	          inlineDiff.forEach(function(oneLine) {
-	            if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
-	            if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
-	          });
-	          self[index - 1].inlineDiff.push(oneRemovedLine), self[index].inlineDiff.push(oneAddedLine);
-
-	          oneRemovedLine = [], oneAddedLine = [];
-	          inlineBinaryDiff.forEach(function(oneLine) {
-	            if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
-	            if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
-	          });
-	          self[index - 1].inlineBinaryDiff.push(oneRemovedLine), self[index].inlineBinaryDiff.push(oneAddedLine);
-	        });
-	      }
-	    }
+	
+	function CaseObject() {
+	  this.extendFrom({
+	    "error": null,
+	    "msg": null,
+	    "resultCode": null,
+	    "input": null,
+	    "stdOutput": null,
+	    "yourOutput": null,
+	    "diff": null,
+	    "memoryused": null,
+	    "timeused": null
 	  });
 	}
-
+	CaseObject.prototype = {
+	  "constructor": CaseObject,
+	  "extendFrom": function(parent) {
+	    for (var name in parent) this[name] = parent[name];
+	  },
+	  /** 
+	   * modify a CaseObject by adding to it some diff information
+	   * @return {undefined}
+	   *
+	   * dependent of 
+	   *     {diff_match_patch} Diff
+	   */
+	  "genDiffInfo": function() {
+	    if (typeof(this.stdOutput) != 'string' || 0 == this.stdOutput.length
+	      || typeof(this.yourOutput) != 'string' || 0 == this.yourOutput.length) {
+	
+	        this['diff'] = null;
+	        return;
+	    }
+	    this['diff'] = Diff.diffLines(this.stdOutput, this.yourOutput);
+	    this.diff.forEach(function(oneDiff, index, self) {
+	        // if the case is [removed] [added] and the two blocks contain the same number of lines
+	      if (index && self[index - 1].removed && self[index].added) {
+	        var removedLines = self[index - 1].value;
+	        var removedLinesBinary = self[index - 1].binary;
+	        var addedLines = self[index].value;
+	        var addedLinesBinary = self[index].binary;
+	        if (removedLines.length == addedLines.length) {
+	          self[index - 1]['inlineDiff'] = [], self[index]['inlineDiff'] = [];
+	          self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
+	          
+	            // perform diff on every two corresponding lines (diff by char)
+	          removedLines.forEach(function(one, j) {
+	            var inlineDiff = Diff.diffChars(removedLines[j], addedLines[j]);
+	            var inlineBinaryDiff = Diff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);
+	
+	            var oneRemovedLine = [], oneAddedLine = [];
+	            inlineDiff.forEach(function(oneLine) {
+	              if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
+	              if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
+	            });
+	            self[index - 1].inlineDiff.push(oneRemovedLine), self[index].inlineDiff.push(oneAddedLine);
+	
+	            oneRemovedLine = [], oneAddedLine = [];
+	            inlineBinaryDiff.forEach(function(oneLine) {
+	              if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
+	              if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
+	            });
+	            self[index - 1].inlineBinaryDiff.push(oneRemovedLine), self[index].inlineBinaryDiff.push(oneAddedLine);
+	          });
+	        }
+	      }
+	    });
+	  }
+	
+	};
+	
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
 	    module.exports = factory();
@@ -634,16 +878,19 @@
 	    });
 	  */
 	  else if (typeof(exports) === 'object')
-	    exports['genDiffInfo'] = factory();
+	    exports['CaseObject'] = factory();
 	  else
-	    root['genDiffInfo'] = factory();
+	    root['CaseObject'] = factory();
 	})(this, function factory() {
-	  return genDiffInfo;
+	  return CaseObject;
 	});
 
 
 /***/ },
 /* 7 */
+/*!***********************************************!*\
+  !*** ./js/components/lib/diff_match_patch.js ***!
+  \***********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -664,22 +911,22 @@
 	 * See the License for the specific language governing permissions and
 	 * limitations under the License.
 	 */
-
+	
 	/**
 	 * @fileoverview Computes the difference between two texts to create a patch.
 	 * Applies the patch onto another text, allowing for errors.
 	 * @author fraser@google.com (Neil Fraser)
 	 */
-
+	
 	/**
 	 * Class containing the diff, match and patch methods.
 	 * @constructor
 	 */
 	function diff_match_patch() {
-
+	
 	  // Defaults.
 	  // Redefine these in your program to override the defaults.
-
+	
 	  // Number of seconds to map a diff before giving up (0 for infinity).
 	  this.Diff_Timeout = 1.0;
 	  // Cost of an empty edit operation in terms of edit characters.
@@ -697,15 +944,15 @@
 	  this.Patch_DeleteThreshold = 0.5;
 	  // Chunk size for context length.
 	  this.Patch_Margin = 4;
-
+	
 	  // The number of bits in an int.
 	  this.Match_MaxBits = 32;
 	}
-
-
+	
+	
 	//  DIFF FUNCTIONS
-
-
+	
+	
 	/**
 	 * The data structure representing a diff is an array of tuples:
 	 * [[DIFF_DELETE, 'Hello'], [DIFF_INSERT, 'Goodbye'], [DIFF_EQUAL, ' world.']]
@@ -714,11 +961,11 @@
 	var DIFF_DELETE = -1;
 	var DIFF_INSERT = 1;
 	var DIFF_EQUAL = 0;
-
+	
 	/** @typedef {{0: number, 1: string}} */
 	diff_match_patch.Diff;
-
-
+	
+	
 	/**
 	 * Find the differences between two texts.  Simplifies the problem by stripping
 	 * any common prefix or suffix off the texts before diffing.
@@ -743,12 +990,12 @@
 	    }
 	  }
 	  var deadline = opt_deadline;
-
+	
 	  // Check for null inputs.
 	  if (text1 == null || text2 == null) {
 	    throw new Error('Null input. (diff_main)');
 	  }
-
+	
 	  // Check for equality (speedup).
 	  if (text1 == text2) {
 	    if (text1) {
@@ -756,27 +1003,27 @@
 	    }
 	    return [];
 	  }
-
+	
 	  if (typeof opt_checklines == 'undefined') {
 	    opt_checklines = true;
 	  }
 	  var checklines = opt_checklines;
-
+	
 	  // Trim off common prefix (speedup).
 	  var commonlength = this.diff_commonPrefix(text1, text2);
 	  var commonprefix = text1.substring(0, commonlength);
 	  text1 = text1.substring(commonlength);
 	  text2 = text2.substring(commonlength);
-
+	
 	  // Trim off common suffix (speedup).
 	  commonlength = this.diff_commonSuffix(text1, text2);
 	  var commonsuffix = text1.substring(text1.length - commonlength);
 	  text1 = text1.substring(0, text1.length - commonlength);
 	  text2 = text2.substring(0, text2.length - commonlength);
-
+	
 	  // Compute the diff on the middle block.
 	  var diffs = this.diff_compute_(text1, text2, checklines, deadline);
-
+	
 	  // Restore the prefix and suffix.
 	  if (commonprefix) {
 	    diffs.unshift([DIFF_EQUAL, commonprefix]);
@@ -787,8 +1034,8 @@
 	  this.diff_cleanupMerge(diffs);
 	  return diffs;
 	};
-
-
+	
+	
 	/**
 	 * Find the differences between two texts.  Assumes that the texts do not
 	 * have any common prefix or suffix.
@@ -804,17 +1051,17 @@
 	diff_match_patch.prototype.diff_compute_ = function(text1, text2, checklines,
 	    deadline) {
 	  var diffs;
-
+	
 	  if (!text1) {
 	    // Just add some text (speedup).
 	    return [[DIFF_INSERT, text2]];
 	  }
-
+	
 	  if (!text2) {
 	    // Just delete some text (speedup).
 	    return [[DIFF_DELETE, text1]];
 	  }
-
+	
 	  var longtext = text1.length > text2.length ? text1 : text2;
 	  var shorttext = text1.length > text2.length ? text2 : text1;
 	  var i = longtext.indexOf(shorttext);
@@ -829,13 +1076,13 @@
 	    }
 	    return diffs;
 	  }
-
+	
 	  if (shorttext.length == 1) {
 	    // Single character string.
 	    // After the previous speedup, the character can't be an equality.
 	    return [[DIFF_DELETE, text1], [DIFF_INSERT, text2]];
 	  }
-
+	
 	  // Check to see if the problem can be split in two.
 	  var hm = this.diff_halfMatch_(text1, text2);
 	  if (hm) {
@@ -851,15 +1098,15 @@
 	    // Merge the results.
 	    return diffs_a.concat([[DIFF_EQUAL, mid_common]], diffs_b);
 	  }
-
+	
 	  if (checklines && text1.length > 100 && text2.length > 100) {
 	    return this.diff_lineMode_(text1, text2, deadline);
 	  }
-
+	
 	  return this.diff_bisect_(text1, text2, deadline);
 	};
-
-
+	
+	
 	/**
 	 * Do a quick line-level diff on both strings, then rediff the parts for
 	 * greater accuracy.
@@ -876,14 +1123,14 @@
 	  text1 = a.chars1;
 	  text2 = a.chars2;
 	  var linearray = a.lineArray;
-
+	
 	  var diffs = this.diff_main(text1, text2, false, deadline);
-
+	
 	  // Convert the diff back to original text.
 	  this.diff_charsToLines_(diffs, linearray);
 	  // Eliminate freak matches (e.g. blank lines)
 	  this.diff_cleanupSemantic(diffs);
-
+	
 	  // Rediff any replacement blocks, this time character-by-character.
 	  // Add a dummy entry at the end.
 	  diffs.push([DIFF_EQUAL, '']);
@@ -924,11 +1171,11 @@
 	    pointer++;
 	  }
 	  diffs.pop();  // Remove the dummy entry at the end.
-
+	
 	  return diffs;
 	};
-
-
+	
+	
 	/**
 	 * Find the 'middle snake' of a diff, split the problem in two
 	 * and return the recursively constructed diff.
@@ -971,7 +1218,7 @@
 	    if ((new Date()).getTime() > deadline) {
 	      break;
 	    }
-
+	
 	    // Walk the front path one step.
 	    for (var k1 = -d + k1start; k1 <= d - k1end; k1 += 2) {
 	      var k1_offset = v_offset + k1;
@@ -1006,7 +1253,7 @@
 	        }
 	      }
 	    }
-
+	
 	    // Walk the reverse path one step.
 	    for (var k2 = -d + k2start; k2 <= d - k2end; k2 += 2) {
 	      var k2_offset = v_offset + k2;
@@ -1049,8 +1296,8 @@
 	  // number of diffs equals number of characters, no commonality at all.
 	  return [[DIFF_DELETE, text1], [DIFF_INSERT, text2]];
 	};
-
-
+	
+	
 	/**
 	 * Given the location of the 'middle snake', split the diff in two parts
 	 * and recurse.
@@ -1068,15 +1315,15 @@
 	  var text2a = text2.substring(0, y);
 	  var text1b = text1.substring(x);
 	  var text2b = text2.substring(y);
-
+	
 	  // Compute both diffs serially.
 	  var diffs = this.diff_main(text1a, text2a, false, deadline);
 	  var diffsb = this.diff_main(text1b, text2b, false, deadline);
-
+	
 	  return diffs.concat(diffsb);
 	};
-
-
+	
+	
 	/**
 	 * Split two texts into an array of strings.  Reduce the texts to a string of
 	 * hashes where each Unicode character represents one line.
@@ -1091,11 +1338,11 @@
 	diff_match_patch.prototype.diff_linesToChars_ = function(text1, text2) {
 	  var lineArray = [];  // e.g. lineArray[4] == 'Hello\n'
 	  var lineHash = {};   // e.g. lineHash['Hello\n'] == 4
-
+	
 	  // '\x00' is a valid character, but various debuggers don't like it.
 	  // So we'll insert a junk entry to avoid generating a null character.
 	  lineArray[0] = '';
-
+	
 	  /**
 	   * Split a text into an array of strings.  Reduce the texts to a string of
 	   * hashes where each Unicode character represents one line.
@@ -1120,7 +1367,7 @@
 	      }
 	      var line = text.substring(lineStart, lineEnd + 1);
 	      lineStart = lineEnd + 1;
-
+	
 	      if (lineHash.hasOwnProperty ? lineHash.hasOwnProperty(line) :
 	          (lineHash[line] !== undefined)) {
 	        chars += String.fromCharCode(lineHash[line]);
@@ -1132,20 +1379,20 @@
 	    }
 	    return chars;
 	  }
-
+	
 	  var chars1 = diff_linesToCharsMunge_(text1);
 	  var chars2 = diff_linesToCharsMunge_(text2);
 	  return {chars1: chars1, chars2: chars2, lineArray: lineArray};
 	};
-
+	
 	diff_match_patch.prototype.diff_onelineToWords_ = function(text1, text2) {
 	  var lineArray = [];  // e.g. lineArray[4] == 'Hello\n'
 	  var lineHash = {};   // e.g. lineHash['Hello\n'] == 4
-
+	
 	  // '\x00' is a valid character, but various debuggers don't like it.
 	  // So we'll insert a junk entry to avoid generating a null character.
 	  lineArray[0] = '';
-
+	
 	  /**
 	   * Split a text into an array of strings.  Reduce the texts to a string of
 	   * hashes where each Unicode character represents one line.
@@ -1174,7 +1421,7 @@
 	      }
 	      var line = text.substring(lineStart, lineEnd + 1);
 	      lineStart = lineEnd + 1;
-
+	
 	      if (lineHash.hasOwnProperty ? lineHash.hasOwnProperty(line) :
 	          (lineHash[line] !== undefined)) {
 	        chars += String.fromCharCode(lineHash[line]);
@@ -1186,12 +1433,12 @@
 	    }
 	    return chars;
 	  }
-
+	
 	  var chars1 = diff_onelineToWordsMunge_(text1);
 	  var chars2 = diff_onelineToWordsMunge_(text2);
 	  return {chars1: chars1, chars2: chars2, lineArray: lineArray};
 	};
-
+	
 	diff_match_patch.prototype.toLineDiffResult = function(rawDiffs) {
 	  var rawDiffsLength = rawDiffs.length;
 	  if (rawDiffsLength && 0 == rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
@@ -1200,7 +1447,7 @@
 	  function appendNewLineTo(index) {
 	    rawDiffs[index][1] += '\n';
 	  };
-
+	
 	    // modify rawDiffs in order to highlight the new lines at the end
 	    // by appending additional '\n' at the end of oneDiffs
 	  (function modifyDiffResult() {
@@ -1300,7 +1547,7 @@
 	  var res = this.diff_main(oldStr, newStr);
 	  return this.toCharDiffResult(res);
 	};
-
+	
 	/**
 	 * Rehydrate the text in a diff from a string of line hashes to real lines of
 	 * text.
@@ -1318,8 +1565,8 @@
 	    diffs[x][1] = text.join('');
 	  }
 	};
-
-
+	
+	
 	/**
 	 * Determine the common prefix of two strings.
 	 * @param {string} text1 First string.
@@ -1350,8 +1597,8 @@
 	  }
 	  return pointermid;
 	};
-
-
+	
+	
 	/**
 	 * Determine the common suffix of two strings.
 	 * @param {string} text1 First string.
@@ -1382,8 +1629,8 @@
 	  }
 	  return pointermid;
 	};
-
-
+	
+	
 	/**
 	 * Determine if the suffix of one string is the prefix of another.
 	 * @param {string} text1 First string.
@@ -1411,7 +1658,7 @@
 	  if (text1 == text2) {
 	    return text_length;
 	  }
-
+	
 	  // Start by looking for a single character match
 	  // and increase length until no match is found.
 	  // Performance analysis: http://neil.fraser.name/news/2010/11/04/
@@ -1431,8 +1678,8 @@
 	    }
 	  }
 	};
-
-
+	
+	
 	/**
 	 * Do the two texts share a substring which is at least half the length of the
 	 * longer text?
@@ -1455,7 +1702,7 @@
 	    return null;  // Pointless.
 	  }
 	  var dmp = this;  // 'this' becomes 'window' in a closure.
-
+	
 	  /**
 	   * Does a substring of shorttext exist within longtext such that the substring
 	   * is at least half the length of longtext?
@@ -1495,7 +1742,7 @@
 	      return null;
 	    }
 	  }
-
+	
 	  // First check if the second quarter is the seed for a half-match.
 	  var hm1 = diff_halfMatchI_(longtext, shorttext,
 	                             Math.ceil(longtext.length / 4));
@@ -1513,7 +1760,7 @@
 	    // Both matched.  Select the longest.
 	    hm = hm1[4].length > hm2[4].length ? hm1 : hm2;
 	  }
-
+	
 	  // A half-match was found, sort out the return data.
 	  var text1_a, text1_b, text2_a, text2_b;
 	  if (text1.length > text2.length) {
@@ -1530,8 +1777,8 @@
 	  var mid_common = hm[4];
 	  return [text1_a, text1_b, text2_a, text2_b, mid_common];
 	};
-
-
+	
+	
 	/**
 	 * Reduce the number of edits by eliminating semantically trivial equalities.
 	 * @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
@@ -1590,13 +1837,13 @@
 	    }
 	    pointer++;
 	  }
-
+	
 	  // Normalize the diff.
 	  if (changes) {
 	    this.diff_cleanupMerge(diffs);
 	  }
 	  this.diff_cleanupSemanticLossless(diffs);
-
+	
 	  // Find any overlaps between deletions and insertions.
 	  // e.g: <del>abcxxx</del><ins>xxxdef</ins>
 	  //   -> <del>abc</del>xxx<ins>def</ins>
@@ -1643,8 +1890,8 @@
 	    pointer++;
 	  }
 	};
-
-
+	
+	
 	/**
 	 * Look for single edits surrounded on both sides by equalities
 	 * which can be shifted sideways to align the edit to a word boundary.
@@ -1667,7 +1914,7 @@
 	      // Edges are the best.
 	      return 6;
 	    }
-
+	
 	    // Each port of this function behaves slightly differently due to
 	    // subtle differences in each language's definition of things like
 	    // 'whitespace'.  Since this function's purpose is largely cosmetic,
@@ -1689,7 +1936,7 @@
 	        one.match(diff_match_patch.blanklineEndRegex_);
 	    var blankLine2 = lineBreak2 &&
 	        two.match(diff_match_patch.blanklineStartRegex_);
-
+	
 	    if (blankLine1 || blankLine2) {
 	      // Five points for blank lines.
 	      return 5;
@@ -1708,7 +1955,7 @@
 	    }
 	    return 0;
 	  }
-
+	
 	  var pointer = 1;
 	  // Intentionally ignore the first and last element (don't need checking).
 	  while (pointer < diffs.length - 1) {
@@ -1718,7 +1965,7 @@
 	      var equality1 = diffs[pointer - 1][1];
 	      var edit = diffs[pointer][1];
 	      var equality2 = diffs[pointer + 1][1];
-
+	
 	      // First, shift the edit as far left as possible.
 	      var commonOffset = this.diff_commonSuffix(equality1, edit);
 	      if (commonOffset) {
@@ -1727,7 +1974,7 @@
 	        edit = commonString + edit.substring(0, edit.length - commonOffset);
 	        equality2 = commonString + equality2;
 	      }
-
+	
 	      // Second, step character by character right, looking for the best fit.
 	      var bestEquality1 = equality1;
 	      var bestEdit = edit;
@@ -1748,7 +1995,7 @@
 	          bestEquality2 = equality2;
 	        }
 	      }
-
+	
 	      if (diffs[pointer - 1][1] != bestEquality1) {
 	        // We have an improvement, save it back to the diff.
 	        if (bestEquality1) {
@@ -1769,14 +2016,14 @@
 	    pointer++;
 	  }
 	};
-
+	
 	// Define some regex patterns for matching boundaries.
 	diff_match_patch.nonAlphaNumericRegex_ = /[^a-zA-Z0-9]/;
 	diff_match_patch.whitespaceRegex_ = /\s/;
 	diff_match_patch.linebreakRegex_ = /[\r\n]/;
 	diff_match_patch.blanklineEndRegex_ = /\n\r?\n$/;
 	diff_match_patch.blanklineStartRegex_ = /^\r?\n\r?\n/;
-
+	
 	/**
 	 * Reduce the number of edits by eliminating operationally trivial equalities.
 	 * @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
@@ -1851,13 +2098,13 @@
 	    }
 	    pointer++;
 	  }
-
+	
 	  if (changes) {
 	    this.diff_cleanupMerge(diffs);
 	  }
 	};
-
-
+	
+	
 	/**
 	 * Reorder and merge like edit sections.  Merge equalities.
 	 * Any edit section can move as long as it doesn't cross an equality.
@@ -1945,7 +2192,7 @@
 	  if (diffs[diffs.length - 1][1] === '') {
 	    diffs.pop();  // Remove the dummy entry at the end.
 	  }
-
+	
 	  // Second pass: look for single edits surrounded on both sides by equalities
 	  // which can be shifted sideways to eliminate an equality.
 	  // e.g: A<ins>BA</ins>C -> <ins>AB</ins>AC
@@ -1983,8 +2230,8 @@
 	    this.diff_cleanupMerge(diffs);
 	  }
 	};
-
-
+	
+	
 	/**
 	 * loc is a location in text1, compute and return the equivalent location in
 	 * text2.
@@ -2019,8 +2266,8 @@
 	  // Add the remaining character length.
 	  return last_chars2 + (loc - last_chars1);
 	};
-
-
+	
+	
 	/**
 	 * Convert a diff array into a pretty HTML report.
 	 * @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
@@ -2051,8 +2298,8 @@
 	  }
 	  return html.join('');
 	};
-
-
+	
+	
 	/**
 	 * Compute and return the source text (all equalities and deletions).
 	 * @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
@@ -2067,8 +2314,8 @@
 	  }
 	  return text.join('');
 	};
-
-
+	
+	
 	/**
 	 * Compute and return the destination text (all equalities and insertions).
 	 * @param {!Array.<!diff_match_patch.Diff>} diffs Array of diff tuples.
@@ -2083,8 +2330,8 @@
 	  }
 	  return text.join('');
 	};
-
-
+	
+	
 	/**
 	 * Compute the Levenshtein distance; the number of inserted, deleted or
 	 * substituted characters.
@@ -2116,8 +2363,8 @@
 	  levenshtein += Math.max(insertions, deletions);
 	  return levenshtein;
 	};
-
-
+	
+	
 	/**
 	 * Crush the diff into an encoded string which describes the operations
 	 * required to transform text1 into text2.
@@ -2143,8 +2390,8 @@
 	  }
 	  return text.join('\t').replace(/%20/g, ' ');
 	};
-
-
+	
+	
 	/**
 	 * Given the original text1, and an encoded string which describes the
 	 * operations required to transform text1 into text2, compute the full diff.
@@ -2200,11 +2447,11 @@
 	  }
 	  return diffs;
 	};
-
-
+	
+	
 	//  MATCH FUNCTIONS
-
-
+	
+	
 	/**
 	 * Locate the best instance of 'pattern' in 'text' near 'loc'.
 	 * @param {string} text The text to search.
@@ -2217,7 +2464,7 @@
 	  if (text == null || pattern == null || loc == null) {
 	    throw new Error('Null input. (match_main)');
 	  }
-
+	
 	  loc = Math.max(0, Math.min(loc, text.length));
 	  if (text == pattern) {
 	    // Shortcut (potentially not guaranteed by the algorithm)
@@ -2233,8 +2480,8 @@
 	    return this.match_bitap_(text, pattern, loc);
 	  }
 	};
-
-
+	
+	
 	/**
 	 * Locate the best instance of 'pattern' in 'text' near 'loc' using the
 	 * Bitap algorithm.
@@ -2248,12 +2495,12 @@
 	  if (pattern.length > this.Match_MaxBits) {
 	    throw new Error('Pattern too long for this browser.');
 	  }
-
+	
 	  // Initialise the alphabet.
 	  var s = this.match_alphabet_(pattern);
-
+	
 	  var dmp = this;  // 'this' becomes 'window' in a closure.
-
+	
 	  /**
 	   * Compute and return the score for a match with e errors and x location.
 	   * Accesses loc and pattern through being a closure.
@@ -2271,7 +2518,7 @@
 	    }
 	    return accuracy + (proximity / dmp.Match_Distance);
 	  }
-
+	
 	  // Highest score beyond which we give up.
 	  var score_threshold = this.Match_Threshold;
 	  // Is there a nearby exact match? (speedup)
@@ -2285,11 +2532,11 @@
 	          Math.min(match_bitapScore_(0, best_loc), score_threshold);
 	    }
 	  }
-
+	
 	  // Initialise the bit arrays.
 	  var matchmask = 1 << (pattern.length - 1);
 	  best_loc = -1;
-
+	
 	  var bin_min, bin_mid;
 	  var bin_max = pattern.length + text.length;
 	  var last_rd;
@@ -2311,7 +2558,7 @@
 	    bin_max = bin_mid;
 	    var start = Math.max(1, loc - bin_mid + 1);
 	    var finish = Math.min(loc + bin_mid, text.length) + pattern.length;
-
+	
 	    var rd = Array(finish + 2);
 	    rd[finish + 1] = (1 << d) - 1;
 	    for (var j = finish; j >= start; j--) {
@@ -2351,8 +2598,8 @@
 	  }
 	  return best_loc;
 	};
-
-
+	
+	
 	/**
 	 * Initialise the alphabet for the Bitap algorithm.
 	 * @param {string} pattern The text to encode.
@@ -2369,11 +2616,11 @@
 	  }
 	  return s;
 	};
-
-
+	
+	
 	//  PATCH FUNCTIONS
-
-
+	
+	
 	/**
 	 * Increase the context until it is unique,
 	 * but don't let the pattern expand beyond Match_MaxBits.
@@ -2387,7 +2634,7 @@
 	  }
 	  var pattern = text.substring(patch.start2, patch.start2 + patch.length1);
 	  var padding = 0;
-
+	
 	  // Look for the first and last matches of pattern in text.  If two different
 	  // matches are found, increase the pattern length.
 	  while (text.indexOf(pattern) != text.lastIndexOf(pattern) &&
@@ -2399,7 +2646,7 @@
 	  }
 	  // Add one chunk for good luck.
 	  padding += this.Patch_Margin;
-
+	
 	  // Add the prefix.
 	  var prefix = text.substring(patch.start2 - padding, patch.start2);
 	  if (prefix) {
@@ -2411,7 +2658,7 @@
 	  if (suffix) {
 	    patch.diffs.push([DIFF_EQUAL, suffix]);
 	  }
-
+	
 	  // Roll back the start points.
 	  patch.start1 -= prefix.length;
 	  patch.start2 -= prefix.length;
@@ -2419,8 +2666,8 @@
 	  patch.length1 += prefix.length + suffix.length;
 	  patch.length2 += prefix.length + suffix.length;
 	};
-
-
+	
+	
 	/**
 	 * Compute a list of patches to turn text1 into text2.
 	 * Use diffs if provided, otherwise compute it ourselves.
@@ -2475,7 +2722,7 @@
 	  } else {
 	    throw new Error('Unknown call format to patch_make.');
 	  }
-
+	
 	  if (diffs.length === 0) {
 	    return [];  // Get rid of the null case.
 	  }
@@ -2492,13 +2739,13 @@
 	  for (var x = 0; x < diffs.length; x++) {
 	    var diff_type = diffs[x][0];
 	    var diff_text = diffs[x][1];
-
+	
 	    if (!patchDiffLength && diff_type !== DIFF_EQUAL) {
 	      // A new patch starts here.
 	      patch.start1 = char_count1;
 	      patch.start2 = char_count2;
 	    }
-
+	
 	    switch (diff_type) {
 	      case DIFF_INSERT:
 	        patch.diffs[patchDiffLength++] = diffs[x];
@@ -2537,7 +2784,7 @@
 	        }
 	        break;
 	    }
-
+	
 	    // Update the current character count.
 	    if (diff_type !== DIFF_INSERT) {
 	      char_count1 += diff_text.length;
@@ -2551,11 +2798,11 @@
 	    this.patch_addContext_(patch, prepatch_text);
 	    patches.push(patch);
 	  }
-
+	
 	  return patches;
 	};
-
-
+	
+	
 	/**
 	 * Given an array of patches, return another array that is identical.
 	 * @param {!Array.<!diff_match_patch.patch_obj>} patches Array of Patch objects.
@@ -2579,8 +2826,8 @@
 	  }
 	  return patchesCopy;
 	};
-
-
+	
+	
 	/**
 	 * Merge a set of patches onto the text.  Return a patched text, as well
 	 * as a list of true/false values indicating which patches were applied.
@@ -2593,13 +2840,13 @@
 	  if (patches.length == 0) {
 	    return [text, []];
 	  }
-
+	
 	  // Deep copy the patches so that no changes are made to originals.
 	  patches = this.patch_deepCopy(patches);
-
+	
 	  var nullPadding = this.patch_addPadding(patches);
 	  text = nullPadding + text + nullPadding;
-
+	
 	  this.patch_splitMax(patches);
 	  // delta keeps track of the offset between the expected and actual location
 	  // of the previous patch.  If there are patches expected at positions 10 and
@@ -2687,8 +2934,8 @@
 	  text = text.substring(nullPadding.length, text.length - nullPadding.length);
 	  return [text, results];
 	};
-
-
+	
+	
 	/**
 	 * Add some padding on text start and end so that edges can match something.
 	 * Intended to be called only from within patch_apply.
@@ -2701,13 +2948,13 @@
 	  for (var x = 1; x <= paddingLength; x++) {
 	    nullPadding += String.fromCharCode(x);
 	  }
-
+	
 	  // Bump all the patches forward.
 	  for (var x = 0; x < patches.length; x++) {
 	    patches[x].start1 += paddingLength;
 	    patches[x].start2 += paddingLength;
 	  }
-
+	
 	  // Add some padding on start of first diff.
 	  var patch = patches[0];
 	  var diffs = patch.diffs;
@@ -2727,7 +2974,7 @@
 	    patch.length1 += extraLength;
 	    patch.length2 += extraLength;
 	  }
-
+	
 	  // Add some padding on end of last diff.
 	  patch = patches[patches.length - 1];
 	  diffs = patch.diffs;
@@ -2743,11 +2990,11 @@
 	    patch.length1 += extraLength;
 	    patch.length2 += extraLength;
 	  }
-
+	
 	  return nullPadding;
 	};
-
-
+	
+	
 	/**
 	 * Look through the patches and break up any which are longer than the maximum
 	 * limit of the match algorithm.
@@ -2839,8 +3086,8 @@
 	    }
 	  }
 	};
-
-
+	
+	
 	/**
 	 * Take a list of patches and return a textual representation.
 	 * @param {!Array.<!diff_match_patch.patch_obj>} patches Array of Patch objects.
@@ -2853,8 +3100,8 @@
 	  }
 	  return text.join('');
 	};
-
-
+	
+	
 	/**
 	 * Parse a textual representation of patches and return a list of Patch objects.
 	 * @param {string} textline Text representation of patches.
@@ -2886,7 +3133,7 @@
 	      patch.start1--;
 	      patch.length1 = parseInt(m[2], 10);
 	    }
-
+	
 	    patch.start2 = parseInt(m[3], 10);
 	    if (m[4] === '') {
 	      patch.start2--;
@@ -2898,7 +3145,7 @@
 	      patch.length2 = parseInt(m[4], 10);
 	    }
 	    textPointer++;
-
+	
 	    while (textPointer < text.length) {
 	      var sign = text[textPointer].charAt(0);
 	      try {
@@ -2930,8 +3177,8 @@
 	  }
 	  return patches;
 	};
-
-
+	
+	
 	/**
 	 * Class representing one patch operation.
 	 * @constructor
@@ -2948,8 +3195,8 @@
 	  /** @type {number} */
 	  this.length2 = 0;
 	};
-
-
+	
+	
 	/**
 	 * Emmulate GNU diff's format.
 	 * Header: @@ -382,8 +481,9 @@
@@ -2991,8 +3238,8 @@
 	  }
 	  return text.join('').replace(/%20/g, ' ');
 	};
-
-
+	
+	
 	// Export these global variables so that they survive Google's JS compiler.
 	// In a browser, 'this' will be 'window'.
 	// Users of node.js should 'require' the uncompressed version since Google's
@@ -3024,10 +3271,13 @@
 
 /***/ },
 /* 8 */
+/*!************************************!*\
+  !*** ./js ^.*lib\/toSubmitAt\.js$ ***!
+  \************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/toSubmitAt.js": 9
+		"./components/lib/toSubmitAt.js": 9
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -3045,8 +3295,20 @@
 
 /***/ },
 /* 9 */
+/*!*****************************************!*\
+  !*** ./js/components/lib/toSubmitAt.js ***!
+  \*****************************************/
 /***/ function(module, exports, __webpack_require__) {
 
+	/** 
+	 * switch string's format between "2015-11-11 11:11:11" (Normal) and "2015-11-11T03:11:11.000Z"(000Z)
+	 * @param {string} str - a string in format "Normal" or "000Z"
+	 * @param {boolean} [toReadable] - true: to Normal;
+	 *                                 false: to 000Z;
+	 *                                 omitted: toggle between Normal and 000Z
+	 * @return {string} resulted string representing time
+	 * independent
+	 */
 	function toSubmitAt(str, toReadable) {
 	  var date = new Date();
 	  function prefixZero(str) {
@@ -3068,7 +3330,7 @@
 	      else return to000Z();
 	  }
 	}
-
+	
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
 	    module.exports = factory();
@@ -3093,6 +3355,9 @@
 
 /***/ },
 /* 10 */
+/*!**********************************!*\
+  !*** ./js ^.*checkIsOnline\.js$ ***!
+  \**********************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
@@ -3114,8 +3379,13 @@
 
 /***/ },
 /* 11 */
+/*!****************************************!*\
+  !*** ./js/components/checkIsOnline.js ***!
+  \****************************************/
 /***/ function(module, exports, __webpack_require__) {
 
+	var httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 3);
+	
 	(function(factory) {
 	  if (typeof module === 'object' && module.exports) {
 	    // Node/CommonJS
@@ -3131,35 +3401,59 @@
 	    factory(matrixObj);
 	  }
 	})(function(matrix) {
+	  /** 
+	   * checked whether a tab is visiting matrix
+	   * if true, show the extension icon
+	   * @param {Tab} oneTab
+	   * @return {boolean} whether the tab is visiting matrix
+	   * dependent of
+	   *   {MatrixObject} matrix
+	   */
+	  function isVisitingMatrix(oneTab) {
+	    if (oneTab.url.startsWith(matrix.rootUrl)) {
+	        // show icon
+	      chrome.pageAction.show(oneTab.id);
+	      return true;
+	    } else {
+	      return false;
+	    }
+	  }
 	  var intervalId = null;
 	  chrome.webRequest.onCompleted.addListener(function(details) {
+	      // return if the request is from the background
 	    if (details.tabId == -1) return;
+	
+	      // show icon and register
 	    chrome.pageAction.show(details.tabId);
-	    var httpRequest = __webpack_require__(3);
+	
+	      // set interval to check whether we have internet access to Matrix
 	    if (intervalId === null) {
 	      intervalId = setInterval(function() {
-	          chrome.tabs.query({}, function(tabArray) {
-	            var tabId = details.tabId;
-	            tabArray.some(function(oneTab, index, self) {
-	              if (oneTab.id == tabId) {
-	                httpRequest(matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', function(err) {
+	            // send a request to Matrix every five seconds
+	          httpRequest(matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', function(err) {
+	
+	              var img19 = './img/' + ((err) ? 'offline.png' : 'online.png');
+	              var img38 = './img/' + ((err) ? 'offline.png' : 'online.png');
+	              var newTitle = (err) ? 'disconnected to Matrix' : 'click to change settings';
+	                // visit each existing tab
+	              chrome.tabs.query({}, function(tabArray) {
+	                tabArray.forEach(function(oneTab) {
+	                  if (!isVisitingMatrix(oneTab)) return;
+	                    // if the tab has registered and is visiting Matrix
+	                    // change icons and title for every tab
 	                  chrome.pageAction.setIcon({
-	                    "tabId": tabId,
+	                    "tabId": oneTab.id,
 	                    "path": {
-	                      "19": './img/' + ((err) ? 'offline.png' : 'online.png'),
-	                      "38": './img/' + ((err) ? 'offline.png' : 'online.png')
+	                      "19": img19,
+	                      "38": img38
 	                    }
 	                  });
 	                  chrome.pageAction.setTitle({
-	                    "tabId": tabId,
-	                    "title": (err) ? 'disconnected to Matrix' : 'click to change settings'
+	                    "tabId": oneTab.id,
+	                    "title": newTitle
 	                  });
 	                });
-	                return true;
-	              } else {
-	                return false;
-	              }
-	            });
+	              });
 	          });
 	      }, 5000);
 	    }
@@ -3173,3 +3467,4 @@
 
 /***/ }
 /******/ ]);
+//# sourceMappingURL=polish_back.js.map

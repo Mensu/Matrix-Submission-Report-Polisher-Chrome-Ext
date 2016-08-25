@@ -1,14 +1,18 @@
 var componentsPath = './components/';
 
 var MatrixObject = require(componentsPath + 'MatrixObject.js');
-var genReportObj = require(componentsPath + 'genReportObj.js');
-var toSubmitAt = require(componentsPath + 'toSubmitAt.js');
+var ReportObject = require(componentsPath + 'ReportObject.js');
+var toSubmitAt = require(componentsPath + 'lib/toSubmitAt.js');
 
 var matrix = new MatrixObject('https://vmatrix.org.cn');
 require(componentsPath + 'checkIsOnline.js')(matrix);
 
+
+  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
+
+
 function sendReportObjToFront(err, body, otherInfo) {
-  var reportObject = genReportObj(body);
+  var reportObject = new ReportObject(body);
   reportObject.submitTime = otherInfo.submitTime;
 
   // console.log(reportObject);
@@ -86,6 +90,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     matrix.rootUrl + '/api/courses/*/assignments/*/submissions/*'
   ]
 });
+
 
 
 

@@ -1,26 +1,40 @@
-var createElementWith = require('./createElementWith.js');
+var createElementWith = require('../lib/createElementWith.js');
 function toSwitch() {
   var button = this;
-  if (button.elementIsHiding) {
-    button.elementToShowByDefault.classList.remove('hiding');
-    button.elementToHideByDefault.classList.add('hiding');
-    button.elementIsHiding = false, button.value = button.buttonText.hide;
+  if (button.elementIsHidden) {
+    button.elementToShowByDefault.classList.remove('hidden');
+    button.elementToHideByDefault.classList.add('hidden');
+    button.elementIsHidden = false, button.value = button.buttonText.hide;
   } else {
-    button.elementToShowByDefault.classList.add('hiding');
-    button.elementToHideByDefault.classList.remove('hiding');
-    button.elementIsHiding = true, button.value = button.buttonText.show;
+    button.elementToShowByDefault.classList.add('hidden');
+    button.elementToHideByDefault.classList.remove('hidden');
+    button.elementIsHidden = true, button.value = button.buttonText.show;
   }
 }
+/** 
+ * create a button that can hide one element and show the other element when clicked
+ * @param {Node} elementToShow - element to show by default
+ * @param {Node} elementToHide - element to hide by default
+ * @param {object} buttonText - text on button, with the following format
+ * {
+ *   "show": text to guide user to show the element that is shown by default
+ *   "hide": text to guide user to show the element that is hidden by default
+ * }
+ * @return {Node} the created button
+ * dependent of 
+ *   {function} createElementWith
+ *   {function} toSwitch
+ */
 function createSwitchBtn(elementToShow, elementToHide, buttonText) {
   var switchBtn = createElementWith('input', 'switch-btn');
   switchBtn.type = 'button';
   switchBtn.buttonText = buttonText;
   switchBtn.value = buttonText.hide;
-  switchBtn.elementIsHiding = false;
+  switchBtn.elementIsHidden = false;
   switchBtn.elementToHideByDefault = elementToHide;
   switchBtn.elementToShowByDefault = elementToShow;
   switchBtn.addEventListener('click', toSwitch, false);
-  elementToHide.classList.add('hiding');
+  elementToHide.classList.add('hidden');
   return switchBtn;
 }
 (function exportModuleUniversally(root, factory) {

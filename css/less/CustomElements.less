@@ -1,6 +1,6 @@
 .plain-text-wrapper {
   background: url("https://developer.cdn.mozilla.net/static/img/blueprint-dark.fd85a7a074ae.png") top center #fafbfc;
-  border-left: 10px solid #558abb;
+  border-left: 10px solid #479ea2; // #558abb;
   padding-left: 1em;
   
   position: relative;
@@ -31,6 +31,17 @@
   color: rgba(95, 95, 95, 1);
   font-size: 0.75em;
 }
+
+.case-inner-wrapper {
+  &.hideHex {
+    .line-numbers-rows .line-numbers-one-row-binary,
+    .one-diff-content .one-diff-content-one-row-binary {
+      display: none;
+    }
+  }
+    
+}
+
 
 .line-numbers-rows {
   position: absolute;

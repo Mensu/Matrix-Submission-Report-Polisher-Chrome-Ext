@@ -1,17 +1,17 @@
-var CustomPre = require('./CustomPre.js');
+var customPre = require('./customPre.js');
 var createHideElementBtn = require('./HideElementBtn.js');
-var ViewInHexSpan = require('./ViewInHexSpan.js');
+var createViewInHexSpan = require('./ViewInHexSpan.js');
 var createSwitchBtn = require('./SwitchBtn.js');
-function CustomElements() {}
-CustomElements.extendFrom = function(parent) {
-  for (var name in parent) this.prototype[name] = parent[name];
-}
-CustomElements.extendFrom(CustomPre);
-CustomElements.extendFrom({
-  "createElementWith": require('./createElementWith'),
+var customElements = {
+  "extendFrom": function(parent) {
+    for (var name in parent) this[name] = parent[name];
+  }
+};
+customElements.extendFrom(customPre);
+customElements.extendFrom({
+  "createElementWith": require('../lib/createElementWith'),
   "createHideElementBtn": createHideElementBtn,
-  "createViewInHexSpan": ViewInHexSpan.createViewInHexSpan,
-  "createHexHidingStyle": ViewInHexSpan.createHexHidingStyle,
+  "createViewInHexSpan": createViewInHexSpan,
   "createSwitchBtn": createSwitchBtn
 });
 
@@ -29,9 +29,9 @@ CustomElements.extendFrom({
     });
   */
   else if (typeof(exports) === 'object')
-    exports['CustomElements'] = factory();
+    exports['customElements'] = factory();
   else
-    root['CustomElements'] = factory();
+    root['customElements'] = factory();
 })(this, function factory() {
-  return new CustomElements();
+  return customElements;
 });

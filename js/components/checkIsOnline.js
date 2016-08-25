@@ -1,3 +1,5 @@
+var httpRequest = require('./lib/httpRequest.js');
+
 (function(factory) {
   if (typeof module === 'object' && module.exports) {
     // Node/CommonJS
@@ -13,35 +15,59 @@
     factory(matrixObj);
   }
 })(function(matrix) {
+  /** 
+   * checked whether a tab is visiting matrix
+   * if true, show the extension icon
+   * @param {Tab} oneTab
+   * @return {boolean} whether the tab is visiting matrix
+   * dependent of
+   *   {MatrixObject} matrix
+   */
+  function isVisitingMatrix(oneTab) {
+    if (oneTab.url.startsWith(matrix.rootUrl)) {
+        // show icon
+      chrome.pageAction.show(oneTab.id);
+      return true;
+    } else {
+      return false;
+    }
+  }
   var intervalId = null;
   chrome.webRequest.onCompleted.addListener(function(details) {
+      // return if the request is from the background
     if (details.tabId == -1) return;
+
+      // show icon and register
     chrome.pageAction.show(details.tabId);
-    var httpRequest = require('./httpRequest.js');
+
+      // set interval to check whether we have internet access to Matrix
     if (intervalId === null) {
       intervalId = setInterval(function() {
-          chrome.tabs.query({}, function(tabArray) {
-            var tabId = details.tabId;
-            tabArray.some(function(oneTab, index, self) {
-              if (oneTab.id == tabId) {
-                httpRequest(matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', function(err) {
+            // send a request to Matrix every five seconds
+          httpRequest(matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', function(err) {
+
+              var img19 = './img/' + ((err) ? 'offline.png' : 'online.png');
+              var img38 = './img/' + ((err) ? 'offline.png' : 'online.png');
+              var newTitle = (err) ? 'disconnected to Matrix' : 'click to change settings';
+                // visit each existing tab
+              chrome.tabs.query({}, function(tabArray) {
+                tabArray.forEach(function(oneTab) {
+                  if (!isVisitingMatrix(oneTab)) return;
+                    // if the tab has registered and is visiting Matrix
+                    // change icons and title for every tab
                   chrome.pageAction.setIcon({
-                    "tabId": tabId,
+                    "tabId": oneTab.id,
                     "path": {
-                      "19": './img/' + ((err) ? 'offline.png' : 'online.png'),
-                      "38": './img/' + ((err) ? 'offline.png' : 'online.png')
+                      "19": img19,
+                      "38": img38
                     }
                   });
                   chrome.pageAction.setTitle({
-                    "tabId": tabId,
-                    "title": (err) ? 'disconnected to Matrix' : 'click to change settings'
+                    "tabId": oneTab.id,
+                    "title": newTitle
                   });
                 });
-                return true;
-              } else {
-                return false;
-              }
-            });
+              });
           });
       }, 5000);
     }

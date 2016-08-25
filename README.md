@@ -2,13 +2,13 @@
 
 # Thanks To
 
-- ``Chen Xu`` without whose generously lending me his netID, this extension wouldn't have come out this soon.
+- [``Chan Hsu``](https://github.com/chenxu2048) without whose generously lending me his netID, this extension wouldn't have come out this soon.
 
 - [``kpdecker``](https://github.com/kpdecker/jsdiff) whose diff implementation lays a foundation for this extension
 
-# Downloads
+# Downloads (unavailable)
 
-[``v0-1-4.crx``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/releases/download/v0.1.4/Matrix-Submission-Report-Polisher-Chrome-Ext-v0-1-4.crx)
+
 
 # Installation
 
@@ -26,26 +26,30 @@
 
 # demo
 
-- compile check
+- (new) google tests (on 2016-08-25)
+
+![google tests](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-google-tests.png)
+
+- compile check (on 2016-08-10)
 
 ![compile check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-compile.png)
 
-- static check
+- static check (on 2016-08-10)
 
 ![static check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-static.png)
 
-- standard tests/random tests
+- standard tests/random tests (on 2016-08-10)
 
 ![standard tests/random tests](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-tests.png)
 
-- difference
+- difference (on 2016-08-10)
 
 ![difference](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff1.png)
 
-- difference with binary
+- difference with binary (on 2016-08-10)
 
 ![difference](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff2.png)
 
-- memory check
+- memory check (on 2016-08-10)
 
 ![memory check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-memory.png)

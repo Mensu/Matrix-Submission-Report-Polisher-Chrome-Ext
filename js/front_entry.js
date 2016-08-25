@@ -1,15 +1,16 @@
 var componentsPath = './components/';
-var polisher = require(componentsPath + 'Polisher.js');
+var polisher = require(componentsPath + 'polisher.js');
 var createPolishedReportDiv = polisher.getPolishedReportDiv;
-var customElements = require(componentsPath + 'CustomElements.js');
-document.body.appendChild(require(componentsPath + 'backToTop.js'));
+var customElements = require(componentsPath + 'elements/customElements.js');
+document.body.appendChild(require(componentsPath + 'elements/backToTop.js'));
 
-
+  // get the reportObject from the back,
+  // use it to create polished report div and attach it to the page
 chrome.runtime.onMessage.addListener(function(body, sender, callback) {
 try {
   if (body.signal == 'start') {
     var reportObject = body.reportObject;
-    var reportWrapper = document.querySelector('.matrix-content[ng-show*="grade"] .matrix-content-wrapper')
+    var reportWrapper = document.querySelector('.course-assignment-report-content-wrapper')
     if (reportWrapper === null){
       return callback("front couldn't find the grade Tab.");
     }
@@ -33,11 +34,11 @@ try {
             "hide": 'show original report'
           });
 
-      // insert newly created div and perform initialzation
+      // insert newly created div and perform initialization
     reportWrapper.insertBefore(switchBtn, originalReport);
     reportWrapper.appendChild(polishedReport);
     if (polishedReport.sideNav) {
-      polishedReport.sideNav.getInitialized(polishedReport.endSelector, 'ui-view.ng-scope');
+      polishedReport.sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
     }
     
       // rid the wrapper of the old divs

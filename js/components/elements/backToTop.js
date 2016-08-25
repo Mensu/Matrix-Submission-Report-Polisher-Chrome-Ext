@@ -1,4 +1,6 @@
-var createElementWith = require('./createElementWith.js');
+var createElementWith = require('../lib/createElementWith.js');
+
+  // create backToTop button
 var backToTop = createElementWith('div', 'backToTop-wrapper',
   createElementWith('div', 'backToTop-btn', [
       createElementWith('div', 'arrow-upward'),
@@ -7,21 +9,25 @@ var backToTop = createElementWith('div', 'backToTop-wrapper',
   )
 );
 backToTop.id = 'backToTop';
+
+  // scroll event
 backToTop.addEventListener('click', function () {
   var distanceFromTop = document.body.scrollTop;
   var pace = distanceFromTop / 33.3;
   window.requestAnimationFrame((function () {
-    var calculatedScrollTop = parseInt(document.body.scrollTop) - pace;
-    document.body.scrollTop = ((calculatedScrollTop < 0) ? 0 : calculatedScrollTop);
-    if (parseInt(document.body.scrollTop) > 0) window.requestAnimationFrame(arguments.callee);
+    var resultedScrollTop = document.body.scrollTop - pace;
+    document.body.scrollTop = ((resultedScrollTop < 0) ? 0 : resultedScrollTop);
+    if (document.body.scrollTop > 0) window.requestAnimationFrame(arguments.callee);
   }));
 }, false);
+
 backToTop.toShow = function() {
-  this.classList.remove('hiding');
+  this.classList.remove('hidden');
 };
 backToTop.toHide = function() {
-  this.classList.add('hiding');
+  this.classList.add('hidden');
 };
+
 (function exportModuleUniversally(root, factory) {
   if (typeof(exports) === 'object' && typeof(module) === 'object')
     module.exports = factory();

@@ -12,10 +12,12 @@
   right: 30px;
   &.fold {
     background-color: rgba(255, 255, 255, 0);
-    .nav-toggle {
-      background-color: rgba(255, 255, 255, 0.8);
-      &::before {
-        content: "+";
+    .nav-toggle-wrapper {
+      .nav-toggle {
+        background-color: rgba(255, 255, 255, 0.8);
+        &::before {
+          content: "+";
+        }
       }
     }
     .nav-body {
@@ -28,6 +30,7 @@
     &:hover {
       color: #0085a1;
     }
+    
   }
 
   .nav-toggle-wrapper {
@@ -73,7 +76,12 @@
         white-space: nowrap;
         text-overflow: ellipsis;
       }
-
+      &.non-pass a {
+        color: red;
+        &:hover {
+          color: #0085a1;
+        }
+      }
       &.h1_nav {
         margin-left: 0;
         font-size: 15px;

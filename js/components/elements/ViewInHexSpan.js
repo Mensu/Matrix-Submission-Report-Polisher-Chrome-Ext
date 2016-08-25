@@ -1,23 +1,25 @@
-var createElementWith = require('./createElementWith.js');
-function createHexHidingStyle(diffId) {
-  return createElementWith('style', 'hexHidingStyle',
-    '#' + diffId + ' .line-numbers-rows .line-numbers-one-row-binary {display: none;}'
-      + '#' + diffId + ' .one-diff-content .one-diff-content-one-row-binary {display: none;}');
-}
-function toViewInHex() {
+var createElementWith = require('../lib/createElementWith.js');
+function toggleViewInHex() {
   var checkbox = this;
-  var parent = checkbox.parentNode.parentNode, diffId = parent.id;
-  var hexHidingStyle = parent.querySelector('.hexHidingStyle');
-  if (hexHidingStyle) parent.removeChild(hexHidingStyle);
-  else parent.insertBefore(createHexHidingStyle(diffId), parent.childNodes[0]);
+  var parent = checkbox.parentNode.parentNode;
+  if (checkbox.checked) parent.classList.remove('hideHex');
+  else parent.classList.add('hideHex');
 }
+/** 
+ * create a span that can toggle to view the text in hex
+ * @param {string} checkboxId
+ * @return {Node} the created span
+ * dependent of 
+ *   {function} createElementWith
+ *   {function} toggleViewInHex
+ */
 function createViewInHexSpan(checkboxId) {
   var checkbox = createElementWith('input', 'view-in-hex-checkbox');
   checkbox.type = 'checkbox';
   var label = createElementWith('label', 'view-in-hex-label', 'view in hex');
   var wrapper = createElementWith('span', 'view-in-hex-wrapper', [checkbox, label]);
   label.htmlFor = checkbox.id = 'view-in-hex-' + checkboxId;
-  checkbox.addEventListener('change', toViewInHex, false);
+  checkbox.addEventListener('change', toggleViewInHex, false);
   return wrapper;
 }
 
@@ -35,12 +37,9 @@ function createViewInHexSpan(checkboxId) {
     });
   */
   else if (typeof(exports) === 'object')
-    exports['ViewInHexSpan'] = factory();
+    exports['createViewInHexSpan'] = factory();
   else
-    root['ViewInHexSpan'] = factory();
+    root['createViewInHexSpan'] = factory();
 })(this, function factory() {
-  return {
-    "createViewInHexSpan": createViewInHexSpan,
-    "createHexHidingStyle": createHexHidingStyle
-  }
+  return createViewInHexSpan;
 });

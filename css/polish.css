@@ -1,18 +1,31 @@
 pre.full-score {
   white-space: pre-wrap;
 }
+input.switch-btn {
+  margin-bottom: 10px;
+}
 .polished-report-success {
   padding-right: 8em;
 }
 .polished-report-success pre.success {
   font-family: Courier, Arial;
 }
-.polished-report-success .report-section div.score {
+.polished-report-success #matrix-programming-report .report-section div.score {
   font-family: "Heiti SC", Arial;
 }
-.polished-report-success .report-section .test-content .report-detail > div.failed-cases-summary {
+.polished-report-success #matrix-programming-report .report-section .test-content {
+  max-height: none;
+}
+.polished-report-success #matrix-programming-report .report-section .test-content .report-detail {
+  max-height: none;
+}
+.polished-report-success #matrix-programming-report .report-section .test-content .report-detail > div.failed-cases-summary {
   font-family: Courier, Arial;
   font-size: 20px;
+}
+.polished-report-success #matrix-programming-report .report-section .test-content .report-detail .error-detail {
+  max-height: none;
+  margin-top: 10px;
 }
 .test-content .report-detail > pre,
 .report-section .test-content .report-detail > div {
@@ -34,13 +47,17 @@ pre.full-score {
   font-family: Courier, Arial;
   margin-top: 0;
   margin-bottom: 0;
+  font-size: 25px !important;
 }
-.tests-check-summary .index {
+.google-test-case-wrapper .index {
+  font-family: Courier, Arial;
+  margin-top: 0;
+  margin-bottom: 0;
   font-size: 25px !important;
 }
 .plain-text-wrapper {
   background: url("https://developer.cdn.mozilla.net/static/img/blueprint-dark.fd85a7a074ae.png") top center #fafbfc;
-  border-left: 10px solid #558abb;
+  border-left: 10px solid #479ea2;
   padding-left: 1em;
   position: relative;
   word-wrap: normal;
@@ -68,6 +85,10 @@ pre.full-score {
 .one-diff-content-one-row-binary {
   color: #5f5f5f;
   font-size: 0.75em;
+}
+.case-inner-wrapper.hideHex .line-numbers-rows .line-numbers-one-row-binary,
+.case-inner-wrapper.hideHex .one-diff-content .one-diff-content-one-row-binary {
+  display: none;
 }
 .line-numbers-rows {
   position: absolute;
@@ -116,10 +137,10 @@ pre.full-score {
 .side-nav.fold {
   background-color: rgba(255, 255, 255, 0);
 }
-.side-nav.fold .nav-toggle {
+.side-nav.fold .nav-toggle-wrapper .nav-toggle {
   background-color: rgba(255, 255, 255, 0.8);
 }
-.side-nav.fold .nav-toggle::before {
+.side-nav.fold .nav-toggle-wrapper .nav-toggle::before {
   content: "+";
 }
 .side-nav.fold .nav-body {
@@ -173,6 +194,12 @@ pre.full-score {
   text-decoration: none;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.side-nav .nav-body li.non-pass a {
+  color: red;
+}
+.side-nav .nav-body li.non-pass a:hover {
+  color: #0085a1;
 }
 .side-nav .nav-body li.h1_nav {
   margin-left: 0;
@@ -261,5 +288,11 @@ pre.full-score {
 
 .hiding {
   display: none;
+}
+.hidden {
+  display: none;
+}
+.non-pass {
+  color: red;
 }
 /*# sourceMappingURL=polish.css.map */
