@@ -434,15 +434,6 @@
 	      return testsDetail(phaseInfo, false);
 	    }
 	    
-	    /** 
-	     * get a div 
-	     * @param {ReportObject} reportObject - a submission report Object
-	     * @return {Node} the the main submission output div
-	     * dependent of
-	     *   {function} createElementWith
-	     *   {function} toLinenumString
-	     *   {function} createDiffPre
-	     */
 	    function getScoreDiv(phase, score, total, pass) {
 	      var nodesToBeAppended = [
 	        createElementWith('span', 'score-text', phase.description + " : You've got "),

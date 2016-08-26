@@ -45,31 +45,31 @@ ReportObject.prototype = {
     if (body.err) {
       reportObject.msg = 'Error: ' + body.msg;
       reportObject.grade = -2;
-      console.log('body:', body);
+      console.log('body (body.err):', body);
 
     } else if (body.status == 'SUBMISSION_NOT_FOUND') {
-      reportObject.msg = 'no submissions yet';
+      reportObject.msg = 'No submissions yet';
       reportObject.grade = -2;
-      console.log('body:', body);
+      console.log('body (no submissions yet):', body);
 
-    } else if (data === undefined || data === null) {
-      reportObject.msg = 'Error: body.data is empty';
-      reportObject.grade = -2;
-      console.log('body:', body);
+    } else if (data === null) {
+      reportObject.grade = 'Not judged yet';
+      // reportObject.grade = -2;
+      console.log('body (not judged yet):', body);
 
-    } else if (data.grade == -1 || data.grade === null) {
-      reportObject.grade = 'under judging';
-      console.log('body.data: (submission under judging)', body.data);
+    } else if (data === null || data.grade == -1 || data.grade === null) {
+      reportObject.grade = 'Under judging';
+      console.log('body.data (submission under judging):', body.data);
 
     } else if (data.report === undefined || data.report === null) {
       reportObject.msg = 'Error: data.report is empty';
       reportObject.grade = -2;
-      console.log('body.data:', body.data);
+      console.log('body.data (body.data is empty):', body.data);
 
     } else if (data.report.error) {
       reportObject.msg = 'Error: ' + data.report.error;
       reportObject.grade = -2;
-      console.log('report', data.report);
+      console.log('report (report.error):', data.report);
     }
 
     var report = null;

@@ -1,24 +1,47 @@
 /** 
- * make a simple http GET request
+ * @description make a simple http request
+ * @param {string} method
  * @param {string} url
- * @param {function} callback - a function that looks like this:
+ * @param {Object} param
+ * @param {function(boolean, Object):void} callback - a function that looks like this:
  *      @param {boolean} error
- *      @param {object} [response] - present when no error occurred
+ *      @param {Object} [response] - present when no error occurred
  *   function(error, response) {
  * 
  *   }
- * @return {undefined}
+ * @return {void}
  * independent
  */
-
-function httpRequest(url, callback) {
+function httpRequest(method, url, param, callback) {
   var xhr = new XMLHttpRequest();
-  xhr.open('get', url, true);
+  method = method.toLowerCase();
+  if (method == 'get') {
+      // convert param to ?key1=value1&key2=value2
+    var temp = '';
+    if (param) {
+      for (var key in param) {
+        temp += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(param[key]);
+      }
+      if (temp.length) {
+        temp = temp.replace(/^&/, '?');
+        if (url[url.lastIndexOf('/') - 1] == '/') url += '/';
+        url += temp;
+      }
+    }
+    param = null;  
+    
+  } else if (method == 'post') {
+    param = JSON.stringify(param);
+  }
+  xhr.open(method, url, true);
+  if (method == 'post') {
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');    
+  }
   xhr.onreadystatechange = function() {
     if (xhr.readyState == 4) return callback(false, this.response);
   }
   xhr.onerror = function() { return callback(true); }
-  xhr.send();
+  xhr.send(param);
 }
 
 (function exportModuleUniversally(root, factory) {

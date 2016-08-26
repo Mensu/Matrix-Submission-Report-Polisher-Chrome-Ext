@@ -8,9 +8,6 @@ var matrix = new MatrixObject('https://vmatrix.org.cn');
 require(componentsPath + 'checkIsOnline.js')(matrix);
 
 
-  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
-
-
 function sendReportObjToFront(err, body, otherInfo) {
   var reportObject = new ReportObject(body);
   reportObject.submitTime = otherInfo.submitTime;
@@ -47,7 +44,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
       "problemId": problemId,
       "submissionId": submissionId
     };
-  matrix.getSubmissionsInfo(param, param, function(err, body, otherInfo) {
+  matrix.getSubmissionsList(param, param, function(err, body, otherInfo) {
       body = JSON.parse(body);
 
         // get submission time
@@ -87,7 +84,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
 
 }, {
   "urls": [
-    matrix.rootUrl + '/api/courses/*/assignments/*/submissions/*'
+    matrix.rootUrl + 'api/courses/*/assignments/*/submissions/*'
   ]
 });
 

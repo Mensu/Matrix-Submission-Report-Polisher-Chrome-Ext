@@ -44,7 +44,7 @@ var httpRequest = require('./lib/httpRequest.js');
     if (intervalId === null) {
       intervalId = setInterval(function() {
             // send a request to Matrix every five seconds
-          httpRequest(matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', function(err) {
+          httpRequest('get', matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', null, function(err) {
 
               var img19 = './img/' + ((err) ? 'offline.png' : 'online.png');
               var img38 = './img/' + ((err) ? 'offline.png' : 'online.png');
@@ -73,7 +73,7 @@ var httpRequest = require('./lib/httpRequest.js');
     }
   }, {
     "urls": [
-      matrix.rootUrl + '/*'
+      matrix.rootUrl + '*'
     ]
   });
 });
