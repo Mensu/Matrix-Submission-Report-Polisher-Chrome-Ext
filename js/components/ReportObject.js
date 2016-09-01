@@ -36,11 +36,6 @@ ReportObject.prototype = {
       "google tests": null
     };
 
-      // wrap to an object
-    if (typeof(body) == 'string') {
-      body = JSON.parse(body);
-    }
-
     var data = body.data;
     if (body.err) {
       reportObject.msg = 'Error: ' + body.msg;
@@ -51,13 +46,17 @@ ReportObject.prototype = {
       reportObject.msg = 'No submissions yet';
       reportObject.grade = -2;
       console.log('body (no submissions yet):', body);
-
+    } else if (body.status == 'NOT_AUTHORIZED') {
+      reportObject.msg = 'Not logged in';
+      reportObject.grade = -2;
+      console.log('body (not logged in):', body);
+      return null;
     } else if (data === null) {
-      reportObject.grade = 'Not judged yet';
-      // reportObject.grade = -2;
+      reportObject.msg = 'Not judged yet';
+      reportObject.grade = -2;
       console.log('body (not judged yet):', body);
 
-    } else if (data === null || data.grade == -1 || data.grade === null) {
+    } else if (data.grade == -1 || data.grade === null) {
       reportObject.grade = 'Under judging';
       console.log('body.data (submission under judging):', body.data);
 
@@ -79,7 +78,7 @@ ReportObject.prototype = {
       report = data.report;
     }
 
-    reportObject.submitTime = data.submitTime;
+    // reportObject.submitTime = data.submitTime;
 
     /** 
      * return a string 'missing' if str is undefined, or return str itself otherwise
@@ -209,7 +208,7 @@ ReportObject.prototype = {
           ++failedCaseNum;
         }
 
-        if ( ({}).toString.apply(errors) != '[object Array]') errors = new Array(errors);
+        if ( Object.prototype.toString.apply(errors) != '[object Array]') errors = new Array(errors);
         // for (j in errors) {
         errors.forEach(function(oneError, j) {
           // var oneError = errors[j];
@@ -231,15 +230,15 @@ ReportObject.prototype = {
             }
           }
 
-          if ( ({}).toString.apply(auxwhat) != '[object Array]' ) auxwhat = [auxwhat];
+          if ( Object.prototype.toString.apply(auxwhat) != '[object Array]' ) auxwhat = [auxwhat];
           content += 'Behavior: ' + wrapWithMissing(behavior) + '\n';
-          if ( ({}).toString.apply(stack) != '[object Array]' ) stack = [stack];
+          if ( Object.prototype.toString.apply(stack) != '[object Array]' ) stack = [stack];
 
           // for (k in stack) {
           stack.forEach(function(frame, index) {
             // var frame = stack[k].frame;
             frame = frame.frame;
-            if ( ({}).toString.apply(frame) != '[object Array]' ) frame = [frame];
+            if ( Object.prototype.toString.apply(frame) != '[object Array]' ) frame = [frame];
             if (index == 0) content += '  ';
             else content += ' ' + auxwhat[index - 1] + ':\n  ';
             // for (l in frame) {
@@ -268,16 +267,26 @@ ReportObject.prototype = {
       var failedCaseNum = 0;
       info.forEach(function(oneTest, index, self) {
         oneTest = oneTest.gtest;
-        var oneCase = {};
+        var oneCase = {}, re = false;
         oneCase['grade'] = oneTest.grade;
         oneCase['info'] = oneTest.info;
+        if (oneTest.failure && oneTest.failure.length == 1 && oneTest.failure[0].error == 'Run time error') {
+          re = true;
+          oneCase.info = {};
+        }
         for (var name in oneCase.info) {
           var description = oneCase.info[name];
           oneCase.info[name] = {};
-          oneCase.info[name]['pass'] = true;
+          oneCase.info[name]['pass'] = !re;
           oneCase.info[name]['description'] = description;
         }
-        if (oneTest.failure != null) {
+        if (re) {
+          oneCase.info['Error'] = {
+            "pass": false,
+            "description": oneTest.failure[0].error
+          }
+          ++failedCaseNum;
+        } else if (oneTest.failure != null) {
           oneTest.failure.forEach(function(oneFailure) {
             for (var name in oneFailure) {
               oneCase.info[name]['pass'] = false;
@@ -296,7 +305,7 @@ ReportObject.prototype = {
     var toContinue = true;
 
     function refactorPhase(phase, func) {
-      if (toContinue && report[phase] && report[phase][phase]) {
+      if (toContinue && report && report[phase] && report[phase][phase]) {
         toContinue = report[phase]['continue'];
         reportObject[phase] = {};
         reportObject[phase]['grade'] = report[phase].grade;

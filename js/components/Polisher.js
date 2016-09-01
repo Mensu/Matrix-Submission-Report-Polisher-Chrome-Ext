@@ -17,9 +17,11 @@ var polisher = {
     var timeLimit = (configs.limits.time === undefined) ? null : configs.limits.time + 'ms';
     var totalPoints = configs.totalPoints;
 
-
+    function wrap(str) {
+      return str === undefined ? '(missing)' : str;
+    }
     var report = createElementWith('div', ['report-success', 'polished-report-success']);
-    var submitTimeText = reportObject.submitTime ? '(submitted at ' + reportObject.submitTime + ')' : '';
+    var submitTimeText = reportObject.submitTime === null ? '' : '(submitted at ' + wrap(reportObject.submitTime) + ')';
     if (reportObject.msg !== null) {
       report.appendChild(createElementWith('pre', 'success', reportObject.msg + '  ' + submitTimeText));
       return report;
@@ -40,6 +42,7 @@ var polisher = {
       "OL": 'Output Limit Exceeded',
       "RE": 'Runtime Error'
     };
+    
     
 
     function compileCheckDetail(phaseInfo) {
@@ -329,7 +332,7 @@ var polisher = {
                   {
                     "id": 'google tests',
                     "getDetail": googleTestsDetail,
-                    "description": 'Google tests',
+                    "description": 'Google Tests',
                     "canShowCR": true
                   }];
 
@@ -338,13 +341,13 @@ var polisher = {
       var pass = reportObject[onePhase.id].pass
           grade = reportObject[onePhase.id].grade;
       var reportSection = createElementWith('div', [onePhase.id.replace(/ /g, '-'), 'report-section'],
-        getScoreDiv(onePhase, grade, totalPoints[onePhase.id], pass));
+        getScoreDiv(onePhase, grade, wrap(totalPoints[onePhase.id]), pass));
 
       var scoreTextOnNav = null;
       if (pass) {
         scoreTextOnNav = ' (' + grade + ')';
       } else {
-        scoreTextOnNav = ' (' + grade + '/' + totalPoints[onePhase.id] + ')';
+        scoreTextOnNav = ' (' + grade + '/' + wrap(totalPoints[onePhase.id]) + ')';
       }
       reportSection.id = 'report-' + onePhase.id.replace(/ /g, '-');
       sideNav.add(onePhase.description + scoreTextOnNav, reportSection.id, 1, (pass ? undefined : 'non-pass'));
@@ -364,8 +367,54 @@ var polisher = {
       var reportDetail = createElementWith('div', 'report-detail', detail);
       testContent.appendChild(reportDetail), reportSection.appendChild(testContent), sectionsWrapper.appendChild(reportSection);
     });
-    report['endSelector'] = '#' + sectionsWrapper.lastElementChild.id;
+    if (sectionsWrapper.lastElementChild) report['endSelector'] = '#' + sectionsWrapper.lastElementChild.id;
+    var fullGrade = 0;
+    for (var item in totalPoints) {
+      if (typeof(totalPoints[item]) == 'number') fullGrade += totalPoints[item];
+    }
+    sideNav.navTitle.textContent += ' (' + (isNaN(Number(reportObject.grade)) ? '0' : reportObject.grade) + '/' + fullGrade + ')';
     report['sideNav'] = sideNav;
+    report.appendChild(sideNav.getNode());
+    return report;
+  },
+  "getFilesCmpDiv": function(filesDiff, configs) {
+    var report = createElementWith('div', ['report-success', 'polished-report-success']);
+    var sectionsWrapper = createElementWith('div');
+    sectionsWrapper.id = 'matrix-programming-report';
+    report.appendChild(createElementWith('matrix-report', 'polished-ver', sectionsWrapper));
+    var sideNav = new SideNav();
+
+    filesDiff.files.forEach(function(oneCommonFile) {
+      var suffix = '';
+      if (oneCommonFile.diff && oneCommonFile.diff.length == 1 && oneCommonFile.diff[0].common == true) {
+        suffix = ' (Same)';
+      }
+      var reportSection = createElementWith('div', ['compile-check', 'report-section'],
+        createElementWith('div', ['compile-check-score', 'score'], oneCommonFile.name + suffix));
+      var scoreTextOnNav = null;
+      reportSection.id = 'files-cmp-report-' + oneCommonFile.name.replace(/ |\./g, '-');
+      sideNav.add(oneCommonFile.name + suffix, reportSection.id, 1, (suffix.length ? undefined : 'non-pass'));
+      
+      var testContent = createElementWith('div', 'test-content');
+      var detail = document.createDocumentFragment();
+      var caseOuterWrapper = createElementWith('div', 'case-outer-wrapper');
+      var caseInnerWrapper = createElementWith('div', 'case-inner-wrapper');
+      var diffPre = createDiffPre(oneCommonFile.diff, configs);
+      var hideBtn = createHideElementBtn(diffPre);
+      caseInnerWrapper.appendChild(hideBtn);
+      if (suffix.length) hideBtn.click();
+      caseInnerWrapper.appendChild(createViewInHexSpan('view-hex-span-' + oneCommonFile.name.replace(/ |\./g, '-')));
+      caseInnerWrapper.classList.add('hideHex');
+      var errorContent = createElementWith('pre', 'error-content', diffPre); 
+      caseInnerWrapper.appendChild(errorContent);
+      caseOuterWrapper.appendChild(caseInnerWrapper), detail.appendChild(caseOuterWrapper);
+      var reportDetail = createElementWith('div', 'report-detail', detail);
+      testContent.appendChild(reportDetail), reportSection.appendChild(testContent), sectionsWrapper.appendChild(reportSection);
+    });
+
+    if (sectionsWrapper.lastElementChild) report['endSelector'] = '#' + sectionsWrapper.lastElementChild.id;
+    report['sideNav'] = sideNav;
+    sideNav.navTitle.textContent = 'Files Comparison';
     report.appendChild(sideNav.getNode());
     return report;
   }

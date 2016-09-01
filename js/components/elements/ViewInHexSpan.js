@@ -19,7 +19,7 @@ function createViewInHexSpan(checkboxId) {
   var label = createElementWith('label', 'view-in-hex-label', 'view in hex');
   var wrapper = createElementWith('span', 'view-in-hex-wrapper', [checkbox, label]);
   label.htmlFor = checkbox.id = 'view-in-hex-' + checkboxId;
-  checkbox.addEventListener('change', toggleViewInHex, false);
+  checkbox.addEventListener('click', toggleViewInHex, false);
   return wrapper;
 }
 

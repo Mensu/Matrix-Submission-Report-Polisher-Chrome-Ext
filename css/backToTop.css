@@ -41,3 +41,6 @@
   background-color: #404040;
 }
 #backtotop .backtotop-btn:hover .vertical-stick {  background-color: #0085a1;  }
+.files-diff-part #course-statistics .statistics-wrapper .statistics-container {
+  width: calc(100% - 36px);
+}

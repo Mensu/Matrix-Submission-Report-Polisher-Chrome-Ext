@@ -48,10 +48,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var componentsPath = './components/';
-	var polisher = __webpack_require__(/*! . */ 12)(componentsPath + 'polisher.js');
+	var polisher = __webpack_require__(/*! . */ 14)(componentsPath + 'polisher.js');
+	var FilesCmp = __webpack_require__(/*! . */ 25)(componentsPath + 'FilesCmp.js');
 	var createPolishedReportDiv = polisher.getPolishedReportDiv;
-	var customElements = __webpack_require__(/*! . */ 23)(componentsPath + 'elements/customElements.js');
-	document.body.appendChild(__webpack_require__(/*! . */ 24)(componentsPath + 'elements/backToTop.js'));
+	var customElements = __webpack_require__(/*! . */ 27)(componentsPath + 'elements/customElements.js');
+	document.body.appendChild(__webpack_require__(/*! . */ 28)(componentsPath + 'elements/backToTop.js'));
 	
 	  // get the reportObject from the back,
 	  // use it to create polished report div and attach it to the page
@@ -59,7 +60,8 @@
 	try {
 	  if (body.signal == 'start') {
 	    var reportObject = body.reportObject;
-	    var reportWrapper = document.querySelector('.course-assignment-report-content-wrapper')
+	    var reportWrapper = document.querySelector('.course-assignment-report-content-wrapper');
+	    var matrixSecondBar = document.querySelector('#matrix-second-bar ul');
 	    if (reportWrapper === null){
 	      return callback("front couldn't find the grade Tab.");
 	    }
@@ -86,8 +88,19 @@
 	      // insert newly created div and perform initialization
 	    reportWrapper.insertBefore(switchBtn, originalReport);
 	    reportWrapper.appendChild(polishedReport);
-	    if (polishedReport.sideNav) {
-	      polishedReport.sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+	    
+	    var sideNav = polishedReport.sideNav;
+	    if (sideNav) {
+	      sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+	      var gradeNavTab = matrixSecondBar.querySelector('li[ng-click*="grade"]');
+	      gradeNavTab['sideNav'] = sideNav;
+	      if (!gradeNavTab.sideNavFixListenerAdded) {
+	        gradeNavTab.addEventListener('click', function() {
+	          this.sideNav.fix();
+	        }, false);
+	        gradeNavTab['sideNavFixListenerAdded'] = true;
+	      }
+	        
 	    }
 	    
 	      // rid the wrapper of the old divs
@@ -100,6 +113,24 @@
 	      // auto polish
 	    if (!body.configs.autoPolish) switchBtn.click();
 	    
+	      // files comparison
+	    if (body.submissionsList && body.submissionsList.length > 1) {
+	      var tabsContentWrapper = document.querySelector('.course-assignment-programming-wrapper');
+	      var element = tabsContentWrapper.querySelector('#files-cmp-tab');
+	      if (element) {
+	        if (body.problemInfo) {
+	          element.filesCmpTab.updateChoicesTable(body.submissionsList);
+	        }
+	      } else {
+	        var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
+	        var element = filesCmpTab.tab;
+	        element.id = 'files-cmp-tab';
+	        tabsContentWrapper.appendChild(element);
+	
+	        matrixSecondBar.appendChild(FilesCmp.createSecondBarLi('Files Comparison', element));
+	      }
+	
+	    }
 	    return callback('front has got the reportObject and attached the polished report to the grade tab!');
 	  }
 	} catch (e) {
@@ -119,17 +150,78 @@
 /* 6 */,
 /* 7 */,
 /* 8 */,
-/* 9 */,
+/* 9 */
+/*!*****************************************!*\
+  !*** ./js/components/lib/toSubmitAt.js ***!
+  \*****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	/** 
+	 * switch string's format between "2015-11-11 11:11:11" (Normal) and "2015-11-11T03:11:11.000Z"(000Z)
+	 * @param {string} str - a string in format "Normal" or "000Z"
+	 * @param {boolean} [toReadable] - true: to Normal;
+	 *                                 false: to 000Z;
+	 *                                 omitted: toggle between Normal and 000Z
+	 * @return {string} resulted string representing time
+	 * independent
+	 */
+	function toSubmitAt(str, toReadable) {
+	  var date = new Date();
+	  function prefixZero(str) {
+	    return (String(str).length - 1) ? String(str) : '0' + str;
+	  }
+	  function to000Z() {
+	    date.setFullYear(str.substring(0, 4)), date.setMonth(parseInt(str.substring(5, 7)) - 1), date.setDate(str.substring(8, 10)), date.setHours(str.substring(11, 13)), date.setMinutes(str.substring(14, 16)), date.setSeconds(str.substring(17, 19));
+	    return date.getUTCFullYear() + '-' + prefixZero(parseInt(date.getUTCMonth()) + 1) + '-' + prefixZero(date.getUTCDate()) + 'T' + prefixZero(date.getUTCHours()) + ':' + prefixZero(date.getUTCMinutes()) + ':' + prefixZero(date.getUTCSeconds()) + '.000Z';
+	  }
+	  function toNormal() {
+	    date.setUTCFullYear(str.substring(0, 4)), date.setUTCMonth(parseInt(str.substring(5, 7)) - 1), date.setUTCDate(str.substring(8, 10)), date.setUTCHours(str.substring(11, 13)), date.setUTCMinutes(str.substring(14, 16)), date.setUTCSeconds(str.substring(17, 19));
+	    return date.getFullYear() + '-' + prefixZero(parseInt(date.getMonth()) + 1) + '-' + prefixZero(date.getDate()) + ' ' + prefixZero(date.getHours()) + ':' + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds());
+	  }
+	  if (~str.indexOf('.000Z')) {
+	      if (toReadable || toReadable === undefined) return toNormal();
+	      else return str;
+	  } else {
+	      if (toReadable) return str;
+	      else return to000Z();
+	  }
+	}
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['toSubmitAt'] = factory();
+	  else
+	    root['toSubmitAt'] = factory();
+	})(this, function factory() {
+	  return toSubmitAt;
+	});
+
+
+/***/ },
 /* 10 */,
 /* 11 */,
-/* 12 */
+/* 12 */,
+/* 13 */,
+/* 14 */
 /*!*****************************!*\
   !*** ./js ^.*polisher\.js$ ***!
   \*****************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/polisher.js": 13
+		"./components/polisher.js": 15
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -142,24 +234,24 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 12;
+	webpackContext.id = 14;
 
 
 /***/ },
-/* 13 */
+/* 15 */
 /*!***********************************!*\
   !*** ./js/components/polisher.js ***!
   \***********************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 14);
+	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 16);
 	var createElementWith = customElements.createElementWith;
 	var createLinenumPreWithText = customElements.createLinenumPreWithText;
 	var createPreWithText = customElements.createPreWithText;
 	var createDiffPre = customElements.createDiffPre;
 	var createHideElementBtn = customElements.createHideElementBtn;
 	var createViewInHexSpan = customElements.createViewInHexSpan;
-	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 20);
+	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 22);
 	
 	var polisher = {
 	  "getPolishedReportDiv": function(reportObject, configs) {
@@ -171,9 +263,11 @@
 	    var timeLimit = (configs.limits.time === undefined) ? null : configs.limits.time + 'ms';
 	    var totalPoints = configs.totalPoints;
 	
-	
+	    function wrap(str) {
+	      return str === undefined ? '(missing)' : str;
+	    }
 	    var report = createElementWith('div', ['report-success', 'polished-report-success']);
-	    var submitTimeText = reportObject.submitTime ? '(submitted at ' + reportObject.submitTime + ')' : '';
+	    var submitTimeText = reportObject.submitTime === null ? '' : '(submitted at ' + wrap(reportObject.submitTime) + ')';
 	    if (reportObject.msg !== null) {
 	      report.appendChild(createElementWith('pre', 'success', reportObject.msg + '  ' + submitTimeText));
 	      return report;
@@ -194,6 +288,7 @@
 	      "OL": 'Output Limit Exceeded',
 	      "RE": 'Runtime Error'
 	    };
+	    
 	    
 	
 	    function compileCheckDetail(phaseInfo) {
@@ -483,7 +578,7 @@
 	                  {
 	                    "id": 'google tests',
 	                    "getDetail": googleTestsDetail,
-	                    "description": 'Google tests',
+	                    "description": 'Google Tests',
 	                    "canShowCR": true
 	                  }];
 	
@@ -492,13 +587,13 @@
 	      var pass = reportObject[onePhase.id].pass
 	          grade = reportObject[onePhase.id].grade;
 	      var reportSection = createElementWith('div', [onePhase.id.replace(/ /g, '-'), 'report-section'],
-	        getScoreDiv(onePhase, grade, totalPoints[onePhase.id], pass));
+	        getScoreDiv(onePhase, grade, wrap(totalPoints[onePhase.id]), pass));
 	
 	      var scoreTextOnNav = null;
 	      if (pass) {
 	        scoreTextOnNav = ' (' + grade + ')';
 	      } else {
-	        scoreTextOnNav = ' (' + grade + '/' + totalPoints[onePhase.id] + ')';
+	        scoreTextOnNav = ' (' + grade + '/' + wrap(totalPoints[onePhase.id]) + ')';
 	      }
 	      reportSection.id = 'report-' + onePhase.id.replace(/ /g, '-');
 	      sideNav.add(onePhase.description + scoreTextOnNav, reportSection.id, 1, (pass ? undefined : 'non-pass'));
@@ -518,8 +613,54 @@
 	      var reportDetail = createElementWith('div', 'report-detail', detail);
 	      testContent.appendChild(reportDetail), reportSection.appendChild(testContent), sectionsWrapper.appendChild(reportSection);
 	    });
-	    report['endSelector'] = '#' + sectionsWrapper.lastElementChild.id;
+	    if (sectionsWrapper.lastElementChild) report['endSelector'] = '#' + sectionsWrapper.lastElementChild.id;
+	    var fullGrade = 0;
+	    for (var item in totalPoints) {
+	      if (typeof(totalPoints[item]) == 'number') fullGrade += totalPoints[item];
+	    }
+	    sideNav.navTitle.textContent += ' (' + (isNaN(Number(reportObject.grade)) ? '0' : reportObject.grade) + '/' + fullGrade + ')';
 	    report['sideNav'] = sideNav;
+	    report.appendChild(sideNav.getNode());
+	    return report;
+	  },
+	  "getFilesCmpDiv": function(filesDiff, configs) {
+	    var report = createElementWith('div', ['report-success', 'polished-report-success']);
+	    var sectionsWrapper = createElementWith('div');
+	    sectionsWrapper.id = 'matrix-programming-report';
+	    report.appendChild(createElementWith('matrix-report', 'polished-ver', sectionsWrapper));
+	    var sideNav = new SideNav();
+	
+	    filesDiff.files.forEach(function(oneCommonFile) {
+	      var suffix = '';
+	      if (oneCommonFile.diff && oneCommonFile.diff.length == 1 && oneCommonFile.diff[0].common == true) {
+	        suffix = ' (Same)';
+	      }
+	      var reportSection = createElementWith('div', ['compile-check', 'report-section'],
+	        createElementWith('div', ['compile-check-score', 'score'], oneCommonFile.name + suffix));
+	      var scoreTextOnNav = null;
+	      reportSection.id = 'files-cmp-report-' + oneCommonFile.name.replace(/ |\./g, '-');
+	      sideNav.add(oneCommonFile.name + suffix, reportSection.id, 1, (suffix.length ? undefined : 'non-pass'));
+	      
+	      var testContent = createElementWith('div', 'test-content');
+	      var detail = document.createDocumentFragment();
+	      var caseOuterWrapper = createElementWith('div', 'case-outer-wrapper');
+	      var caseInnerWrapper = createElementWith('div', 'case-inner-wrapper');
+	      var diffPre = createDiffPre(oneCommonFile.diff, configs);
+	      var hideBtn = createHideElementBtn(diffPre);
+	      caseInnerWrapper.appendChild(hideBtn);
+	      if (suffix.length) hideBtn.click();
+	      caseInnerWrapper.appendChild(createViewInHexSpan('view-hex-span-' + oneCommonFile.name.replace(/ |\./g, '-')));
+	      caseInnerWrapper.classList.add('hideHex');
+	      var errorContent = createElementWith('pre', 'error-content', diffPre); 
+	      caseInnerWrapper.appendChild(errorContent);
+	      caseOuterWrapper.appendChild(caseInnerWrapper), detail.appendChild(caseOuterWrapper);
+	      var reportDetail = createElementWith('div', 'report-detail', detail);
+	      testContent.appendChild(reportDetail), reportSection.appendChild(testContent), sectionsWrapper.appendChild(reportSection);
+	    });
+	
+	    if (sectionsWrapper.lastElementChild) report['endSelector'] = '#' + sectionsWrapper.lastElementChild.id;
+	    report['sideNav'] = sideNav;
+	    sideNav.navTitle.textContent = 'Files Comparison';
 	    report.appendChild(sideNav.getNode());
 	    return report;
 	  }
@@ -551,16 +692,16 @@
 
 
 /***/ },
-/* 14 */
+/* 16 */
 /*!**************************************************!*\
   !*** ./js/components/elements/customElements.js ***!
   \**************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var customPre = __webpack_require__(/*! ./customPre.js */ 15);
-	var createHideElementBtn = __webpack_require__(/*! ./HideElementBtn.js */ 17);
-	var createViewInHexSpan = __webpack_require__(/*! ./ViewInHexSpan.js */ 18);
-	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 19);
+	var customPre = __webpack_require__(/*! ./customPre.js */ 17);
+	var createHideElementBtn = __webpack_require__(/*! ./HideElementBtn.js */ 19);
+	var createViewInHexSpan = __webpack_require__(/*! ./ViewInHexSpan.js */ 20);
+	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 21);
 	var customElements = {
 	  "extendFrom": function(parent) {
 	    for (var name in parent) this[name] = parent[name];
@@ -568,7 +709,7 @@
 	};
 	customElements.extendFrom(customPre);
 	customElements.extendFrom({
-	  "createElementWith": __webpack_require__(/*! ../lib/createElementWith */ 16),
+	  "createElementWith": __webpack_require__(/*! ../lib/createElementWith */ 18),
 	  "createHideElementBtn": createHideElementBtn,
 	  "createViewInHexSpan": createViewInHexSpan,
 	  "createSwitchBtn": createSwitchBtn
@@ -597,13 +738,13 @@
 
 
 /***/ },
-/* 15 */
+/* 17 */
 /*!*********************************************!*\
   !*** ./js/components/elements/customPre.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 16);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	var CustomPre = {
 	
 	  /** 
@@ -660,7 +801,13 @@
 	   *   {function} createElementWith
 	   *   {function} CustomPre.toLinenumString
 	   */
-	  "createDiffPre": function(diffResult) {
+	  "createDiffPre": function(diffResult, configs) {
+	    if (!configs) {
+	      configs = {
+	        "stdHeading": null,
+	        "yourHeading": null
+	      };
+	    }
 	    var leadingNewLine = createElementWith('span', 'diffPre-leading-newline', '\n');
 	    var diffPre = createElementWith('pre', ['plain-text-wrapper', 'line-numbers-wrapper', 'diffPre'], leadingNewLine);
 	    var linenumRowsLeft = createElementWith('span', 'line-numbers-rows');
@@ -673,8 +820,8 @@
 	    var linenumRowConfig = {
 	      "stdLinenum": (function() { return CustomPre.toLinenumString(stdLinenum++); }),
 	      "yourLinenum": (function() { return CustomPre.toLinenumString(yourLinenum++); }),
-	      "stdHeading": (function() { return '  std'; }),
-	      "yourHeading": (function() { return 'your'; }),
+	      "stdHeading": (function() { return configs.stdHeading || '  std'; }),
+	      "yourHeading": (function() { return configs.yourHeading || 'your'; }),
 	      "added": (function() { return '    +'; }),
 	      "removed": (function() { return '    -'; }),
 	      "blank": (function() { return '     '; })
@@ -806,7 +953,7 @@
 
 
 /***/ },
-/* 16 */
+/* 18 */
 /*!************************************************!*\
   !*** ./js/components/lib/createElementWith.js ***!
   \************************************************/
@@ -867,13 +1014,13 @@
 
 
 /***/ },
-/* 17 */
+/* 19 */
 /*!**************************************************!*\
   !*** ./js/components/elements/HideElementBtn.js ***!
   \**************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 16);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	function toggleHidden() {
 	  var btn = this;
 	  if (btn.elementIsHidden) {
@@ -935,13 +1082,13 @@
 
 
 /***/ },
-/* 18 */
+/* 20 */
 /*!*************************************************!*\
   !*** ./js/components/elements/ViewInHexSpan.js ***!
   \*************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 16);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	function toggleViewInHex() {
 	  var checkbox = this;
 	  var parent = checkbox.parentNode.parentNode;
@@ -962,7 +1109,7 @@
 	  var label = createElementWith('label', 'view-in-hex-label', 'view in hex');
 	  var wrapper = createElementWith('span', 'view-in-hex-wrapper', [checkbox, label]);
 	  label.htmlFor = checkbox.id = 'view-in-hex-' + checkboxId;
-	  checkbox.addEventListener('change', toggleViewInHex, false);
+	  checkbox.addEventListener('click', toggleViewInHex, false);
 	  return wrapper;
 	}
 	
@@ -989,13 +1136,13 @@
 
 
 /***/ },
-/* 19 */
+/* 21 */
 /*!*********************************************!*\
   !*** ./js/components/elements/SwitchBtn.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 16);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	function toSwitch() {
 	  var button = this;
 	  if (button.elementIsHidden) {
@@ -1057,18 +1204,19 @@
 
 
 /***/ },
-/* 20 */
+/* 22 */
 /*!*******************************************!*\
   !*** ./js/components/elements/SideNav.js ***!
   \*******************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var $ = __webpack_require__(/*! ../jquery.js */ 21);
-	__webpack_require__(/*! ./jquery.nav.js */ 22)(this, $);
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 16);
+	var $ = __webpack_require__(/*! ../jquery.js */ 23);
+	__webpack_require__(/*! ./jquery.nav.js */ 24)(this, $);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	function SideNav() {
 	  this.wrapper = createElementWith('div', 'side-nav');
-	  this.toggle = createElementWith('h5', 'nav-toggle-wrapper', createElementWith('div', 'nav-toggle', 'Navigation'));
+	  this.navTitle = createElementWith('div', 'nav-toggle', 'Report');
+	  this.toggle = createElementWith('h5', 'nav-toggle-wrapper', this.navTitle);
 	  this.body = createElementWith('ul', 'nav-body', '');
 	  this.wrapper.appendChild(this.toggle);
 	  this.wrapper.appendChild(this.body);
@@ -1076,7 +1224,7 @@
 	SideNav.prototype = {
 	  "add": function(title, id, type, classList) {
 	    var newItem = createElementWith('a');
-	    if (typeof(classList) == 'string') classList = new Array(classList);
+	    if (typeof(classList) == 'string') classList = [classList];
 	    else classList = [];
 	    this.body.appendChild(createElementWith('li', ['h' + type + '_nav'].concat(classList), newItem));
 	    newItem.outerHTML = '<a href="#' + id + '" rel="nofollow">' + title + '</a>';
@@ -1105,6 +1253,9 @@
 	        endSelector: endSelector,
 	        unbindSelector: unbindSelector
 	    });
+	    this.fix();
+	  },
+	  "fix": function() {
 	    this.onePageNav.disabled = true;
 	    if (this.body.querySelector('a')) this.body.querySelector('a').click();
 	    this.onePageNav.disabled = false;
@@ -1138,7 +1289,7 @@
 
 
 /***/ },
-/* 21 */
+/* 23 */
 /*!*********************************!*\
   !*** ./js/components/jquery.js ***!
   \*********************************/
@@ -11221,7 +11372,7 @@
 
 
 /***/ },
-/* 22 */
+/* 24 */
 /*!**********************************************!*\
   !*** ./js/components/elements/jquery.nav.js ***!
   \**********************************************/
@@ -11255,10 +11406,10 @@
 	        // that require this pattern but the window provided is a noop
 	        // if it's defined (how jquery works)
 	        if ( typeof window !== 'undefined' ) {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 21);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 23);
 	        }
 	        else {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 21)(root);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 23)(root);
 	        }
 	      }
 	      factory(jQuery);
@@ -11266,7 +11417,7 @@
 	    };
 	  } if (true) {
 	    // AMD. Register as an anonymous module.
-	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 21)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 23)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  } else {
 	    // Browser globals
 	    factory(jQuery);
@@ -11538,14 +11689,354 @@
 	}));
 
 /***/ },
-/* 23 */
+/* 25 */
+/*!*****************************!*\
+  !*** ./js ^.*FilesCmp\.js$ ***!
+  \*****************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var map = {
+		"./components/FilesCmp.js": 26
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 25;
+
+
+/***/ },
+/* 26 */
+/*!***********************************!*\
+  !*** ./js/components/FilesCmp.js ***!
+  \***********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 18);
+	var toSubmitAt = __webpack_require__(/*! ./lib/toSubmitAt.js */ 9);
+	var createSwitchBtn = __webpack_require__(/*! ./elements/SwitchBtn.js */ 21);
+	var polisher = __webpack_require__(/*! ./polisher.js */ 15);
+	
+	function toArray(arrayLike) {
+	  return Array.prototype.slice.call(arrayLike, 0);
+	}
+	
+	function hideFilesCmp() {
+	  if (this.hideElement) {
+	    this.hideElement.classList.add('hidden');
+	  }
+	  var tabName = /"([a-z]{1,})"\)$/.exec(this.attributes['ng-click'].value)[1];
+	  var shouldAppear = this.hideElement.parentNode.querySelector('div.course-assignment-programming-content.ng-hide[ng-show*=' + tabName + ']');
+	  if (shouldAppear) {
+	    shouldAppear.classList.remove('ng-hide');
+	  }
+	}
+	
+	function SwitchSelectedTab() {
+	    // change tab's selected state
+	  var originalSelectedTab = this.parentNode.querySelector('li.programming-nav-active');
+	  originalSelectedTab.classList.remove('programming-nav-active');
+	  this.classList.add('programming-nav-active');
+	  if (!this.hideElement) return;
+	
+	    // add listener for other tabs
+	      // to hide our FilesCmp tab content when other tabs are clicked
+	  var liList = this.parentNode.querySelectorAll('li');
+	  for (var i = 0, length = liList.length; i != length; ++i) {
+	    liList[i]['hideElement'] = this.hideElement;
+	    if (this.isSameNode(liList[i])) continue;
+	    liList[i].removeEventListener('click', hideFilesCmp, false);
+	    liList[i].addEventListener('click', hideFilesCmp, false);
+	  }
+	
+	    // show our FilesCmp tab content now because it is currently selected
+	  this.hideElement.classList.remove('hidden');
+	    // hide other tabs content 
+	  var originalContent = this.hideElement.parentNode.querySelector('div.course-assignment-programming-content:not(.ng-hide):not(.files-cmp)');
+	  if (originalContent) originalContent.classList.add('ng-hide');
+	}
+	
+	var invisibleRow = createElementWith('tr', ['invisible-row'], [createElementWith('td', 'th-checkbox', createElementWith('span', 'invisible', createCheckbox())),
+	                                                  createElementWith('td', 'th-sub-id', createElementWith('span', 'invisible', '000000')),
+	                                                  createElementWith('td', 'th-sub-time', createElementWith('span', 'invisible', '0000-00-00 00:00:00')),
+	                                                  createElementWith('td', 'th-grade', createElementWith('span', 'invisible', '100'))]);
+	
+	function checkBoxInsideMe() {
+	  var checkbox = this.querySelector('input');
+	  checkbox.click();
+	}
+	
+	function onChecked(event) {
+	  event.stopPropagation();
+	
+	  var tr = this.parentNode.parentNode;
+	  var tbody = tr.parentNode;
+	  var anotherTable = tbody.parentNode.anotherTable;
+	    // clicked on selected part => click on related checkbox on choices part
+	  if ( -1 == anotherTable.className.indexOf('selected') ) return tr.relatedCheckbox.click();
+	    // clicked on choices part
+	  if (this.checked) {
+	      if ( tbody.querySelectorAll('input:checked').length == 2 ) {
+	        toArray(tbody.querySelectorAll('input:not(:checked)')).forEach(function(one) {
+	          one.disabled = true;
+	        });
+	        tbody.filesCmpTab.switchBtn.disabled = false;
+	      }
+	      var oneInvisibleRow = anotherTable.querySelector('.invisible-row');
+	      var selectedRow = tr.cloneNode(true);
+	      selectedRow.addEventListener('click', checkBoxInsideMe, false);
+	      selectedRow.querySelector('input').addEventListener('click', onChecked, false);
+	      
+	      this['relatedRow'] = selectedRow;
+	      selectedRow['relatedCheckbox'] = this;
+	      oneInvisibleRow.parentNode.replaceChild(selectedRow, oneInvisibleRow);
+	      var first = !selectedRow.previousSibling;
+	      selectedRow.insertBefore(createElementWith('td', 'th-role', createElementWith('span', 'th-span-role', (first ? 'old' : 'new'))), selectedRow.firstChild);
+	  } else {
+	      if ( tbody.querySelectorAll('input:checked').length == 1 ) {
+	        toArray(tbody.querySelectorAll('input:not(:checked)')).forEach(function(one) {
+	          one.disabled = false;
+	        });
+	        tbody.filesCmpTab.switchBtn.disabled = true;
+	      }
+	      var clonedInvisibleRow = invisibleRow.cloneNode(true);
+	      var first = !this.relatedRow.previousSibling;
+	      clonedInvisibleRow.insertBefore( createElementWith('td', 'th-role', createElementWith('span', 'th-span-role', (first ? 'old' : 'new'))), clonedInvisibleRow.firstChild );
+	      this.relatedRow.parentNode.replaceChild(clonedInvisibleRow, this.relatedRow);
+	  }
+	}
+	
+	function createCheckbox() {
+	  var checkbox = createElementWith('input', 'files-cmp-checkbox');
+	  checkbox.type = 'checkbox';
+	  checkbox.addEventListener('click', onChecked, false);
+	  return checkbox;
+	}
+	
+	function showDifference() {
+	    // when back to selectChoicePart
+	  if (!this.elementIsHidden) return;
+	
+	  var filesCmpTab = this.filesCmpTab;
+	  var filesDiffPart = filesCmpTab.filesDiffPart;
+	  var tbody = filesCmpTab.selectedTable.querySelector('tbody');
+	
+	    // get submissionId
+	  var oldId = Number(tbody.childNodes[0].querySelector('.th-sub-id').textContent);
+	  var newId = Number(tbody.childNodes[1].querySelector('.th-sub-id').textContent);
+	  if (filesDiffPart.cmpIds && filesDiffPart.cmpIds.oldId == oldId && filesDiffPart.cmpIds.newId == newId) return;
+	  
+	    // get courseId and problemId
+	  var courseId = null;
+	  var problemId = null;
+	  var ids = /course\/(\d{1,})\/assignment\/programming\?problemId=(\d{1,})/.exec(document.URL);
+	  courseId = ids[1];
+	  problemId = ids[2];
+	
+	    // remove old ones
+	  var oldFilesCmpDiv = filesDiffPart.querySelector('.polished-report-success');
+	  if (oldFilesCmpDiv) {
+	    if (oldFilesCmpDiv.sideNav) oldFilesCmpDiv.sideNav.remove();
+	    oldFilesCmpDiv.parentNode.removeChild(oldFilesCmpDiv);
+	  }
+	  
+	  chrome.runtime.sendMessage({
+	    "signal": 'filesDiff',
+	    "courseId": courseId,
+	    "problemId": problemId,
+	    "oldId": oldId,
+	    "newId": newId
+	  }, function(response) {
+	    if (response.status != 'OK') {
+	      filesDiffPart.appendChild(createElementWith('div', 'polished-report-success', 'Failed to get files to compare'));
+	    } else {
+	      var filesCmpDiv = __webpack_require__(/*! ./polisher.js */ 15).getFilesCmpDiv(response.filesDiff, {
+	        "stdHeading": String(oldId),
+	        "yourHeading": String(newId)
+	      });
+	
+	        // fix sideNav problem
+	      var sideNav = filesCmpDiv.sideNav;
+	      if (sideNav) {
+	        sideNav.init(filesCmpDiv.endSelector, 'ui-view.ng-scope');
+	        var filesCmpNavTab = document.querySelector('#matrix-second-bar ul li.files-cmp-li');
+	        filesCmpNavTab['sideNav'] = sideNav;
+	        if (!filesCmpNavTab.sideNavFixListenerAdded) {
+	          filesCmpNavTab.addEventListener('click', function() {
+	            this.sideNav.fix();
+	          }, false);
+	          filesCmpNavTab['sideNavFixListenerAdded'] = true;
+	        }
+	      }
+	        
+	        
+	      filesDiffPart['cmpIds'] = {
+	        "oldId": oldId,
+	        "newId": newId
+	      };
+	      var tableWrapper = filesCmpTab.selectedPart.querySelector('#course-statistics').cloneNode(true);
+	        // remove checkboxed
+	      toArray(tableWrapper.querySelectorAll('.td-checkbox')).forEach(function(one) {
+	        one.parentNode.removeChild(one);
+	      });
+	      filesCmpDiv.insertBefore(tableWrapper, filesCmpDiv.firstChild);
+	      filesDiffPart.appendChild(filesCmpDiv);
+	    }
+	  });
+	}
+	
+	function FilesCmpTab(submissionsList) {
+	  this['selectedPart'] = createElementWith('div', 'selected-part', this.createSelectedPartContent());
+	  this['choicesPart'] = createElementWith('div', 'choices-part', this.createChoicesPartContent(submissionsList));
+	  this['filesDiffPart'] = createElementWith('div', 'files-diff-part');
+	
+	  this['selectedTable'] = this.selectedPart.querySelector('table');
+	  this['choicesTable'] = this.choicesPart.querySelector('table');
+	  this.updateAnotherTable();
+	  this['selectChoicePart'] = createElementWith('div', 'select-choice-part', [this.selectedPart, this.choicesPart]);
+	
+	  this['switchBtn'] = createSwitchBtn(this.selectChoicePart, this.filesDiffPart, {
+	    "show": 'select files',
+	    "hide": 'show difference'
+	  });
+	  this.switchBtn.classList.add('files-cmp-switch-btn');
+	  this.switchBtn.addEventListener('click', showDifference, false);
+	  this.switchBtn['filesCmpTab'] = this;
+	  this.switchBtn.disabled = true;
+	
+	  this.selectedPart.querySelector('tbody')['switchBtn'] = this.switchBtn;
+	  this.choicesPart.querySelector('tbody')['switchBtn'] = this.switchBtn;
+	
+	  this['tab'] = createElementWith('div', ['course-assignment-programming-content', 'files-cmp', 'hidden'], [this.selectChoicePart, this.filesDiffPart]);
+	  this.tab.insertBefore(this.switchBtn, this.selectChoicePart);
+	  this.tab['filesCmpTab'] = this;
+	}
+	FilesCmpTab.prototype = {
+	  "constructor": FilesCmpTab,
+	  "createSelectedPartContent": function() {
+	    var thead = createElementWith('thead', 'files-cmp-thead',
+	        createElementWith('tr', 'files-cmp-trow', [createElementWith('th', 'files-cmp-th', ' '),
+	                                                    createElementWith('th', ['files-cmp-th', 'td-checkbox'], 'Selected'),
+	                                                    createElementWith('th', 'th-sub-id', 'Id'),
+	                                                    createElementWith('th', 'th-sub-time', 'Submission Time'),
+	                                                    createElementWith('th', 'th-grade', 'Grade')]));
+	
+	    var tbody = createElementWith('tbody', 'files-cmp-tbody');
+	    tbody['filesCmpTab'] = this;
+	    for (var i = 0; i != 2; ++i) {
+	      var clonedInvisibleRow = invisibleRow.cloneNode(true);
+	      var role = createElementWith( 'td', 'th-role', createElementWith('span', 'th-span-role', (0 == i ? 'old' : 'new') ));
+	      clonedInvisibleRow.insertBefore( role, clonedInvisibleRow.firstChild );
+	      tbody.appendChild(clonedInvisibleRow);
+	    }
+	    
+	    var table = createElementWith('table', ['assignment-info', 'selected-table'], [thead, tbody]);
+	    var wrapper = createElementWith('div', 'files-cmp-selected-part-wrapper', 
+	                                      createElementWith('div', 'statistics-wrapper',
+	                                                  createElementWith('div', 'statistics-container', table)));
+	    wrapper.id = 'course-statistics';
+	    return wrapper;
+	  },
+	  "createChoicesPartContent": function(submissionsList) {
+	    var wrapper = createElementWith('div', 'files-cmp-choices-part-wrapper',
+	                                    createElementWith('div', 'statistics-wrapper',
+	                                                  createElementWith('div', 'statistics-container', this.createChoicesTable(submissionsList))));
+	    wrapper.id = 'course-statistics';
+	    return wrapper;
+	  },
+	  "createChoicesTable": function(submissionsList) {
+	    var thead = createElementWith('thead', 'files-cmp-thead',
+	      createElementWith('tr', 'files-cmp-trow', [createElementWith('th', 'files-cmp-th', 'Selected'),
+	                                                    createElementWith('th', 'th-sub-id', 'Id'),
+	                                                  createElementWith('th', 'th-sub-time', 'Submission Time'),
+	                                                  createElementWith('th', 'th-grade', 'Grade')]));
+	
+	    var tbody = createElementWith('tbody', 'files-cmp-tbody');
+	    tbody['filesCmpTab'] = this;
+	
+	    submissionsList.forEach(function(one) {
+	      var row = createElementWith('tr', 'files-cmp-tr', [createElementWith('td', ['files-cmp-td', 'td-checkbox'], createCheckbox()),
+	                                                  createElementWith('th', 'th-sub-id', String(one.sub_ca_id)),
+	                                                  createElementWith('td', 'th-sub-time', toSubmitAt(one.submit_at), true),
+	                                                  createElementWith('td', 'th-grade', String(one.grade))]);
+	      row.addEventListener('click', checkBoxInsideMe, false);
+	      tbody.appendChild(row);
+	    });
+	
+	    var table = createElementWith('table', ['assignment-info', 'choices-table'], [thead, tbody]);
+	    table['submissionsList'] = submissionsList;
+	    return table;
+	  },
+	  "updateAnotherTable": function() {
+	    this.selectedTable['anotherTable'] = this.choicesTable;
+	    this.choicesTable['anotherTable'] = this.selectedTable;
+	  },
+	  "updateChoicesTable": function(submissionsList) {
+	    var oldTable = this.choicesTable;
+	
+	    var switchBtn = this.switchBtn;
+	    if (switchBtn.elementIsHidden) {
+	      switchBtn.click();
+	    }
+	    toArray(oldTable.querySelectorAll('input:checked')).forEach(function(one) {
+	      one.click();
+	    });
+	    
+	    var newTable = this.choicesTable = this.createChoicesTable(submissionsList);
+	    oldTable.parentNode.replaceChild(newTable, oldTable);
+	
+	    this.updateAnotherTable();
+	  }
+	};
+	
+	var FilesCmpElements = {
+	  "createSecondBarLi": function(text, hideElement) {
+	    var li = createElementWith('li', ['navli', 'files-cmp-li'], createElementWith('a', 'programming-nav', text));
+	    li['hideElement'] = hideElement;
+	    li.addEventListener('click', SwitchSelectedTab, false);
+	    return li;
+	  },
+	  "FilesCmpTab": FilesCmpTab
+	};
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['FilesCmpElements'] = factory();
+	  else
+	    root['FilesCmpElements'] = factory();
+	})(this, function factory() {
+	  return FilesCmpElements;
+	});
+
+
+/***/ },
+/* 27 */
 /*!*********************************************!*\
   !*** ./js ^.*elements\/customElements\.js$ ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/elements/customElements.js": 14
+		"./components/elements/customElements.js": 16
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -11558,18 +12049,18 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 23;
+	webpackContext.id = 27;
 
 
 /***/ },
-/* 24 */
+/* 28 */
 /*!****************************************!*\
   !*** ./js ^.*elements\/backToTop\.js$ ***!
   \****************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/elements/backToTop.js": 25
+		"./components/elements/backToTop.js": 29
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -11582,17 +12073,17 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 24;
+	webpackContext.id = 28;
 
 
 /***/ },
-/* 25 */
+/* 29 */
 /*!*********************************************!*\
   !*** ./js/components/elements/backToTop.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 16);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	
 	  // create backToTop button
 	var backToTop = createElementWith('div', 'backToTop-wrapper',

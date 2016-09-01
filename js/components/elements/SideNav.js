@@ -3,7 +3,8 @@ require('./jquery.nav.js')(this, $);
 var createElementWith = require('../lib/createElementWith.js');
 function SideNav() {
   this.wrapper = createElementWith('div', 'side-nav');
-  this.toggle = createElementWith('h5', 'nav-toggle-wrapper', createElementWith('div', 'nav-toggle', 'Navigation'));
+  this.navTitle = createElementWith('div', 'nav-toggle', 'Report');
+  this.toggle = createElementWith('h5', 'nav-toggle-wrapper', this.navTitle);
   this.body = createElementWith('ul', 'nav-body', '');
   this.wrapper.appendChild(this.toggle);
   this.wrapper.appendChild(this.body);
@@ -11,7 +12,7 @@ function SideNav() {
 SideNav.prototype = {
   "add": function(title, id, type, classList) {
     var newItem = createElementWith('a');
-    if (typeof(classList) == 'string') classList = new Array(classList);
+    if (typeof(classList) == 'string') classList = [classList];
     else classList = [];
     this.body.appendChild(createElementWith('li', ['h' + type + '_nav'].concat(classList), newItem));
     newItem.outerHTML = '<a href="#' + id + '" rel="nofollow">' + title + '</a>';
@@ -40,6 +41,9 @@ SideNav.prototype = {
         endSelector: endSelector,
         unbindSelector: unbindSelector
     });
+    this.fix();
+  },
+  "fix": function() {
     this.onePageNav.disabled = true;
     if (this.body.querySelector('a')) this.body.querySelector('a').click();
     this.onePageNav.disabled = false;

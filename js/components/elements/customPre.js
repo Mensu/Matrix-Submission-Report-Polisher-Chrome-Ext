@@ -55,7 +55,13 @@ var CustomPre = {
    *   {function} createElementWith
    *   {function} CustomPre.toLinenumString
    */
-  "createDiffPre": function(diffResult) {
+  "createDiffPre": function(diffResult, configs) {
+    if (!configs) {
+      configs = {
+        "stdHeading": null,
+        "yourHeading": null
+      };
+    }
     var leadingNewLine = createElementWith('span', 'diffPre-leading-newline', '\n');
     var diffPre = createElementWith('pre', ['plain-text-wrapper', 'line-numbers-wrapper', 'diffPre'], leadingNewLine);
     var linenumRowsLeft = createElementWith('span', 'line-numbers-rows');
@@ -68,8 +74,8 @@ var CustomPre = {
     var linenumRowConfig = {
       "stdLinenum": (function() { return CustomPre.toLinenumString(stdLinenum++); }),
       "yourLinenum": (function() { return CustomPre.toLinenumString(yourLinenum++); }),
-      "stdHeading": (function() { return '  std'; }),
-      "yourHeading": (function() { return 'your'; }),
+      "stdHeading": (function() { return configs.stdHeading || '  std'; }),
+      "yourHeading": (function() { return configs.yourHeading || 'your'; }),
       "added": (function() { return '    +'; }),
       "removed": (function() { return '    -'; }),
       "blank": (function() { return '     '; })

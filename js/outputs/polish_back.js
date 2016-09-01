@@ -52,33 +52,12 @@
 	var MatrixObject = __webpack_require__(/*! . */ 1)(componentsPath + 'MatrixObject.js');
 	var ReportObject = __webpack_require__(/*! . */ 4)(componentsPath + 'ReportObject.js');
 	var toSubmitAt = __webpack_require__(/*! . */ 8)(componentsPath + 'lib/toSubmitAt.js');
+	var FilesDiff = __webpack_require__(/*! . */ 10)(componentsPath + 'FilesDiff.js');
 	
 	var matrix = new MatrixObject('https://vmatrix.org.cn');
-	__webpack_require__(/*! . */ 10)(componentsPath + 'checkIsOnline.js')(matrix);
+	__webpack_require__(/*! . */ 12)(componentsPath + 'checkIsOnline.js')(matrix);
 	
 	
-	function sendReportObjToFront(err, body, otherInfo) {
-	  var reportObject = new ReportObject(body);
-	  reportObject.submitTime = otherInfo.submitTime;
-	
-	  // console.log(reportObject);
-	
-	  chrome.tabs.sendMessage(otherInfo.tabId, {
-	    "signal": 'start',
-	    "reportObject": reportObject,
-	    "problemInfo": otherInfo.problemInfo,
-	    "configs": {
-	      "showCR": localStorage.showCR,
-	      "autoPolish": localStorage.autoPolish,
-	      "maxStdCaseNum": localStorage.maxStdCaseNum,
-	      "maxRanCaseNum": localStorage.maxRanCaseNum,
-	      "maxMemCaseNum": localStorage.maxMemCaseNum
-	    }
-	  }, function(response) {
-	    console.log(response);
-	  });
-	
-	}
 	  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
 	chrome.webRequest.onCompleted.addListener(function(details) {
 	  var requiringLatest = false;
@@ -93,43 +72,129 @@
 	      "problemId": problemId,
 	      "submissionId": submissionId
 	    };
-	  matrix.getSubmissionsList(param, param, function(err, body, otherInfo) {
-	      body = JSON.parse(body);
-	
-	        // get submission time
-	      if (body.data.length) {
-	          if (requiringLatest) {
-	              otherInfo['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
-	          } else {
-	              body.data.some(function(oneSubmission, index, self) {
-	                  if (otherInfo.submissionId == oneSubmission.sub_ca_id) {
-	                    otherInfo['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
-	                    return true;
-	                  } else {
-	                    return false;
-	                  }
+	  
+	  matrix.getSubmissionsList(param)
+	    .then(function(body) {
+	        param['submissionsList'] = body.data;
+	        if (body.data == null || 0 == body.data.length) {
+	          param['submitTime'] = null;
+	          return;
+	        }
+	        param['submitTime'] = undefined;
+	            // get submission time
+	        if (requiringLatest) {
+	            param['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
+	        } else {
+	            body.data.some(function(oneSubmission, index, self) {
+	                if (param.submissionId == oneSubmission.sub_ca_id) {
+	                  param['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
+	                  return true;
+	                } else {
+	                  return false;
+	                }
+	            });
+	        }
+	    }, function(err) {
+	        console.log('Error: Failed to get submissions list');
+	        console.log('parameters: ', param);
+	    })
+	    .then(function() {
+	        function sendReportObjToFront(body) {
+	          var reportObject = new ReportObject(body);
+	          if (reportObject === null) return;
+	          reportObject.submitTime = param.submitTime;
+	          // console.log(reportObject);
+	          chrome.tabs.sendMessage(param.tabId, {
+	            "signal": 'start',
+	            "reportObject": reportObject,
+	            "problemInfo": param.problemInfo,
+	            "submissionsList": param.submissionsList,
+	            "configs": {
+	              "showCR": localStorage.showCR,
+	              "autoPolish": localStorage.autoPolish,
+	              "maxStdCaseNum": localStorage.maxStdCaseNum,
+	              "maxRanCaseNum": localStorage.maxRanCaseNum,
+	              "maxMemCaseNum": localStorage.maxMemCaseNum
+	            }
+	          }, function(response) {
+	            console.log(response);
+	          });
+	        }
+	        
+	        if (!requiringLatest) {
+	              // get and send the specific report to the front
+	            return matrix.getSubmission(param)
+	              .then(sendReportObjToFront, function(err) {
+	                  console.log('Error: Failed to get specific report. Stopped.');
 	              });
-	          }
-	      }
-	      
-	      if (requiringLatest) {
+	        }
+	
 	          // get limits and total points of each section 
-	        matrix.getProblemInfo(otherInfo, otherInfo, function(err, body, otherInfo) {
-	          body = JSON.parse(body);
-	          var config = body.data.ca.config;
-	          otherInfo['problemInfo'] = config;
-	          otherInfo.problemInfo['totalPoints'] = config.grading;
-	
-	          // console.log(otherInfo);
-	
-	            // get and send the latest report to the front
-	          matrix.getLatestReport(otherInfo, otherInfo, sendReportObjToFront);
-	        });
-	      } else {
-	          // get and send the specific report to the front
-	        matrix.getSubmission(otherInfo, otherInfo, sendReportObjToFront);
-	      }
+	        matrix.getProblemInfo(param).then(function(body) {
+	              if (body.data == null) return Promise.reject();
+	              var config = body.data.ca.config;
+	              param['problemInfo'] = config;
+	              param.problemInfo['totalPoints'] = config.grading;
+	          }, function(err) {
+	              console.log('Error: Failed to get problem info');
+	              console.log('parameters: ', param);
+	              param['problemInfo'] = {
+	                "limits": {},
+	                "totalPoints": {"google tests detail": {}}
+	              };
+	          }).then(function() {
+	                // get and send the latest report to the front
+	              return matrix.getLatestReport(param)
+	                .then(sendReportObjToFront, function(err) {
+	                    console.log('Error: Failed to get latest report. Stopped.');
+	                });
+	          });
 	    });
+	    
+	    // function(err, body, otherInfo) {
+	    //   if (err) {
+	    //     console.log('Error: Failed to get submissions list');
+	    //     console.log('parameters: ', otherInfo);
+	    //   } else if (body.data.length) {
+	    //         // get submission time
+	    //       if (requiringLatest) {
+	    //           otherInfo['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
+	    //       } else {
+	    //           body.data.some(function(oneSubmission, index, self) {
+	    //               if (otherInfo.submissionId == oneSubmission.sub_ca_id) {
+	    //                 otherInfo['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
+	    //                 return true;
+	    //               } else {
+	    //                 return false;
+	    //               }
+	    //           });
+	    //       }
+	    //   }
+	
+	    //   if (requiringLatest) {
+	    //       // get limits and total points of each section 
+	    //     matrix.getProblemInfo(otherInfo, otherInfo, function(err, body, otherInfo) {
+	    //       if (err) {
+	    //         console.log('Error: Failed to get problem info');
+	    //         console.log('parameters: ', otherInfo);
+	    //         otherInfo['problemInfo'] = {
+	    //           "limits": {},
+	    //           "totalPoints": {"google tests detail": {}}
+	    //         };
+	    //       } else {
+	    //         var config = body.data.ca.config;
+	    //         otherInfo['problemInfo'] = config;
+	    //         otherInfo.problemInfo['totalPoints'] = config.grading;
+	    //       }
+	
+	    //         // get and send the latest report to the front
+	    //       matrix.getLatestReport(otherInfo, otherInfo, sendReportObjToFront);
+	    //     });
+	    //   } else {
+	    //       // get and send the specific report to the front
+	    //     matrix.getSubmission(otherInfo, otherInfo, sendReportObjToFront);
+	    //   }
+	    // });
 	
 	}, {
 	  "urls": [
@@ -137,7 +202,32 @@
 	  ]
 	});
 	
-	
+	chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+	  if (message.signal != 'filesDiff') return;
+	  var oldFiles = null;
+	  matrix.getSubmission({
+	    "courseId": message.courseId,
+	    "problemId": message.problemId,
+	    "submissionId": message.oldId
+	  }).then(function(body) {
+	      if (body.data == null) return Promise.reject();
+	      oldFiles = body.data.answers;
+	      return matrix.getSubmission({
+	        "courseId": message.courseId,
+	        "problemId": message.problemId,
+	        "submissionId": message.newId
+	      });
+	  }).then(function(body) {
+	      if (body.data == null) return Promise.reject();
+	      var filesDiff = new FilesDiff(oldFiles, body.data.answers);
+	      sendResponse({"status": 'OK', "filesDiff": filesDiff});
+	  }, function(err) {
+	      console.log('Error: Failed to get files to compare');
+	      console.log('parameters: ', message);
+	      sendResponse({"status": 'BAD'});
+	  });
+	  return true;
+	});
 	
 	
 	
@@ -175,6 +265,28 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 3);
+	
+	/** 
+	 * parse a string to JSON without throwing an error if failed
+	 * @param {string} str - string to be parsed
+	 * 
+	 * @return {boolean|Object} return JSON object if succeeded, or false if failed
+	 * independent
+	 */
+	function JSONParser(str) {
+	  var ret = null;
+	  try {
+	    ret = JSON.parse(str);
+	  } catch (e) {
+	    ret = false;
+	    console.log(e);
+	    console.log('Error: Failed to parse the following string to JSON');
+	    console.log(str);
+	    return e;
+	  }
+	  return ret;
+	}
+	
 	/** 
 	 * @constructor
 	 * MatrixObject
@@ -201,6 +313,9 @@
 	    this.rootUrl += '/';
 	  }
 	}
+	
+	
+	
 	MatrixObject.prototype = {
 	  "constructor": MatrixObject,
 	  "configsSetter": function(newConfigs) {
@@ -209,6 +324,51 @@
 	      if (newConfigs[oneConfig] !== undefined) this[oneConfig] = newConfigs[oneConfig];
 	    }
 	  },
+	
+	  /** 
+	   * wrap an xhr request by trying parsing response data as JSON and catching possible errors
+	   * @param {string} method - 'get' or 'post'
+	   * @param {string} url - url to send request
+	   * @param {Object} [param] - parameters
+	   * 
+	   * @return {Object} Promise
+	   * 
+	   * @private
+	   * dependent of 
+	   *   {function} httpRequest
+	   */
+	  "request": function(method, url, param) {
+	    if (!param) param = null;
+	    return httpRequest(method, url, param)
+	      .then(function(body) {
+	          body = JSONParser(body);
+	          if (body instanceof Error) {
+	            return Promise.reject(body);
+	          } else {
+	            return Promise.resolve(body);
+	          }
+	      }, function(err) {
+	          return Promise.reject(err);
+	      });
+	  },
+	
+	  /** 
+	   * test whether user has internet access to Matrix
+	   * @return {Object} - Promise
+	   * @Promise {fullfilled} null
+	   * @Promise {rejected} true or an error object
+	   * dependent of 
+	   *   {function} httpRequest
+	   */
+	  "testNetwork": function() {
+	    return httpRequest('get', this.rootUrl + '/app-angular/course/self/views/list.client.view.html', null)
+	      .then(function() {
+	          return Promise.resolve(null);
+	      }, function(err) {
+	          return Promise.reject(err);
+	      });
+	  },
+	
 	  /** 
 	   * get one submission by courseId, problemId and submissionId (sub_ca_id)
 	   * @param {Object} param - object that looks like this
@@ -217,21 +377,11 @@
 	   *     "problemId": the assignment's id,
 	   *     "submissionId": the submission's id,
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getSubmission": function(param, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId, null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "getSubmission": function(param) {
+	      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId);
 	  },
 	
 	  /** 
@@ -241,21 +391,11 @@
 	   *     "courseId": the course's id,
 	   *     "problemId": the assignment's id
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getLatestReport": function(param, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last/feedback', null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "getLatestReport": function(param) {
+	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last/feedback');
 	  },
 	
 	  /** 
@@ -265,21 +405,11 @@
 	   *     "courseId": the course's id,
 	   *     "problemId": the assignment's id
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getLatestSubmission": function(problemId, userId, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last', null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "getLatestSubmission": function(param) {
+	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last');
 	  },
 	
 	  /** 
@@ -289,21 +419,11 @@
 	   *     "courseId": the course's id,
 	   *     "problemId": the assignment's id
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getProblemInfo": function(param, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId, null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "getProblemInfo": function(param) {
+	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId);
 	  },
 	
 	  /** 
@@ -313,21 +433,11 @@
 	   *     "courseId": the course's id,
 	   *     "problemId": the assignment's id
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getSubmissionsList": function(param, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions', null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "getSubmissionsList": function(param) {
+	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions');
 	  },
 	
 	  /** 
@@ -337,42 +447,32 @@
 	   *     "username": username,
 	   *     "passowrd": password
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "login": function(param, otherInfo, callback) {
-	    httpRequest('post', this.rootUrl + 'api/users/login', param, function(err, body) {
-	      return callback(err, body, otherInfo);
+	  "login": function(param) {
+	    return this.request('post', this.rootUrl + 'api/users/login', {
+	      "username": param.username,
+	      "password": param.password
 	    });
 	  },
 	
 	  /** 
-	   * get courses list of currect user
-	   * @param {Object} param - object that looks like this
-	   *   {}
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
+	   * log out
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getCoursesList": function(param, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses', null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "logout": function() {
+	    return this.request('get', this.rootUrl + 'api/users/logout');
+	  },
+	
+	  /** 
+	   * get courses list of currect user
+	   * dependent of 
+	   *   {function} this.request
+	   */
+	  "getCoursesList": function() {
+	    return this.request('get', this.rootUrl + 'api/courses');
 	  },
 	
 	  /** 
@@ -381,21 +481,11 @@
 	   *   {
 	   *     "courseId": the course's id
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getCourseInfo": function(param, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId, null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "getCourseInfo": function(param) {
+	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/description');
 	  },
 	
 	  /** 
@@ -404,21 +494,11 @@
 	   *   {
 	   *     "courseId": the course's id
 	   *   }
-	   * @param {*} otherInfo - any other information that will send to callback function
-	   * @param {function(boolean, string, *):void} callback - function that looks like this
-	   *      @param {boolean} error
-	   *      @param {string} response - the response when no error occurred, or undefined otherwise
-	   *      @param {*} otherInfo - any other information from user
-	   *   function(error, response, otherInfo) {
-	   *
-	   *   }
 	   * dependent of 
-	   *   {function} httpRequest
+	   *   {function} this.request
 	   */
-	  "getProblemsList": function(param, otherInfo, callback) {
-	    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments', null, function(err, body) {
-	      return callback(err, body, otherInfo);
-	    });
+	  "getProblemsList": function(param) {
+	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments');
 	  }
 	};
 	
@@ -466,35 +546,43 @@
 	 * independent
 	 */
 	function httpRequest(method, url, param, callback) {
-	  var xhr = new XMLHttpRequest();
-	  method = method.toLowerCase();
-	  if (method == 'get') {
-	      // convert param to ?key1=value1&key2=value2
-	    var temp = '';
-	    if (param) {
-	      for (var key in param) {
-	        temp += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(param[key]);
+	  return new Promise(function(resolve, reject) {
+	      var xhr = new XMLHttpRequest();
+	      method = method.toLowerCase();
+	      if (method == 'get') {
+	          // convert param to ?key1=value1&key2=value2
+	        var temp = '';
+	        if (param) {
+	          for (var key in param) {
+	            temp += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(param[key]);
+	          }
+	          if (temp.length) {
+	            temp = temp.replace(/^&/, '?');
+	            if (url[url.lastIndexOf('/') - 1] == '/') url += '/';
+	            url += temp;
+	          }
+	        }
+	        param = null;  
+	        
+	      } else if (method == 'post') {
+	        param = JSON.stringify(param);
 	      }
-	      if (temp.length) {
-	        temp = temp.replace(/^&/, '?');
-	        if (url[url.lastIndexOf('/') - 1] == '/') url += '/';
-	        url += temp;
+	      xhr.open(method, url, true);
+	      if (method == 'post') {
+	        xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');    
 	      }
-	    }
-	    param = null;  
-	    
-	  } else if (method == 'post') {
-	    param = JSON.stringify(param);
-	  }
-	  xhr.open(method, url, true);
-	  if (method == 'post') {
-	    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');    
-	  }
-	  xhr.onreadystatechange = function() {
-	    if (xhr.readyState == 4) return callback(false, this.response);
-	  }
-	  xhr.onerror = function() { return callback(true); }
-	  xhr.send(param);
+	      xhr.onload = function() {
+	        if (this.status == 200 || this.status == 304) {
+	          return resolve(this.response);
+	        } else {
+	          return reject(true);
+	        }
+	      }
+	      xhr.onerror = function() {
+	        return reject(true);
+	      }
+	      xhr.send(param);
+	  });
 	}
 	
 	(function exportModuleUniversally(root, factory) {
@@ -588,11 +676,6 @@
 	      "google tests": null
 	    };
 	
-	      // wrap to an object
-	    if (typeof(body) == 'string') {
-	      body = JSON.parse(body);
-	    }
-	
 	    var data = body.data;
 	    if (body.err) {
 	      reportObject.msg = 'Error: ' + body.msg;
@@ -603,13 +686,17 @@
 	      reportObject.msg = 'No submissions yet';
 	      reportObject.grade = -2;
 	      console.log('body (no submissions yet):', body);
-	
+	    } else if (body.status == 'NOT_AUTHORIZED') {
+	      reportObject.msg = 'Not logged in';
+	      reportObject.grade = -2;
+	      console.log('body (not logged in):', body);
+	      return null;
 	    } else if (data === null) {
-	      reportObject.grade = 'Not judged yet';
-	      // reportObject.grade = -2;
+	      reportObject.msg = 'Not judged yet';
+	      reportObject.grade = -2;
 	      console.log('body (not judged yet):', body);
 	
-	    } else if (data === null || data.grade == -1 || data.grade === null) {
+	    } else if (data.grade == -1 || data.grade === null) {
 	      reportObject.grade = 'Under judging';
 	      console.log('body.data (submission under judging):', body.data);
 	
@@ -631,7 +718,7 @@
 	      report = data.report;
 	    }
 	
-	    reportObject.submitTime = data.submitTime;
+	    // reportObject.submitTime = data.submitTime;
 	
 	    /** 
 	     * return a string 'missing' if str is undefined, or return str itself otherwise
@@ -761,7 +848,7 @@
 	          ++failedCaseNum;
 	        }
 	
-	        if ( ({}).toString.apply(errors) != '[object Array]') errors = new Array(errors);
+	        if ( Object.prototype.toString.apply(errors) != '[object Array]') errors = new Array(errors);
 	        // for (j in errors) {
 	        errors.forEach(function(oneError, j) {
 	          // var oneError = errors[j];
@@ -783,15 +870,15 @@
 	            }
 	          }
 	
-	          if ( ({}).toString.apply(auxwhat) != '[object Array]' ) auxwhat = [auxwhat];
+	          if ( Object.prototype.toString.apply(auxwhat) != '[object Array]' ) auxwhat = [auxwhat];
 	          content += 'Behavior: ' + wrapWithMissing(behavior) + '\n';
-	          if ( ({}).toString.apply(stack) != '[object Array]' ) stack = [stack];
+	          if ( Object.prototype.toString.apply(stack) != '[object Array]' ) stack = [stack];
 	
 	          // for (k in stack) {
 	          stack.forEach(function(frame, index) {
 	            // var frame = stack[k].frame;
 	            frame = frame.frame;
-	            if ( ({}).toString.apply(frame) != '[object Array]' ) frame = [frame];
+	            if ( Object.prototype.toString.apply(frame) != '[object Array]' ) frame = [frame];
 	            if (index == 0) content += '  ';
 	            else content += ' ' + auxwhat[index - 1] + ':\n  ';
 	            // for (l in frame) {
@@ -820,16 +907,26 @@
 	      var failedCaseNum = 0;
 	      info.forEach(function(oneTest, index, self) {
 	        oneTest = oneTest.gtest;
-	        var oneCase = {};
+	        var oneCase = {}, re = false;
 	        oneCase['grade'] = oneTest.grade;
 	        oneCase['info'] = oneTest.info;
+	        if (oneTest.failure && oneTest.failure.length == 1 && oneTest.failure[0].error == 'Run time error') {
+	          re = true;
+	          oneCase.info = {};
+	        }
 	        for (var name in oneCase.info) {
 	          var description = oneCase.info[name];
 	          oneCase.info[name] = {};
-	          oneCase.info[name]['pass'] = true;
+	          oneCase.info[name]['pass'] = !re;
 	          oneCase.info[name]['description'] = description;
 	        }
-	        if (oneTest.failure != null) {
+	        if (re) {
+	          oneCase.info['Error'] = {
+	            "pass": false,
+	            "description": oneTest.failure[0].error
+	          }
+	          ++failedCaseNum;
+	        } else if (oneTest.failure != null) {
 	          oneTest.failure.forEach(function(oneFailure) {
 	            for (var name in oneFailure) {
 	              oneCase.info[name]['pass'] = false;
@@ -848,7 +945,7 @@
 	    var toContinue = true;
 	
 	    function refactorPhase(phase, func) {
-	      if (toContinue && report[phase] && report[phase][phase]) {
+	      if (toContinue && report && report[phase] && report[phase][phase]) {
 	        toContinue = report[phase]['continue'];
 	        reportObject[phase] = {};
 	        reportObject[phase]['grade'] = report[phase].grade;
@@ -3469,13 +3566,13 @@
 
 /***/ },
 /* 10 */
-/*!**********************************!*\
-  !*** ./js ^.*checkIsOnline\.js$ ***!
-  \**********************************/
+/*!******************************!*\
+  !*** ./js ^.*FilesDiff\.js$ ***!
+  \******************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/checkIsOnline.js": 11
+		"./components/FilesDiff.js": 11
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -3493,6 +3590,125 @@
 
 /***/ },
 /* 11 */
+/*!************************************!*\
+  !*** ./js/components/FilesDiff.js ***!
+  \************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 7);
+	var Diff = new diff_match_patch();
+	Diff.Diff_Timeout = 0;
+	
+	function CommonFile(oldFile, newFile) {
+	  this['name'] = oldFile.name;
+	  this['oldContent'] = oldFile.code;
+	  this['newContent'] = newFile.code;
+	  this.genDiffInfo();
+	}
+	
+	CommonFile.prototype = {
+	  /** 
+	   * modify a CaseObject by adding to it some diff information
+	   * @return {undefined}
+	   *
+	   * dependent of 
+	   *     {diff_match_patch} Diff
+	   */
+	  "genDiffInfo": function() {
+	    this['diff'] = Diff.diffLines(this.oldContent, this.newContent);
+	    this.diff.forEach(function(oneDiff, index, self) {
+	        // if the case is [removed] [added] and the two blocks contain the same number of lines
+	      if (index && self[index - 1].removed && self[index].added) {
+	        var removedLines = self[index - 1].value;
+	        var removedLinesBinary = self[index - 1].binary;
+	        var addedLines = self[index].value;
+	        var addedLinesBinary = self[index].binary;
+	        if (removedLines.length == addedLines.length) {
+	          self[index - 1]['inlineDiff'] = [], self[index]['inlineDiff'] = [];
+	          self[index - 1]['inlineBinaryDiff'] = [], self[index]['inlineBinaryDiff'] = [];
+	          
+	            // perform diff on every two corresponding lines (diff by char)
+	          removedLines.forEach(function(one, j) {
+	            var inlineDiff = Diff.diffChars(removedLines[j], addedLines[j]);
+	            var inlineBinaryDiff = Diff.diffWords(removedLinesBinary[j], addedLinesBinary[j]);
+	
+	            var oneRemovedLine = [], oneAddedLine = [];
+	            inlineDiff.forEach(function(oneLine) {
+	              if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
+	              if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
+	            });
+	            self[index - 1].inlineDiff.push(oneRemovedLine), self[index].inlineDiff.push(oneAddedLine);
+	
+	            oneRemovedLine = [], oneAddedLine = [];
+	            inlineBinaryDiff.forEach(function(oneLine) {
+	              if (oneLine.added === undefined) oneRemovedLine.push(oneLine);
+	              if (oneLine.removed === undefined) oneAddedLine.push(oneLine);
+	            });
+	            self[index - 1].inlineBinaryDiff.push(oneRemovedLine), self[index].inlineBinaryDiff.push(oneAddedLine);
+	          });
+	        }
+	      }
+	    });
+	  }
+	};
+	
+	function FilesDiff(oldFiles, newFiles) {
+	  var files = this['files'] = [];
+	  oldFiles.forEach(function(oneFile, index) {
+	    if (oneFile.name == newFiles[index].name) {
+	      files.push(new CommonFile(oneFile, newFiles[index]));
+	    }
+	  });
+	}
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['FilesDiff'] = factory();
+	  else
+	    root['FilesDiff'] = factory();
+	})(this, function factory() {
+	  return FilesDiff;
+	});
+
+
+/***/ },
+/* 12 */
+/*!**********************************!*\
+  !*** ./js ^.*checkIsOnline\.js$ ***!
+  \**********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var map = {
+		"./components/checkIsOnline.js": 13
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 12;
+
+
+/***/ },
+/* 13 */
 /*!****************************************!*\
   !*** ./js/components/checkIsOnline.js ***!
   \****************************************/
@@ -3539,36 +3755,38 @@
 	
 	      // show icon and register
 	    chrome.pageAction.show(details.tabId);
-	
+	    return;
 	      // set interval to check whether we have internet access to Matrix
 	    if (intervalId === null) {
 	      intervalId = setInterval(function() {
 	            // send a request to Matrix every five seconds
-	          httpRequest('get', matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', null, function(err) {
-	
-	              var img19 = './img/' + ((err) ? 'offline.png' : 'online.png');
-	              var img38 = './img/' + ((err) ? 'offline.png' : 'online.png');
-	              var newTitle = (err) ? 'disconnected to Matrix' : 'click to change settings';
-	                // visit each existing tab
-	              chrome.tabs.query({}, function(tabArray) {
-	                tabArray.forEach(function(oneTab) {
-	                  if (!isVisitingMatrix(oneTab)) return;
-	                    // if the tab has registered and is visiting Matrix
-	                    // change icons and title for every tab
-	                  chrome.pageAction.setIcon({
-	                    "tabId": oneTab.id,
-	                    "path": {
-	                      "19": img19,
-	                      "38": img38
-	                    }
-	                  });
-	                  chrome.pageAction.setTitle({
-	                    "tabId": oneTab.id,
-	                    "title": newTitle
+	          matrix.testNetwork()
+	            .then(function() {return true;}, function() {return false;})
+	            .then(function(connected) {
+	                var img19 = './img/' + (connected ? 'online.png' : 'offline.png');
+	                var img38 = './img/' + (connected ? 'online.png' : 'offline.png');
+	                var newTitle = connected ? 'click to change settings' : 'disconnected to Matrix';
+	                  // visit each existing tab
+	                chrome.tabs.query({}, function(tabArray) {
+	                  tabArray.forEach(function(oneTab) {
+	                    if (!isVisitingMatrix(oneTab)) return;
+	                      // if the tab has registered and is visiting Matrix
+	                      // change icons and title for every tab
+	                    chrome.pageAction.setIcon({
+	                      "tabId": oneTab.id,
+	                      "path": {
+	                        "19": img19,
+	                        "38": img38
+	                      }
+	                    });
+	                    chrome.pageAction.setTitle({
+	                      "tabId": oneTab.id,
+	                      "title": newTitle
+	                    });
 	                  });
 	                });
-	              });
-	          });
+	            });
+	          
 	      }, 5000);
 	    }
 	  }, {

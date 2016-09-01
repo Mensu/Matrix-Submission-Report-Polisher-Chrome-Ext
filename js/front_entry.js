@@ -1,5 +1,6 @@
 var componentsPath = './components/';
 var polisher = require(componentsPath + 'polisher.js');
+var FilesCmp = require(componentsPath + 'FilesCmp.js');
 var createPolishedReportDiv = polisher.getPolishedReportDiv;
 var customElements = require(componentsPath + 'elements/customElements.js');
 document.body.appendChild(require(componentsPath + 'elements/backToTop.js'));
@@ -10,7 +11,8 @@ chrome.runtime.onMessage.addListener(function(body, sender, callback) {
 try {
   if (body.signal == 'start') {
     var reportObject = body.reportObject;
-    var reportWrapper = document.querySelector('.course-assignment-report-content-wrapper')
+    var reportWrapper = document.querySelector('.course-assignment-report-content-wrapper');
+    var matrixSecondBar = document.querySelector('#matrix-second-bar ul');
     if (reportWrapper === null){
       return callback("front couldn't find the grade Tab.");
     }
@@ -37,8 +39,19 @@ try {
       // insert newly created div and perform initialization
     reportWrapper.insertBefore(switchBtn, originalReport);
     reportWrapper.appendChild(polishedReport);
-    if (polishedReport.sideNav) {
-      polishedReport.sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+    
+    var sideNav = polishedReport.sideNav;
+    if (sideNav) {
+      sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+      var gradeNavTab = matrixSecondBar.querySelector('li[ng-click*="grade"]');
+      gradeNavTab['sideNav'] = sideNav;
+      if (!gradeNavTab.sideNavFixListenerAdded) {
+        gradeNavTab.addEventListener('click', function() {
+          this.sideNav.fix();
+        }, false);
+        gradeNavTab['sideNavFixListenerAdded'] = true;
+      }
+        
     }
     
       // rid the wrapper of the old divs
@@ -51,6 +64,24 @@ try {
       // auto polish
     if (!body.configs.autoPolish) switchBtn.click();
     
+      // files comparison
+    if (body.submissionsList && body.submissionsList.length > 1) {
+      var tabsContentWrapper = document.querySelector('.course-assignment-programming-wrapper');
+      var element = tabsContentWrapper.querySelector('#files-cmp-tab');
+      if (element) {
+        if (body.problemInfo) {
+          element.filesCmpTab.updateChoicesTable(body.submissionsList);
+        }
+      } else {
+        var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
+        var element = filesCmpTab.tab;
+        element.id = 'files-cmp-tab';
+        tabsContentWrapper.appendChild(element);
+
+        matrixSecondBar.appendChild(FilesCmp.createSecondBarLi('Files Comparison', element));
+      }
+
+    }
     return callback('front has got the reportObject and attached the polished report to the grade tab!');
   }
 } catch (e) {

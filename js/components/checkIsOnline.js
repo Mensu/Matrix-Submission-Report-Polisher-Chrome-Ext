@@ -39,36 +39,38 @@ var httpRequest = require('./lib/httpRequest.js');
 
       // show icon and register
     chrome.pageAction.show(details.tabId);
-
+    return;
       // set interval to check whether we have internet access to Matrix
     if (intervalId === null) {
       intervalId = setInterval(function() {
             // send a request to Matrix every five seconds
-          httpRequest('get', matrix.rootUrl + '/app-angular/course/self/views/list.client.view.html', null, function(err) {
-
-              var img19 = './img/' + ((err) ? 'offline.png' : 'online.png');
-              var img38 = './img/' + ((err) ? 'offline.png' : 'online.png');
-              var newTitle = (err) ? 'disconnected to Matrix' : 'click to change settings';
-                // visit each existing tab
-              chrome.tabs.query({}, function(tabArray) {
-                tabArray.forEach(function(oneTab) {
-                  if (!isVisitingMatrix(oneTab)) return;
-                    // if the tab has registered and is visiting Matrix
-                    // change icons and title for every tab
-                  chrome.pageAction.setIcon({
-                    "tabId": oneTab.id,
-                    "path": {
-                      "19": img19,
-                      "38": img38
-                    }
-                  });
-                  chrome.pageAction.setTitle({
-                    "tabId": oneTab.id,
-                    "title": newTitle
+          matrix.testNetwork()
+            .then(function() {return true;}, function() {return false;})
+            .then(function(connected) {
+                var img19 = './img/' + (connected ? 'online.png' : 'offline.png');
+                var img38 = './img/' + (connected ? 'online.png' : 'offline.png');
+                var newTitle = connected ? 'click to change settings' : 'disconnected to Matrix';
+                  // visit each existing tab
+                chrome.tabs.query({}, function(tabArray) {
+                  tabArray.forEach(function(oneTab) {
+                    if (!isVisitingMatrix(oneTab)) return;
+                      // if the tab has registered and is visiting Matrix
+                      // change icons and title for every tab
+                    chrome.pageAction.setIcon({
+                      "tabId": oneTab.id,
+                      "path": {
+                        "19": img19,
+                        "38": img38
+                      }
+                    });
+                    chrome.pageAction.setTitle({
+                      "tabId": oneTab.id,
+                      "title": newTitle
+                    });
                   });
                 });
-              });
-          });
+            });
+          
       }, 5000);
     }
   }, {

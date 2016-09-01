@@ -1,4 +1,26 @@
 var httpRequest = require('./lib/httpRequest.js');
+
+/** 
+ * parse a string to JSON without throwing an error if failed
+ * @param {string} str - string to be parsed
+ * 
+ * @return {boolean|Object} return JSON object if succeeded, or false if failed
+ * independent
+ */
+function JSONParser(str) {
+  var ret = null;
+  try {
+    ret = JSON.parse(str);
+  } catch (e) {
+    ret = false;
+    console.log(e);
+    console.log('Error: Failed to parse the following string to JSON');
+    console.log(str);
+    return e;
+  }
+  return ret;
+}
+
 /** 
  * @constructor
  * MatrixObject
@@ -25,6 +47,9 @@ function MatrixObject(configs) {
     this.rootUrl += '/';
   }
 }
+
+
+
 MatrixObject.prototype = {
   "constructor": MatrixObject,
   "configsSetter": function(newConfigs) {
@@ -33,6 +58,51 @@ MatrixObject.prototype = {
       if (newConfigs[oneConfig] !== undefined) this[oneConfig] = newConfigs[oneConfig];
     }
   },
+
+  /** 
+   * wrap an xhr request by trying parsing response data as JSON and catching possible errors
+   * @param {string} method - 'get' or 'post'
+   * @param {string} url - url to send request
+   * @param {Object} [param] - parameters
+   * 
+   * @return {Object} Promise
+   * 
+   * @private
+   * dependent of 
+   *   {function} httpRequest
+   */
+  "request": function(method, url, param) {
+    if (!param) param = null;
+    return httpRequest(method, url, param)
+      .then(function(body) {
+          body = JSONParser(body);
+          if (body instanceof Error) {
+            return Promise.reject(body);
+          } else {
+            return Promise.resolve(body);
+          }
+      }, function(err) {
+          return Promise.reject(err);
+      });
+  },
+
+  /** 
+   * test whether user has internet access to Matrix
+   * @return {Object} - Promise
+   * @Promise {fullfilled} null
+   * @Promise {rejected} true or an error object
+   * dependent of 
+   *   {function} httpRequest
+   */
+  "testNetwork": function() {
+    return httpRequest('get', this.rootUrl + '/app-angular/course/self/views/list.client.view.html', null)
+      .then(function() {
+          return Promise.resolve(null);
+      }, function(err) {
+          return Promise.reject(err);
+      });
+  },
+
   /** 
    * get one submission by courseId, problemId and submissionId (sub_ca_id)
    * @param {Object} param - object that looks like this
@@ -41,21 +111,11 @@ MatrixObject.prototype = {
    *     "problemId": the assignment's id,
    *     "submissionId": the submission's id,
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getSubmission": function(param, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId, null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "getSubmission": function(param) {
+      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId);
   },
 
   /** 
@@ -65,21 +125,11 @@ MatrixObject.prototype = {
    *     "courseId": the course's id,
    *     "problemId": the assignment's id
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getLatestReport": function(param, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last/feedback', null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "getLatestReport": function(param) {
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last/feedback');
   },
 
   /** 
@@ -89,21 +139,11 @@ MatrixObject.prototype = {
    *     "courseId": the course's id,
    *     "problemId": the assignment's id
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getLatestSubmission": function(problemId, userId, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last', null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "getLatestSubmission": function(param) {
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last');
   },
 
   /** 
@@ -113,21 +153,11 @@ MatrixObject.prototype = {
    *     "courseId": the course's id,
    *     "problemId": the assignment's id
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getProblemInfo": function(param, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId, null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "getProblemInfo": function(param) {
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId);
   },
 
   /** 
@@ -137,21 +167,11 @@ MatrixObject.prototype = {
    *     "courseId": the course's id,
    *     "problemId": the assignment's id
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getSubmissionsList": function(param, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions', null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "getSubmissionsList": function(param) {
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions');
   },
 
   /** 
@@ -161,42 +181,32 @@ MatrixObject.prototype = {
    *     "username": username,
    *     "passowrd": password
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "login": function(param, otherInfo, callback) {
-    httpRequest('post', this.rootUrl + 'api/users/login', param, function(err, body) {
-      return callback(err, body, otherInfo);
+  "login": function(param) {
+    return this.request('post', this.rootUrl + 'api/users/login', {
+      "username": param.username,
+      "password": param.password
     });
   },
 
   /** 
-   * get courses list of currect user
-   * @param {Object} param - object that looks like this
-   *   {}
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
+   * log out
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getCoursesList": function(param, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses', null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "logout": function() {
+    return this.request('get', this.rootUrl + 'api/users/logout');
+  },
+
+  /** 
+   * get courses list of currect user
+   * dependent of 
+   *   {function} this.request
+   */
+  "getCoursesList": function() {
+    return this.request('get', this.rootUrl + 'api/courses');
   },
 
   /** 
@@ -205,21 +215,11 @@ MatrixObject.prototype = {
    *   {
    *     "courseId": the course's id
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getCourseInfo": function(param, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId, null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "getCourseInfo": function(param) {
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/description');
   },
 
   /** 
@@ -228,21 +228,11 @@ MatrixObject.prototype = {
    *   {
    *     "courseId": the course's id
    *   }
-   * @param {*} otherInfo - any other information that will send to callback function
-   * @param {function(boolean, string, *):void} callback - function that looks like this
-   *      @param {boolean} error
-   *      @param {string} response - the response when no error occurred, or undefined otherwise
-   *      @param {*} otherInfo - any other information from user
-   *   function(error, response, otherInfo) {
-   *
-   *   }
    * dependent of 
-   *   {function} httpRequest
+   *   {function} this.request
    */
-  "getProblemsList": function(param, otherInfo, callback) {
-    httpRequest('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments', null, function(err, body) {
-      return callback(err, body, otherInfo);
-    });
+  "getProblemsList": function(param) {
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments');
   }
 };
 
