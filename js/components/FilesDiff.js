@@ -58,7 +58,7 @@ CommonFile.prototype = {
 function FilesDiff(oldFiles, newFiles) {
   var files = this['files'] = [];
   oldFiles.forEach(function(oneFile, index) {
-    if (oneFile.name == newFiles[index].name) {
+    if (newFiles[index] && oneFile.name == newFiles[index].name) {
       files.push(new CommonFile(oneFile, newFiles[index]));
     }
   });

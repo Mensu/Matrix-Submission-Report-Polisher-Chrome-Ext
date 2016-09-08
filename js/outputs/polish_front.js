@@ -297,7 +297,9 @@
 	      // return detail;
 	
 	      var fragment = document.createDocumentFragment();
-	      if (!phaseInfo.pass) fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Compilation failed'));
+	      if (!phaseInfo.pass) {
+	        fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Compilation failed'));
+	      }
 	      var detail = createPreWithText(phaseInfo.report);
 	      detail.classList.add('error-content');
 	      fragment.appendChild(detail);
@@ -306,22 +308,25 @@
 	    function staticCheckDetail(phaseInfo) {
 	      var violations = phaseInfo.report;
 	      var fragment = document.createDocumentFragment();
-	      // var detail
+	      if (!phaseInfo.pass) fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Violations of oclint rules detected'));
+	      var detail = document.createDocumentFragment();
 	      for (var i in violations) {
 	        var oneViolation = createPreWithText(violations[i]);
 	        oneViolation.classList.add('violations');
-	/* use detail */      fragment.appendChild(oneViolation);
+	        detail.appendChild(oneViolation);
 	      }
+	      fragment.appendChild(detail);
 	      return fragment;
 	    }
 	    function testsDetail(phaseInfo, std) {
 	      var cases = phaseInfo.report;
 	      var fragment = document.createDocumentFragment();
-	      // var detail
+	      var detail = document.createDocumentFragment();
+	      
 	      var index = 1;
 	      var maxCaseNum = std ? maxStdCaseNum : maxRanCaseNum;
 	      if (phaseInfo.failedCaseNum) {
-	/* use detail */        fragment.appendChild(createElementWith('div', 'failed-cases-summary', phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' tests failed to pass.'));
+	        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' tests failed to pass'));
 	      }
 	      var getSummary = function(caseInfo) {
 	        var summary = createElementWith('div', 'tests-check-summary');
@@ -413,16 +418,17 @@
 	        }
 	        if (breakFromInner && index == maxCaseNum) break;
 	      }
+	      fragment.appendChild(detail);
 	      return fragment;
 	    }
 	    function memoryCheckDetail(phaseInfo) {
 	      var cases = phaseInfo.report;
 	      var fragment = document.createDocumentFragment();
-	      // var detail
+	      var detail = document.createDocumentFragment();
 	      var index = 1;
 	      var maxCaseNum = maxMemCaseNum;
 	      if (phaseInfo.failedCaseNum) {
-	/* use detail */        fragment.appendChild(createElementWith('div', 'failed-cases-summary', phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' tests failed to pass.'));
+	        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' tests failed to pass'));
 	      }
 	      var getSummary = function(caseInfo) {
 	        var summary = createElementWith('div', 'tests-check-summary');
@@ -491,11 +497,14 @@
 	        }
 	        if (breakFromInner && index == maxCaseNum) break;
 	      }
+	      fragment.appendChild(detail);
 	      return fragment;
 	    }
 	    function googleTestsDetail(phaseInfo) {
 	      var fragment = document.createDocumentFragment();
-	      if (!phaseInfo.pass) fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Google Test failed'));
+	      if (!phaseInfo.pass) {
+	        fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Failed to pass Google Test'));
+	      }
 	      var detail = createElementWith('div', 'error-detail');
 	      var cases = phaseInfo.report;
 	      for (var cr = 0; cr < showCR * 1 + 1; ++cr) {
@@ -11396,6 +11405,15 @@
 	 *   scrollSpeed: 750
 	 * });
 	 */
+	function getOffsetTop(element) {
+		var ret = element.offsetTop;
+		var parent = element.offsetParent;
+		while (parent !== null) {
+			ret += parent.offsetTop;
+			parent = parent.offsetParent;
+		}
+		return ret;
+	}
 	(function (factory) {
 	  if (typeof module === 'object' && module.exports) {
 	    // Node/CommonJS
@@ -11536,7 +11554,7 @@
 			getSection: function(windowPos) {
 				var returnValue = null;
 				var windowHeight = Math.round(this.$win.height() * this.config.scrollThreshold);
-				var endPos = this.config.endSelector ? $(this.config.endSelector).offset().top + $(this.config.endSelector).height() : null;
+				var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
 				var allZero = true;
 				for(var section in this.sections) {
 					if (this.sections[section]) allZero = false;
@@ -11644,7 +11662,7 @@
 					var $parent = this.$elem.find('.' + this.config.currentClass);
 					$parent.removeClass(this.config.currentClass);
 					var navInternalOffset = 0;
-					var endPos = this.config.endSelector ? $(this.config.endSelector).offset().top + $(this.config.endSelector).height() : null;
+					var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
 					if (endPos !== null && windowTop > endPos) navInternalOffset = this.$nav.last().parent()[0].offsetTop;
 					if (navInternalOffset != this.$elem.scrollTop() + this.$elem.height() - this.$nav.last().parent().height()) this.$elem.animate({
 						scrollTop: navInternalOffset

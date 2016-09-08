@@ -1,11 +1,11 @@
+@matrix-color: #0085a1;
 .side-nav {
   display: block;
   padding-bottom: 40px;
   color: #808080;
   background-color: rgba(255, 255, 255, 0.8);
-  // padding-left: 4px;
   border-radius: 3px;
-  width: 200px;
+  width: 216px;
   height: 500px;
   position: fixed;
   top: 120px;
@@ -28,7 +28,7 @@
   a {
     color: rgb(130, 130, 130);
     &:hover {
-      color: #0085a1;
+      color: @matrix-color;
     }
     
   }
@@ -49,6 +49,9 @@
         position: relative;
         margin-right: 5px;
         bottom: 1px;
+      }
+      &:hover {
+        color: @matrix-color;
       }
     }
   }
@@ -81,7 +84,7 @@
       &.non-pass a {
         color: red;
         &:hover {
-          color: #0085a1;
+          color: @matrix-color;
         }
       }
       &.h1_nav {
@@ -128,7 +131,7 @@
         border-radius: 4px;
         background-color: #F5F5F5;
         a {
-          color: #0085a1!important;
+          color: @matrix-color!important;
         }
       }
     }

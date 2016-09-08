@@ -16,6 +16,15 @@
  *   scrollSpeed: 750
  * });
  */
+function getOffsetTop(element) {
+	var ret = element.offsetTop;
+	var parent = element.offsetParent;
+	while (parent !== null) {
+		ret += parent.offsetTop;
+		parent = parent.offsetParent;
+	}
+	return ret;
+}
 (function (factory) {
   if (typeof module === 'object' && module.exports) {
     // Node/CommonJS
@@ -156,7 +165,7 @@
 		getSection: function(windowPos) {
 			var returnValue = null;
 			var windowHeight = Math.round(this.$win.height() * this.config.scrollThreshold);
-			var endPos = this.config.endSelector ? $(this.config.endSelector).offset().top + $(this.config.endSelector).height() : null;
+			var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
 			var allZero = true;
 			for(var section in this.sections) {
 				if (this.sections[section]) allZero = false;
@@ -264,7 +273,7 @@
 				var $parent = this.$elem.find('.' + this.config.currentClass);
 				$parent.removeClass(this.config.currentClass);
 				var navInternalOffset = 0;
-				var endPos = this.config.endSelector ? $(this.config.endSelector).offset().top + $(this.config.endSelector).height() : null;
+				var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
 				if (endPos !== null && windowTop > endPos) navInternalOffset = this.$nav.last().parent()[0].offsetTop;
 				if (navInternalOffset != this.$elem.scrollTop() + this.$elem.height() - this.$nav.last().parent().height()) this.$elem.animate({
 					scrollTop: navInternalOffset

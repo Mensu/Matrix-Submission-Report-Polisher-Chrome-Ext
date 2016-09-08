@@ -2,3 +2,5 @@
 js/.vscode/
 
 js/.vscode/launch.json
+
+.DS_Store

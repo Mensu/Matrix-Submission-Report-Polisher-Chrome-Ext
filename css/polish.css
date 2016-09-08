@@ -47,6 +47,13 @@ input.switch-btn {
   font-family: Courier, Arial;
   margin-top: 0;
   margin-bottom: 0;
+  margin-left: 0 !important;
+}
+.tests-check-summary .result-code,
+.tests-check-summary .limit-use {
+  font-size: 18px !important;
+}
+.tests-check-summary .index {
   font-size: 25px !important;
 }
 .google-test-case-wrapper .index {
@@ -121,13 +128,17 @@ input.switch-btn {
 .inline-added-bg {
   background-color: chartreuse;
 }
+span.one-diff-content {
+  display: inline-block;
+  min-width: 100%;
+}
 .side-nav {
   display: block;
   padding-bottom: 40px;
   color: #808080;
   background-color: rgba(255, 255, 255, 0.8);
   border-radius: 3px;
-  width: 200px;
+  width: 216px;
   height: 500px;
   position: fixed;
   top: 120px;
@@ -169,6 +180,9 @@ input.switch-btn {
   position: relative;
   margin-right: 5px;
   bottom: 1px;
+}
+.side-nav .nav-toggle-wrapper .nav-toggle:hover {
+  color: #0085a1;
 }
 .side-nav .nav-body {
   position: relative;
@@ -241,7 +255,7 @@ input.switch-btn {
   background-color: #F5F5F5;
 }
 .side-nav .nav-body li.active a {
-  color: #0085a1!important;
+  color: #0085a1 !important;
 }
 #course-assignment-programming #course-assignment-programming-container #matrix-second-bar ul li.hidden {
   display: none;
