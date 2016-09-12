@@ -111,6 +111,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
 
 chrome.webRequest.onCompleted.addListener(function(details) {
   if (details.tabId == -1
+    || !localStorage.autoPolish
     || (!/libraries\/(\d*)\/problems\/(\d{1,})$/.test(details.url) )) return;
 
   var libraryId = RegExp['$1'], problemId = RegExp['$2'];

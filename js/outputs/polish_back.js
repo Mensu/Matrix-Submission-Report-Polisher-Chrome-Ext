@@ -160,6 +160,7 @@
 	
 	chrome.webRequest.onCompleted.addListener(function(details) {
 	  if (details.tabId == -1
+	    || !localStorage.autoPolish
 	    || (!/libraries\/(\d*)\/problems\/(\d{1,})$/.test(details.url) )) return;
 	
 	  var libraryId = RegExp['$1'], problemId = RegExp['$2'];
@@ -3789,7 +3790,7 @@
 	
 	      // show icon and register
 	    chrome.pageAction.show(details.tabId);
-	    return;
+	    // return;
 	      // set interval to check whether we have internet access to Matrix
 	    if (intervalId === null) {
 	      intervalId = setInterval(function() {

@@ -11,7 +11,7 @@
   "page_action": {
     "default_icon": {
       "19": "img/online.png",  // 初始图标
-      "38": "img/avatar.png"
+      "38": "img/online.png"
     },
     "default_title": "Matrix Submission Report Polisher",  // 鼠标放到图标上
     "default_popup": "popup.html"  // 点击弹出的小窗口

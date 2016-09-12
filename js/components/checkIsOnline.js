@@ -39,7 +39,7 @@ var httpRequest = require('./lib/httpRequest.js');
 
       // show icon and register
     chrome.pageAction.show(details.tabId);
-    return;
+    // return;
       // set interval to check whether we have internet access to Matrix
     if (intervalId === null) {
       intervalId = setInterval(function() {
