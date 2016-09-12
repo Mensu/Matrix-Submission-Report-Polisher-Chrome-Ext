@@ -106,6 +106,7 @@ input.switch-btn {
   width: 3.3em;
   letter-spacing: -1px;
   border-right: 1px solid #999;
+  -webkit-user-select: none;
 }
 .line-numbers-rows > div {
   display: block;
@@ -272,6 +273,38 @@ span.one-diff-content {
 }
 .files-diff-part th.th-grade {
   width: 40%;
+}
+.no-validation-login {
+  width: 326px;
+  height: 45px;
+  display: block;
+  border: 0;
+  border-radius: 8px;
+  background-color: rgba(71, 158, 162, 0.5);
+  font-size: 16px;
+  color: #fff;
+  -webkit-transition: background-color 0.2s;
+  transition: background-color 0.2s;
+  -webkit-appearance: push-button;
+  -webkit-user-select: none;
+  padding: 2px 6px 3px;
+  white-space: pre;
+  -webkit-box-align: start;
+      -ms-flex-align: start;
+              -ms-grid-row-align: flex-start;
+          align-items: flex-start;
+  text-align: center;
+}
+.no-validation-login:hover {
+  background-color: #479ea2;
+  cursor: pointer;
+}
+.no-validation-login:focus {
+  outline: 0;
+}
+input.faraway {
+  position: absolute;
+  left: -1000000px;
 }
 #backtotop {
   position: fixed;

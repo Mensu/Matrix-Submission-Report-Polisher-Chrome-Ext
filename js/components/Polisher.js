@@ -1,4 +1,5 @@
 var customElements = require('./elements/customElements.js');
+var createMatrixAlert = require('./createMatrixAlert.js');
 var createElementWith = customElements.createElementWith;
 var createLinenumPreWithText = customElements.createLinenumPreWithText;
 var createPreWithText = customElements.createPreWithText;
@@ -40,7 +41,8 @@ var polisher = {
       "TL": 'Time Limit Exceeded',
       "ML": 'Memory Limit Exceeded',
       "OL": 'Output Limit Exceeded',
-      "RE": 'Runtime Error'
+      "RE": 'Runtime Error',
+      "null": 'Unexpected Error'
     };
     
     
@@ -80,7 +82,7 @@ var polisher = {
       var index = 1;
       var maxCaseNum = std ? maxStdCaseNum : maxRanCaseNum;
       if (phaseInfo.failedCaseNum) {
-        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' tests failed to pass'));
+        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's') + ' failed to pass'));
       }
       var getSummary = function(caseInfo) {
         var summary = createElementWith('div', 'tests-check-summary');
@@ -182,7 +184,7 @@ var polisher = {
       var index = 1;
       var maxCaseNum = maxMemCaseNum;
       if (phaseInfo.failedCaseNum) {
-        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' tests failed to pass'));
+        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's') + ' failed to pass'));
       }
       var getSummary = function(caseInfo) {
         var summary = createElementWith('div', 'tests-check-summary');
@@ -296,7 +298,7 @@ var polisher = {
       var nodesToBeAppended = [
         createElementWith('span', 'score-text', phase.description + " : You've got "),
         createElementWith('span', (score == total ? 'score-text' : ['score-text', 'non-pass']), String(score)),
-        createElementWith('span', 'score-text', ' of the total of ' + total + ' points')
+        createElementWith('span', 'score-text', ' of the total of ' + total + ' point' + (total == 1 ? '' : 's'))
       ];
       if (typeof(phase.url) == 'string' && !pass) {
         var link = createElementWith('a', 'link', 'Why did it go wrong?');
@@ -426,7 +428,9 @@ var polisher = {
     sideNav.navTitle.textContent = 'Files Comparison';
     report.appendChild(sideNav.getNode());
     return report;
-  }
+  },
+
+  "createMatrixAlert": createMatrixAlert
 
 
 };

@@ -233,6 +233,20 @@ MatrixObject.prototype = {
    */
   "getProblemsList": function(param) {
     return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments');
+  },
+
+  /** 
+   * get problem info from a library by libraryId and problemId
+   * @param {Object} param - object that looks like this
+   *   {
+   *     "libraryId": the library's id
+   *     "problemId": the assignment's id
+   *   }
+   * dependent of 
+   *   {function} this.request
+   */
+  "getLibraryProblemInfo": function(param) {
+    return this.request('get', this.rootUrl + 'api/libraries/' + param.libraryId + '/problems/' + param.problemId);
   }
 };
 

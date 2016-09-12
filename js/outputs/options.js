@@ -3,6 +3,7 @@ var autoPolishCheckBox = document.getElementById('autoPolish');
 var maxStdCaseNumInput = document.getElementById('maxStdCaseNum');
 var maxRanCaseNumInput = document.getElementById('maxRanCaseNum');
 var maxMemCaseNumInput = document.getElementById('maxMemCaseNum');
+var noValidationLoginCheckBox = document.getElementById('noValidationLogin');
 var saveButton = document.getElementById('save');
 var savedSuccessfully = document.getElementById('savedSuccessfully');
 var maxCaseNums = [
@@ -23,11 +24,12 @@ var maxCaseNums = [
     "input": maxMemCaseNumInput,
     "description": '内存测试最大样例数',
     "default": 2
-  },
+  }
 ];
 function init() {
   showCRCheckBox.checked = localStorage.showCR;
   autoPolishCheckBox.checked = localStorage.autoPolish;
+  noValidationLoginCheckBox.checked = localStorage.noValidationLogin;
   for (var i in maxCaseNums)
     maxCaseNums[i].input.value = localStorage[maxCaseNums[i].id] || maxCaseNums[i]['default'];
 }
@@ -37,7 +39,7 @@ saveButton.addEventListener('click', function() {
     if (checkBox.checked) localStorage[name] = true;
     else localStorage.removeItem(name);
   };
-  saveCheckBox(showCRCheckBox, 'showCR'), saveCheckBox(autoPolishCheckBox, 'autoPolish');
+  saveCheckBox(showCRCheckBox, 'showCR'), saveCheckBox(autoPolishCheckBox, 'autoPolish'), saveCheckBox(noValidationLoginCheckBox, 'noValidationLogin');
   
   var saveCaseNumber = function(Input, name, description) {
     if ((Input.value.match(/^(\d){1,2}$/)
@@ -51,5 +53,5 @@ saveButton.addEventListener('click', function() {
     if (!errOccurred) errOccurred |= saveCaseNumber(maxCaseNums[i].input, maxCaseNums[i].id, maxCaseNums[i].description);
   }
   if (errOccurred) return savedSuccessfully.innerHTML = "";
-  else return savedSuccessfully.innerHTML = "    保存成功！", init();
+  else return savedSuccessfully.innerHTML = "    保存成功（刷新Matrix后生效）", init();
 }, false);

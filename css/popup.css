@@ -6,10 +6,6 @@ body {
   height: 200px;
   width: 250px;
 }
-#s {
+#wrapper {
   margin: 10% 5%;
-
-  color: red;
-  text-align: center;
-
 }
