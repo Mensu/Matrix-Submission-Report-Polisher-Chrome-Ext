@@ -294,8 +294,12 @@ function afterClose(event) {
   if (liList.length == 2 && ~liList[1].className.indexOf('files-cmp-li')) {
     liList[0].click();
   } else {
-    if (curLi.prevLi.isSameNode(liList[0])) curLi.nextLi.click();
-    else curLi.prevLi.click();
+    setTimeout(function() {
+      var selectedTab = curLi.parentUl.querySelector('.choice-tab-active');
+      if (selectedTab) selectedTab.click();
+      else if (curLi.prevLi.isSameNode(liList[0])) curLi.nextLi.click();
+      else curLi.prevLi.click();
+    }, 500);
   }
 
 }
