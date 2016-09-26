@@ -11,6 +11,7 @@
   top: 120px;
   right: 30px;
   z-index: 6;
+  
   &.fold {
     background-color: rgba(255, 255, 255, 0);
     .nav-toggle-wrapper {
@@ -45,6 +46,7 @@
       padding-left: 17px;
       border-radius: 3px;
       font-size: 19px;
+      font-weight: normal;
       &::before {
         content: "−";
         position: relative;
@@ -105,7 +107,7 @@
       &.h1_nav,
       &.h2_nav,
       &.h3_nav {
-        font-weight: bold;
+        font-weight: normal;
       }
 
       &.h4_nav {
@@ -124,6 +126,7 @@
       &.h4_nav,
       &.h5_nav,
       &.h6_nav {
+        font-weight: normal;
         a {
           max-width: 170px;
         }

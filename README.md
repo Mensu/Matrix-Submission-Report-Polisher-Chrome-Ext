@@ -6,49 +6,51 @@
 
 - [``Neil Fraser``](https://github.com/NeilFraser) whose famous [diff implementation](https://code.google.com/p/google-diff-match-patch/) lays a foundation for this extension
 
-# Downloads (unavailable)
+# Downloads
 
+[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.5.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.5.zip)
 
 # Installation
 
-- go to [``chrome://extensions``](chrome://extensions), drag the downloaded ``.crx`` file into chrome before dropping it
+- Go to [``chrome://extensions``](chrome://extensions)
+- Check the box of Developer mode
+- Click Load unpacked extension…
+- Navigate to the extension’s folder and click OK
 
-![drag](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-drag.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-check.png" alt="check box">
 
-- confirm to add the extension
-
-![add](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-add.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-confirm.png" alt="confirm">
 
 - It is suggested that you check the "auto polish" box
 
-![check auto polish box](http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto.png" alt="auto polish">
 
 # demo
 
-- (new) google tests (on 2016-08-25)
+- compile check (on 2016-09-26)
 
-![google tests](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-google-tests-1.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-compile-check.png" alt="compile check">
 
-- compile check (on 2016-08-25)
+- static check (on 2016-09-26)
 
-![compile check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-compile-1.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-static-check.png" alt="static check">
 
-- static check (on 2016-08-10)
+- standard tests/random tests (on 2016-09-26)
 
-![static check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-static.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-tests.png" alt="standard tests/random tests">
 
-- standard tests/random tests (on 2016-08-10)
+- difference (on 2016-09-26)
 
-![standard tests/random tests](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-tests.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff-1.png" alt="difference">
 
-- difference (on 2016-08-10)
+- difference with binary (on 2016-09-26)
 
-![difference](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff1.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff-2.png" alt="difference with hex">
 
-- difference with binary (on 2016-08-10)
+- memory check (on 2016-09-26)
 
-![difference](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-diff2.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-memory-check.png" alt="memory check">
 
-- memory check (on 2016-08-10)
+- google tests (on 2016-09-26)
 
-![memory check](http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-memory.png)
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-google-tests.png" alt="google tests">

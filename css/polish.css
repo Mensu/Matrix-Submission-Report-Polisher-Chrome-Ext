@@ -235,6 +235,7 @@ span.one-diff-content {
   padding-left: 17px;
   border-radius: 3px;
   font-size: 19px;
+  font-weight: normal;
 }
 .side-nav .nav-toggle-wrapper .nav-toggle::before {
   content: "−";
@@ -293,7 +294,7 @@ span.one-diff-content {
 .side-nav .nav-body li.h1_nav,
 .side-nav .nav-body li.h2_nav,
 .side-nav .nav-body li.h3_nav {
-  font-weight: bold;
+  font-weight: normal;
 }
 .side-nav .nav-body li.h4_nav {
   margin-left: 18px !important;
@@ -306,6 +307,11 @@ span.one-diff-content {
 .side-nav .nav-body li.h6_nav {
   margin-left: 40px !important;
   font-size: 9px;
+}
+.side-nav .nav-body li.h4_nav,
+.side-nav .nav-body li.h5_nav,
+.side-nav .nav-body li.h6_nav {
+  font-weight: normal;
 }
 .side-nav .nav-body li.h4_nav a,
 .side-nav .nav-body li.h5_nav a,
