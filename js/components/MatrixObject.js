@@ -171,7 +171,11 @@ MatrixObject.prototype = {
    *   {function} this.request
    */
   "getSubmissionsList": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions');
+    if (param.isUsingUserId && param.userId) {
+      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions?user_id=' + param.userId);
+    } else {
+      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions');
+    }
   },
 
   /** 
@@ -247,6 +251,10 @@ MatrixObject.prototype = {
    */
   "getLibraryProblemInfo": function(param) {
     return this.request('get', this.rootUrl + 'api/libraries/' + param.libraryId + '/problems/' + param.problemId);
+  },
+
+  "getStudentSubmission": function(param) {
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '%20%20%20%20%20%20%20%20/assignments/' + param.problemId + '/submissions/' + param.submissionId + '?user_id=' + param.userId);
   }
 };
 

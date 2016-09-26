@@ -1,19 +1,35 @@
+@import "utility.less";
 pre.full-score {
   white-space: pre-wrap;
 
 }
 input.switch-btn {
   margin-bottom: 10px;
+  .matrix-button();
 }
 .polished-report-success {
   padding-right: 8em;
   pre.success {
+    background-color: #fff;
+    border-radius: 5px;
+    padding: 36px;
+    margin-top: 0;
     font-family: Courier, Arial;
+    font-size: 24px;
+    color: #479ea2;
+    line-height: 24px;
+    box-shadow: 0 3px 10px #ccc;
+    width: 897px;
+  }
+  pre {
+    line-height: 20px;
+    font-size: 13px;
+    background-color: transparent;
+    padding: unset;
+    overflow: unset;
+    border-radius: 3px;
   }
   #matrix-programming-report .report-section {
-    div.score {
-      font-family: "Heiti SC", Arial;
-    }
     .test-content {
       max-height: none;
       .report-detail {
@@ -64,7 +80,7 @@ input.switch-btn {
   }
 
   .index {
-    font-size: 25px !important;
+    font-size: 23px !important;
   }
 
 }
@@ -78,3 +94,31 @@ input.switch-btn {
   }
 }
 
+.submission-container {
+  .files-cmp {
+    margin-top: 26px !important;
+  }
+  .polished-report-success pre.success {
+    width: 897px;
+    padding: 36px;
+    background-color: #FFF;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #ccc;
+    line-height: 24px;
+    font-size: 24px;
+    font-family: "Heiti SC", Arial;
+    color: #479ea2;
+  }
+}
+
+#course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-wrapper .report-container {
+  .polished-report-success {
+    padding-right: unset;
+    pre.success {
+      width: auto;
+    }
+  }
+  #matrix-programming-report .report-section {
+    width: auto;
+  }
+}

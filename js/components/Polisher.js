@@ -348,9 +348,17 @@ var polisher = {
                   }];
 
     phases.forEach(function(onePhase) {
-      if (reportObject[onePhase.id] === null) return;
-      var pass = reportObject[onePhase.id].pass
-          grade = reportObject[onePhase.id].grade;
+      var reportObjCurPhase = reportObject[onePhase.id];
+      if (0 == totalPoints[onePhase.id]) return;
+      if (reportObjCurPhase === null) {
+        reportObjCurPhase = {
+          "pass": false,
+          "grade": 0,
+          "error": "This part was not executed"
+        }
+      }
+      var pass = reportObjCurPhase.pass
+          grade = reportObjCurPhase.grade;
       var reportSection = createElementWith('div', [onePhase.id.replace(/ /g, '-'), 'report-section'],
         getScoreDiv(onePhase, grade, wrap(totalPoints[onePhase.id]), pass));
 
@@ -365,15 +373,15 @@ var polisher = {
       
       var testContent = createElementWith('div', 'test-content');
       var detail = null;
-      if (reportObject[onePhase.id].error) {
-          detail = createElementWith('div', 'not-executing-check', reportObject[onePhase.id].error);
-      } else if (reportObject[onePhase.id].pass) {
-          detail = createElementWith('pre', 'full-score', "Good Job! You've got full scores in this section.");
+      if (reportObjCurPhase.error) {
+          detail = createElementWith('pre', 'not-executing-check', reportObjCurPhase.error);
+      } else if (reportObjCurPhase.pass) {
+          detail = createElementWith('pre', 'full-score', "Good Job! You've got full scores in this part.");
           if (showCR && onePhase.canShowCR) {
-              detail.appendChild(onePhase.getDetail(reportObject[onePhase.id]));
+              detail.appendChild(onePhase.getDetail(reportObjCurPhase));
           }
       } else {
-          detail = onePhase.getDetail(reportObject[onePhase.id]);
+          detail = onePhase.getDetail(reportObjCurPhase);
       }
       var reportDetail = createElementWith('div', 'report-detail', detail);
       testContent.appendChild(reportDetail), reportSection.appendChild(testContent), sectionsWrapper.appendChild(reportSection);

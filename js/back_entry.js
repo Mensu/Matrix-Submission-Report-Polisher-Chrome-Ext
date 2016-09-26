@@ -23,27 +23,37 @@ chrome.webRequest.onCompleted.addListener(function(details) {
       "problemId": problemId,
       "submissionId": submissionId
     };
-  
+  function getSubmissionTime(data) {
+    param['submissionsList'] = data;
+    if (data == null || 0 == data.length) {
+      param['submitTime'] = null;
+      return;
+    }
+    param['submitTime'] = undefined;
+        // get submission time
+    if (requiringLatest) {
+        param['submitTime'] = toSubmitAt(data[0].submit_at, true);
+    } else {
+        data.some(function(oneSubmission, index, self) {
+            if (param.submissionId == oneSubmission.sub_ca_id) {
+              param['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
+              return true;
+            } else {
+              return false;
+            }
+        });
+    }
+  }
   matrix.getSubmissionsList(param)
     .then(function(body) {
-        param['submissionsList'] = body.data;
-        if (body.data == null || 0 == body.data.length) {
-          param['submitTime'] = null;
-          return;
-        }
-        param['submitTime'] = undefined;
-            // get submission time
-        if (requiringLatest) {
-            param['submitTime'] = toSubmitAt(body.data[0].submit_at, true);
+        if (body.status == 'BAD_REQUEST') {
+          param['userId'] = body.paramData.user.user_id;
+          param['isUsingUserId'] = true;
+          return matrix.getSubmissionsList(param).then(function(body) {
+            getSubmissionTime(body.data);
+          });
         } else {
-            body.data.some(function(oneSubmission, index, self) {
-                if (param.submissionId == oneSubmission.sub_ca_id) {
-                  param['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
-                  return true;
-                } else {
-                  return false;
-                }
-            });
+          getSubmissionTime(body.data);
         }
     }, function(err) {
         console.log('Error: Failed to get submissions list');
@@ -52,7 +62,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     .then(function() {
         function sendReportObjToFront(body) {
           var reportObject = new ReportObject(body);
-          if (reportObject === null) return;
+          if (reportObject === null || param.submitTime == null) return;
           reportObject.submitTime = param.submitTime;
           // console.log(reportObject);
           chrome.tabs.sendMessage(param.tabId, {
@@ -164,6 +174,69 @@ chrome.webRequest.onCompleted.addListener(function(details) {
 }, {
   "urls": [
     matrix.rootUrl + 'api/users/login'
+  ]
+});
+
+chrome.webRequest.onCompleted.addListener(function(details) {
+  if (details.tabId == -1
+    || (!/\/courses\/(\d{1,})%20%20%20%20%20%20%20%20\/assignments\/(\d{1,})\/submissions\/(\d{1,})\?user_id=(\d{1,})$/.test(details.url) )) return;
+
+  var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'], userId = RegExp['$4'];
+  var param = {
+      "tabId": details.tabId,
+      "courseId": courseId,
+      "problemId": problemId,
+      "submissionId": submissionId,
+      "userId": userId,
+      "isUsingUserId": true
+    };
+  matrix.getSubmissionsList(param).then(function(body) {
+    param['submissionsList'] = body.data;
+    if (body.data == null || 0 == body.data.length) {
+      param['submitTime'] = null;
+      return;
+    }
+    param['submitTime'] = undefined;
+    // get submission time
+    body.data.some(function(oneSubmission, index, self) {
+        if (param.submissionId == oneSubmission.sub_ca_id) {
+          param['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
+          return true;
+        } else {
+          return false;
+        }
+    });
+    return matrix.getStudentSubmission(param);
+  }).then(function(body) {
+    if (body.data == null) return Promise.reject();
+    var config = JSON.parse(body.data.config);
+    param['problemInfo'] = config;
+    param.problemInfo['totalPoints'] = config.grading;
+    var reportObject = new ReportObject(body);
+    if (reportObject === null) return;
+    reportObject.submitTime = param.submitTime;
+    // console.log(reportObject);
+    chrome.tabs.sendMessage(param.tabId, {
+      "signal": 'startStudentSubmission',
+      "reportObject": reportObject,
+      "problemInfo": param.problemInfo,
+      "submissionsList": param.submissionsList,
+      "configs": {
+        "showCR": localStorage.showCR,
+        "autoPolish": localStorage.autoPolish,
+        "maxStdCaseNum": localStorage.maxStdCaseNum,
+        "maxRanCaseNum": localStorage.maxRanCaseNum,
+        "maxMemCaseNum": localStorage.maxMemCaseNum
+
+      }
+    }, function(response) {
+      console.log(response);
+    });
+  });
+  
+}, {
+  "urls": [
+    matrix.rootUrl + 'api/courses/*%20%20%20%20%20%20%20%20/assignments/*/submissions/*?user_id=*'
   ]
 });
 

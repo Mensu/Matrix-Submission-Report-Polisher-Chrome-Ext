@@ -53,5 +53,5 @@ saveButton.addEventListener('click', function() {
     if (!errOccurred) errOccurred |= saveCaseNumber(maxCaseNums[i].input, maxCaseNums[i].id, maxCaseNums[i].description);
   }
   if (errOccurred) return savedSuccessfully.innerHTML = "";
-  else return savedSuccessfully.innerHTML = "    保存成功（刷新Matrix后生效）", init();
+  else return savedSuccessfully.innerHTML = "    保存成功", init();
 }, false);

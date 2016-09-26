@@ -170,6 +170,99 @@ try {
       }, false);
       return callback('front has removed validation for login!');
     })();
+  } else if (body.signal == 'startStudentSubmission') {
+    var reportObject = body.reportObject;
+    var reportWrapper = document.querySelector('.report-container');
+    var matrixSecondBar = document.querySelector('.choice-tab ul');
+    if (reportWrapper === null) {
+      return callback("front couldn't find the grade Tab.");
+    }
+    if (body.problemInfo) {
+      reportWrapper['problemInfo'] = body.problemInfo;
+    }
+    var selectedStudentId = matrixSecondBar.querySelector('li.choice-tab-active').title;
+    
+      // get div components
+    var oldPolishedReport = reportWrapper.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
+        oldSwitchBtn = reportWrapper.querySelector('.switch-btn:not(.hidden)'),
+        otherStudentReport = reportWrapper.querySelector('.polished-report-success:not(.hidden)'),
+        gradeWrapper = reportWrapper.parentNode.parentNode.querySelector('.grade-wrapper');
+        originalReport = reportWrapper.querySelector('#matrixui-programming-report');
+
+    var polishedReport = createPolishedReportDiv(reportObject, {
+          "showCR": body.configs.showCR,
+          "maxStdCaseNum": body.configs.maxStdCaseNum,
+          "maxRanCaseNum": body.configs.maxRanCaseNum,
+          "maxMemCaseNum": body.configs.maxMemCaseNum,
+          "limits": reportWrapper.problemInfo.limits,
+          "totalPoints": reportWrapper.problemInfo.totalPoints,
+        }),
+        switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
+          "show": 'show polished report',
+          "hide": 'show original report'
+        });
+
+    gradeWrapper.classList.add('hidden');
+    switchBtn['gradeWrapper'] = gradeWrapper;
+    switchBtn.addEventListener('click', showOrginalGrade, false);
+
+      // insert newly created div and perform initialization
+    reportWrapper.insertBefore(switchBtn, reportWrapper.firstChild);
+
+    polishedReport['title'] = selectedStudentId;
+    polishedReport['switchBtn'] = switchBtn;
+    reportWrapper.insertBefore(polishedReport, reportWrapper.querySelector('div'));
+    
+    var sideNav = polishedReport.sideNav;
+    if (sideNav) {
+      sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+    }
+    
+      // rid the wrapper of the old divs
+    if (oldPolishedReport) {
+      if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
+      reportWrapper.removeChild(oldPolishedReport);
+    }
+    if (otherStudentReport) {
+      otherStudentReport.classList.add('hidden');
+    }
+    if (oldSwitchBtn) {
+      oldSwitchBtn.classList.add('hidden');
+    }
+
+      // auto polish
+    if (!body.configs.autoPolish) switchBtn.click();
+    
+      // files comparison
+    if (body.submissionsList && body.submissionsList.length) {
+      var tabsContentWrapper = document.querySelector('.submission-container');
+      var element = tabsContentWrapper.querySelector('#files-cmp-tab');
+      if (element) {
+        if (body.submissionsList[0].sub_ca_id != element.latestSubmissionId) {
+          element.filesCmpTab.updateChoicesTable(body.submissionsList);
+          element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
+          element.fileCmpTab.fix();
+        }
+        
+      } else {
+        var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
+        var element = filesCmpTab.tab;
+        element.id = 'files-cmp-tab';
+        element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
+        tabsContentWrapper.appendChild(element);
+
+        var fileCmpTab = FilesCmp.createSecondBarLi('Files Comparison', element, true);
+        element['fileCmpTab'] = fileCmpTab;
+        matrixSecondBar.appendChild(fileCmpTab);
+
+        var originalFix = fileCmpTab.fix;
+        fileCmpTab['originalFix'] = originalFix;
+        fileCmpTab.fix = addListenersForTabs;
+        fileCmpTab.fix();
+      }
+
+    }
+    return callback('front has got the reportObject and attached the polished report to the grade tab!');
   }
 } catch (e) {
   callback('the following error occurred at front:\n\n' + e.stack);
@@ -177,3 +270,86 @@ try {
 }
 });
 
+function showOrginalGrade() {
+  var button = this;
+  if (button.elementIsHidden) {
+    button.gradeWrapper.classList.remove('hidden');
+  } else {
+    button.gradeWrapper.classList.add('hidden');
+  }
+}
+function clickConnectedTab() {
+  this.connectedTab.click();
+}
+function afterClose(event) {
+  event.stopPropagation();
+  var curLi = this.parentNode;
+  var oldReport = curLi.hideElement.parentNode.querySelector('.polished-report-success[title*="' + curLi.title + '"]');
+  if (oldReport) {
+    oldReport.classList.add('hidden');
+    oldReport.switchBtn.classList.add('hidden');
+  }
+
+  var liList = curLi.parentUl.querySelectorAll('li');
+  if (liList.length == 2 && ~liList[1].className.indexOf('files-cmp-li')) {
+    liList[0].click();
+  } else {
+    if (curLi.prevLi.isSameNode(liList[0])) curLi.nextLi.click();
+    else curLi.prevLi.click();
+  }
+
+}
+function switchReport() {
+  var username = this.title;
+  if (username) {
+    var wrapper = this.hideElement.parentNode;
+    var newReport = wrapper.querySelector('.polished-report-success[title="' + username + '"]');
+    var oldReport = wrapper.querySelector('.polished-report-success:not(.hidden)');
+    var oldSwitchBtn = wrapper.querySelector('.switch-btn:not(.hidden):not(.files-cmp-switch-btn)');
+    if (newReport) {
+      if (oldReport == null || !newReport.isSameNode(oldReport)) {
+        if (oldSwitchBtn) {
+          oldSwitchBtn.classList.add('hidden');
+        }
+        if (oldReport) {
+          oldReport.classList.add('hidden');
+        }
+        
+        newReport.switchBtn.classList.remove('hidden');
+        newReport.switchBtn.click(), newReport.switchBtn.click();
+
+        var newReportParent = newReport.parentNode;
+        var insertPoint = newReportParent.querySelector('.switch-btn:last-of-type');
+        if (insertPoint) insertPoint = insertPoint.nextElementSibling;
+        if (null === insertPoint) insertPoint = newReportParent.firstChild;
+        newReportParent.insertBefore(newReport, insertPoint);
+        this.parentUl.querySelector('.files-cmp-li').fix();
+      }
+      newReport.sideNav.fix();
+    }
+  }
+}
+function addListenersForTabs() {
+  this.originalFix();
+  var liList = this.parentNode.querySelectorAll('li');
+  var allBlockLiList = document.querySelectorAll('#all-block .tab-list li');
+  for (var i = 0, length = liList.length; i != length; ++i) {
+    var oneLi = liList[i];
+    var oneAllBlockLi = allBlockLiList[i];
+    oneLi['prevLi'] = liList[i - 1];
+    oneLi['nextLi'] = liList[i + 1];
+    oneLi.removeEventListener('click', switchReport, false);
+    oneLi.addEventListener('click', switchReport, false);
+    if (allBlockLiList[i]) {
+      oneAllBlockLi['connectedTab'] = liList[i + 1];
+      oneAllBlockLi.removeEventListener('click', clickConnectedTab, false);
+      oneAllBlockLi.addEventListener('click', clickConnectedTab, false);
+    }
+
+    var close = oneLi.querySelector('i');
+    if (close) {
+      close.removeEventListener('click', afterClose, false);
+      close.addEventListener('click', afterClose, false);
+    }
+  }
+}
