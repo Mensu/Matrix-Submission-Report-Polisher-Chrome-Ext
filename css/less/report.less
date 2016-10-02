@@ -111,14 +111,26 @@ input.switch-btn {
   }
 }
 
-#course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-wrapper .report-container {
-  .polished-report-success {
-    padding-right: unset;
-    pre.success {
+#course-assignment-one-submission-program {
+  .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-wrapper .report-container {
+    .polished-report-success {
+      padding-right: unset;
+      pre.success {
+        width: auto;
+      }
+    }
+    #matrix-programming-report .report-section {
       width: auto;
     }
   }
-  #matrix-programming-report .report-section {
-    width: auto;
+}
+
+#course-assignment-one-submission-program, #course-assignment-programming {
+  .CodeMirror .CodeMirror-code .cm-string {
+    color: #FF9800;
+  }
+  .cm-s-twilight span.cm-variable-3, .cm-s-twilight span.cm-def {
+    color: #03A9F4;
   }
 }
+  

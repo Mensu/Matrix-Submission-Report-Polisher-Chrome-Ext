@@ -8,14 +8,14 @@
   box-shadow: 0 0 10px #ccc;
   background: rgba(71,158,162,.5);
   outline: none;
+  transition: background-color .2s ease-in-out;
   &:hover {
     background: #4797B1;
-    transition: background-color .2s ease-in-out;
   }
   &:disabled {
+    background-color: #ccc;
     &:hover {
-      background-color: rgba(71, 158, 162, 0.498039);
-      transition: none;
+      background-color: #ccc;
       cursor: not-allowed;
     }
   }

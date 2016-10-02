@@ -12,16 +12,17 @@ input.switch-btn {
   box-shadow: 0 0 10px #ccc;
   background: rgba(71, 158, 162, 0.5);
   outline: none;
-}
-input.switch-btn:hover {
-  background: #4797B1;
   -webkit-transition: background-color 0.2s ease-in-out;
   transition: background-color 0.2s ease-in-out;
 }
+input.switch-btn:hover {
+  background: #4797B1;
+}
+input.switch-btn:disabled {
+  background-color: #ccc;
+}
 input.switch-btn:disabled:hover {
-  background-color: rgba(71, 158, 162, 0.498039);
-  -webkit-transition: none;
-  transition: none;
+  background-color: #ccc;
   cursor: not-allowed;
 }
 .polished-report-success {
@@ -119,6 +120,16 @@ input.switch-btn:disabled:hover {
 #course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-wrapper .report-container #matrix-programming-report .report-section {
   width: auto;
 }
+#course-assignment-one-submission-program .CodeMirror .CodeMirror-code .cm-string,
+#course-assignment-programming .CodeMirror .CodeMirror-code .cm-string {
+  color: #FF9800;
+}
+#course-assignment-one-submission-program .cm-s-twilight span.cm-variable-3,
+#course-assignment-programming .cm-s-twilight span.cm-variable-3,
+#course-assignment-one-submission-program .cm-s-twilight span.cm-def,
+#course-assignment-programming .cm-s-twilight span.cm-def {
+  color: #03A9F4;
+}
 pre.plain-text-wrapper {
   background: url("https://developer.cdn.mozilla.net/static/img/blueprint-dark.fd85a7a074ae.png") top center #fafbfc;
   border-left: 10px solid #479ea2;
@@ -175,11 +186,13 @@ pre.diffPre {
   left: 3.4em;
 }
 pre.diff-removed-bg,
-div.diff-removed-bg {
+div.diff-removed-bg,
+span.diff-removed-bg {
   background-color: pink;
 }
 pre.diff-added-bg,
-div.diff-added-bg {
+div.diff-added-bg,
+span.diff-added-bg {
   background-color: darkseagreen;
 }
 .inline-removed-bg {
