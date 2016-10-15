@@ -66,7 +66,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     .then(function() {
         function sendReportObjToFront(body) {
           if (param.reportBody.data == null) return Promise.reject();
-          param.problemInfo.totalPoints['google style'] = 0;
+          if (param.problemInfo) param.problemInfo.totalPoints['google style'] = 0;
 
           var reportObject = new ReportObject(param.reportBody);
           if (reportObject === null || param.submitTime == null) return;
