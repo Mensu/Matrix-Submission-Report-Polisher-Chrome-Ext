@@ -5,7 +5,10 @@ var ReportObject = require(componentsPath + 'ReportObject.js');
 var toSubmitAt = require(componentsPath + 'lib/toSubmitAt.js');
 var FilesDiff = require(componentsPath + 'FilesDiff.js');
 
-var matrix = new MatrixObject('https://vmatrix.org.cn');
+var matrix = new MatrixObject({
+  "rootUrl": 'https://vmatrix.org.cn',
+  "googleStyleUrl": 'http://119.29.146.176:3000/'
+});
 require(componentsPath + 'checkIsOnline.js')(matrix);
 
 
@@ -59,11 +62,20 @@ chrome.webRequest.onCompleted.addListener(function(details) {
         console.log('Error: Failed to get submissions list');
         console.log('parameters: ', param);
     })
+    
     .then(function() {
         function sendReportObjToFront(body) {
-          var reportObject = new ReportObject(body);
+          if (param.reportBody.data == null) return Promise.reject();
+          param.problemInfo.totalPoints['google style'] = 0;
+
+          var reportObject = new ReportObject(param.reportBody);
           if (reportObject === null || param.submitTime == null) return;
           reportObject.submitTime = param.submitTime;
+
+          if (body && body.status == 'OK') reportObject['google style'] = body.data;
+          else console.log('Google Style Error: ', body);
+
+
           // console.log(reportObject);
           chrome.tabs.sendMessage(param.tabId, {
             "signal": 'start',
@@ -86,6 +98,23 @@ chrome.webRequest.onCompleted.addListener(function(details) {
         if (!requiringLatest) {
               // get and send the specific report to the front
             return matrix.getSubmission(param)
+              
+              .then(function(body) {
+                param['reportBody'] = body;
+                if (body.data.answers) {
+                  return matrix.getGoogleStyleReport({
+                    "answers": {
+                      "files": body.data.answers
+                    }
+                  });
+                } else {
+                  return null;
+                }
+              }).catch(function(err) {
+                console.log('Error occurs when fetching Google Style: ', err);
+                return null;
+              })
+              
               .then(sendReportObjToFront, function(err) {
                   console.log('Error: Failed to get specific report. Stopped.');
               });
@@ -106,7 +135,24 @@ chrome.webRequest.onCompleted.addListener(function(details) {
               };
           }).then(function() {
                 // get and send the latest report to the front
-              return matrix.getLatestReport(param)
+              return matrix.getLatestSubmission(param)
+                
+                .then(function(body) {
+                  param['reportBody'] = body;
+                  if (body.data.answers) {
+                    return matrix.getGoogleStyleReport({
+                      "answers": {
+                        "files": body.data.answers
+                      }
+                    });
+                  } else {
+                    return null;
+                  }
+                }).catch(function(err) {
+                  console.log('Error occurs when fetching Google Style: ', err);
+                  return null;
+                })
+                
                 .then(sendReportObjToFront, function(err) {
                     console.log('Error: Failed to get latest report. Stopped.');
                 });
@@ -208,13 +254,29 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     });
     return matrix.getStudentSubmission(param);
   }).then(function(body) {
-    if (body.data == null) return Promise.reject();
-    var config = JSON.parse(body.data.config);
+    param['reportBody'] = body;
+    return matrix.getGoogleStyleReport({
+      "answers": {
+        "files": body.data.answers
+      }
+    });
+  }).catch(function(err) {
+    console.log('Error occurs when fetching Google Style: ', err);
+    return null;
+  }).then(function(body) {
+    if (param.reportBody.data == null) return Promise.reject();
+    var config = JSON.parse(param.reportBody.data.config);
     param['problemInfo'] = config;
     param.problemInfo['totalPoints'] = config.grading;
-    var reportObject = new ReportObject(body);
+    param.problemInfo.totalPoints['google style'] = 0;
+
+    var reportObject = new ReportObject(param.reportBody);
     if (reportObject === null) return;
     reportObject.submitTime = param.submitTime;
+
+    if (body && body.status == 'OK') reportObject['google style'] = body.data;
+    else console.log('Google Style Error: ', body);
+
     // console.log(reportObject);
     chrome.tabs.sendMessage(param.tabId, {
       "signal": 'startStudentSubmission',

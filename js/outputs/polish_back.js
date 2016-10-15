@@ -54,7 +54,10 @@
 	var toSubmitAt = __webpack_require__(/*! . */ 8)(componentsPath + 'lib/toSubmitAt.js');
 	var FilesDiff = __webpack_require__(/*! . */ 10)(componentsPath + 'FilesDiff.js');
 	
-	var matrix = new MatrixObject('https://vmatrix.org.cn');
+	var matrix = new MatrixObject({
+	  "rootUrl": 'https://vmatrix.org.cn',
+	  "googleStyleUrl": 'http://119.29.146.176:3000/'
+	});
 	__webpack_require__(/*! . */ 12)(componentsPath + 'checkIsOnline.js')(matrix);
 	
 	
@@ -108,11 +111,20 @@
 	        console.log('Error: Failed to get submissions list');
 	        console.log('parameters: ', param);
 	    })
+	    
 	    .then(function() {
 	        function sendReportObjToFront(body) {
-	          var reportObject = new ReportObject(body);
+	          if (param.reportBody.data == null) return Promise.reject();
+	          param.problemInfo.totalPoints['google style'] = 0;
+	
+	          var reportObject = new ReportObject(param.reportBody);
 	          if (reportObject === null || param.submitTime == null) return;
 	          reportObject.submitTime = param.submitTime;
+	
+	          if (body && body.status == 'OK') reportObject['google style'] = body.data;
+	          else console.log('Google Style Error: ', body);
+	
+	
 	          // console.log(reportObject);
 	          chrome.tabs.sendMessage(param.tabId, {
 	            "signal": 'start',
@@ -135,6 +147,23 @@
 	        if (!requiringLatest) {
 	              // get and send the specific report to the front
 	            return matrix.getSubmission(param)
+	              
+	              .then(function(body) {
+	                param['reportBody'] = body;
+	                if (body.data.answers) {
+	                  return matrix.getGoogleStyleReport({
+	                    "answers": {
+	                      "files": body.data.answers
+	                    }
+	                  });
+	                } else {
+	                  return null;
+	                }
+	              }).catch(function(err) {
+	                console.log('Error occurs when fetching Google Style: ', err);
+	                return null;
+	              })
+	              
 	              .then(sendReportObjToFront, function(err) {
 	                  console.log('Error: Failed to get specific report. Stopped.');
 	              });
@@ -155,7 +184,24 @@
 	              };
 	          }).then(function() {
 	                // get and send the latest report to the front
-	              return matrix.getLatestReport(param)
+	              return matrix.getLatestSubmission(param)
+	                
+	                .then(function(body) {
+	                  param['reportBody'] = body;
+	                  if (body.data.answers) {
+	                    return matrix.getGoogleStyleReport({
+	                      "answers": {
+	                        "files": body.data.answers
+	                      }
+	                    });
+	                  } else {
+	                    return null;
+	                  }
+	                }).catch(function(err) {
+	                  console.log('Error occurs when fetching Google Style: ', err);
+	                  return null;
+	                })
+	                
 	                .then(sendReportObjToFront, function(err) {
 	                    console.log('Error: Failed to get latest report. Stopped.');
 	                });
@@ -257,13 +303,29 @@
 	    });
 	    return matrix.getStudentSubmission(param);
 	  }).then(function(body) {
-	    if (body.data == null) return Promise.reject();
-	    var config = JSON.parse(body.data.config);
+	    param['reportBody'] = body;
+	    return matrix.getGoogleStyleReport({
+	      "answers": {
+	        "files": body.data.answers
+	      }
+	    });
+	  }).catch(function(err) {
+	    console.log('Error occurs when fetching Google Style: ', err);
+	    return null;
+	  }).then(function(body) {
+	    if (param.reportBody.data == null) return Promise.reject();
+	    var config = JSON.parse(param.reportBody.data.config);
 	    param['problemInfo'] = config;
 	    param.problemInfo['totalPoints'] = config.grading;
-	    var reportObject = new ReportObject(body);
+	    param.problemInfo.totalPoints['google style'] = 0;
+	
+	    var reportObject = new ReportObject(param.reportBody);
 	    if (reportObject === null) return;
 	    reportObject.submitTime = param.submitTime;
+	
+	    if (body && body.status == 'OK') reportObject['google style'] = body.data;
+	    else console.log('Google Style Error: ', body);
+	
 	    // console.log(reportObject);
 	    chrome.tabs.sendMessage(param.tabId, {
 	      "signal": 'startStudentSubmission',
@@ -393,7 +455,7 @@
 	 *   {function} httpRequest
 	 */
 	function MatrixObject(configs) {
-	  this.configs = ['rootUrl'];
+	  this.configs = ['rootUrl', 'googleStyleUrl'];
 	  for (var i = 0; i != this.configs.length; ++i) {
 	    var oneConfig = this.configs[i];
 	    this[oneConfig] = null;
@@ -405,6 +467,9 @@
 	  this.configsSetter(configs);
 	  if (!this.rootUrl.endsWith('/')) {
 	    this.rootUrl += '/';
+	  }
+	  if (!this.googleStyleUrl.endsWith('/')) {
+	    this.googleStyleUrl += '/';
 	  }
 	}
 	
@@ -615,6 +680,10 @@
 	
 	  "getStudentSubmission": function(param) {
 	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '%20%20%20%20%20%20%20%20/assignments/' + param.problemId + '/submissions/' + param.submissionId + '?user_id=' + param.userId);
+	  },
+	
+	  "getGoogleStyleReport": function(param) {
+	    return this.request('post', this.googleStyleUrl + 'api/lint/google-style', param.answers);
 	  }
 	};
 	
@@ -789,7 +858,8 @@
 	      "standard tests": null,
 	      "random tests": null,
 	      "memory check": null,
-	      "google tests": null
+	      "google tests": null,
+	      "google style": null
 	    };
 	
 	    var data = body.data;
@@ -916,9 +986,9 @@
 	        return;
 	      }
 	      curPhase['pass'] = false;
-	      // for (var i in violation) {
+	      
 	      violation.forEach(function(oneViolation, i, self) {
-	        // var oneViolation = violation[i];
+	        
 	        var range = function(begin, end) {
 	          if (begin == end) return begin;
 	          else return begin + ' ~ ' + end;

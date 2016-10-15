@@ -33,7 +33,8 @@ ReportObject.prototype = {
       "standard tests": null,
       "random tests": null,
       "memory check": null,
-      "google tests": null
+      "google tests": null,
+      "google style": null
     };
 
     var data = body.data;
@@ -160,9 +161,9 @@ ReportObject.prototype = {
         return;
       }
       curPhase['pass'] = false;
-      // for (var i in violation) {
+      
       violation.forEach(function(oneViolation, i, self) {
-        // var oneViolation = violation[i];
+        
         var range = function(begin, end) {
           if (begin == end) return begin;
           else return begin + ' ~ ' + end;

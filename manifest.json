@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Matrix Submission Report Polisher",  // 在扩展管理中的名字
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "polish your submission report on Matrix",  // 在扩展管理中的描述
   "icons": {
     "16": "img/online.png",  // 右键菜单的图标
@@ -46,6 +46,7 @@
   "options_page": "options.html",  // 右键图标，选项，时弹出的页面
   "permissions": [
     "https://vmatrix.org.cn:*/*",  // 可以向这个网站请求
+    "http://119.29.146.176:3000/*",
     "tabs",
     "webRequest"
   ]

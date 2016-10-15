@@ -33,7 +33,7 @@ function JSONParser(str) {
  *   {function} httpRequest
  */
 function MatrixObject(configs) {
-  this.configs = ['rootUrl'];
+  this.configs = ['rootUrl', 'googleStyleUrl'];
   for (var i = 0; i != this.configs.length; ++i) {
     var oneConfig = this.configs[i];
     this[oneConfig] = null;
@@ -45,6 +45,9 @@ function MatrixObject(configs) {
   this.configsSetter(configs);
   if (!this.rootUrl.endsWith('/')) {
     this.rootUrl += '/';
+  }
+  if (!this.googleStyleUrl.endsWith('/')) {
+    this.googleStyleUrl += '/';
   }
 }
 
@@ -255,6 +258,10 @@ MatrixObject.prototype = {
 
   "getStudentSubmission": function(param) {
     return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '%20%20%20%20%20%20%20%20/assignments/' + param.problemId + '/submissions/' + param.submissionId + '?user_id=' + param.userId);
+  },
+
+  "getGoogleStyleReport": function(param) {
+    return this.request('post', this.googleStyleUrl + 'api/lint/google-style', param.answers);
   }
 };
 

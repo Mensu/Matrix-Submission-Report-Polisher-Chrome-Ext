@@ -573,10 +573,10 @@
 	      fragment.appendChild(detail);
 	      return fragment;
 	    }
-	    function staticCheckDetail(phaseInfo) {
+	    function styleCheckDetail(phaseInfo, phaseName) {
 	      var violations = phaseInfo.report;
 	      var fragment = document.createDocumentFragment();
-	      if (!phaseInfo.pass) fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Violations of oclint rules detected'));
+	      if (!phaseInfo.pass) fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Violations of ' + phaseName + ' detected'));
 	      var detail = document.createDocumentFragment();
 	      for (var i in violations) {
 	        var oneViolation = createPreWithText(violations[i]);
@@ -586,6 +586,7 @@
 	      fragment.appendChild(detail);
 	      return fragment;
 	    }
+	   
 	    function testsDetail(phaseInfo, std) {
 	      var cases = phaseInfo.report;
 	      var fragment = document.createDocumentFragment();
@@ -799,6 +800,12 @@
 	      fragment.appendChild(detail);
 	      return fragment;
 	    }
+	    function googleStyleDetail(phaseInfo) {
+	      return styleCheckDetail(phaseInfo, 'Google Style');
+	    }
+	    function staticCheckDetail(phaseInfo) {
+	      return styleCheckDetail(phaseInfo, 'Oclint Rules');
+	    }
 	    function standardTestsDetail(phaseInfo) {
 	      return testsDetail(phaseInfo, true);
 	    }
@@ -824,6 +831,13 @@
 	                    "id": 'compile check',
 	                    "getDetail": compileCheckDetail,
 	                    "description": 'Compile Check',
+	                    "canShowCR": false
+	                  },
+	                  {
+	                    "id": 'google style',
+	                    "getDetail": googleStyleDetail,
+	                    "description": 'Google Style',
+	                    "url": 'https://google.github.io/styleguide/cppguide.html',
 	                    "canShowCR": false
 	                  },
 	                  {
@@ -861,7 +875,9 @@
 	
 	    phases.forEach(function(onePhase) {
 	      var reportObjCurPhase = reportObject[onePhase.id];
-	      if (0 == totalPoints[onePhase.id]) return;
+	      if ( (onePhase.id != 'google style' && !totalPoints[onePhase.id])
+	        || (onePhase.id == 'google style' && !reportObjCurPhase)) return;
+	
 	      if (reportObjCurPhase === null) {
 	        reportObjCurPhase = {
 	          "pass": false,
@@ -908,6 +924,7 @@
 	    report.appendChild(sideNav.getNode());
 	    return report;
 	  },
+	
 	  "getFilesCmpDiv": function(filesDiff, configs) {
 	    var report = createElementWith('div', ['report-success', 'polished-report-success']);
 	    var sectionsWrapper = createElementWith('div');
