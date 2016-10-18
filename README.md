@@ -2,11 +2,11 @@
 
 # Thanks To
 
-- <a href="https://github.com/chenxu2048" target="_blank"><code>Chan Hsu</code></a> without whose generously lending me his netID and server, this extension wouldn't have come out this soon.
+- [``Chan Hsu``](https://github.com/chenxu2048) without whose generously lending me his netID and server, this extension wouldn't have come out this soon.
 
-- <a href="https://github.com/NeilFraser" target="_blank"><code>Neil Fraser</code></a> whose famous [diff implementation](https://code.google.com/p/google-diff-match-patch/) lays a foundation for this extension
+- [``Neil Fraser``](https://github.com/NeilFraser) whose famous [diff implementation](https://code.google.com/p/google-diff-match-patch/) lays a foundation for this extension
 
-- <a href="https://github.com/isagalaev/highlight.js" target="_blank"><code>highlight.js</code></a> whose implementation of codes highlighting also lays a foundation for this extension ( see also <a href="https://github.com/Mensu/highlight.js/tree/line-numbers" target="_blank"><code>Mensu's straightforward linenum edition</code></a>, which is actually used )
+- [``highlight.js``](https://github.com/isagalaev/highlight.js) whose implementation of codes highlighting also lays a foundation for this extension ( see also [Mensu's simple linenum edition](https://github.com/Mensu/highlight.js), which is actually used )
 
 # Downloads
 
@@ -58,7 +58,7 @@
 
 - Memory Check (on 2016-10-18)
 
-<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-memory-check-20161018.png" alt="memory check">
+<img src="http://7xrahq.com1.z0.glb.clouddn.com/matrix-submission-report-polisher-demo-memory-20161018.png" alt="memory check">
 
 - Google Tests (on 2016-10-18)
 
