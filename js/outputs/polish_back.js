@@ -315,7 +315,9 @@
 	        one.dontCheckStyle = true;
 	        answers.push(one);
 	      });
-	      param.reportBody['files'] = body.data.file;
+	      param.reportBody['supportedFiles'] = body.data.file;
+	    } else {
+	      param.reportBody['supportedFiles'] = [];
 	    }
 	    return matrix.getGoogleStyleReport({
 	      "answers": {
@@ -334,7 +336,7 @@
 	
 	    param['problemInfo'] = config;
 	    param.problemInfo['totalPoints'] = config.grading;
-	    param.problemInfo['files'] = param.reportBody.files;
+	    param.problemInfo['supportedFiles'] = param.reportBody.supportedFiles;
 	
 	    param.problemInfo.totalPoints['google style'] = 0;
 	
@@ -3740,7 +3742,7 @@
 	    date = new Date(str);
 	    return date.getFullYear() + '-' + prefixZero(parseInt(date.getMonth()) + 1) + '-'
 	      + prefixZero(date.getDate()) + ' ' + prefixZero(date.getHours()) + ':'
-	      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) +
+	      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds())
 	      + (useMillisecond ? '.' + prefixZero(prefixZero(date.getMilliseconds()), 2) : '');
 	  }
 	  if (str.endsWith('Z')) {

@@ -266,7 +266,9 @@ chrome.webRequest.onCompleted.addListener(function(details) {
         one.dontCheckStyle = true;
         answers.push(one);
       });
-      param.reportBody['files'] = body.data.file;
+      param.reportBody['supportedFiles'] = body.data.file;
+    } else {
+      param.reportBody['supportedFiles'] = [];
     }
     return matrix.getGoogleStyleReport({
       "answers": {
@@ -285,7 +287,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
 
     param['problemInfo'] = config;
     param.problemInfo['totalPoints'] = config.grading;
-    param.problemInfo['files'] = param.reportBody.files;
+    param.problemInfo['supportedFiles'] = param.reportBody.supportedFiles;
 
     param.problemInfo.totalPoints['google style'] = 0;
 

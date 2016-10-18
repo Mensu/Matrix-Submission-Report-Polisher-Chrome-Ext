@@ -65,12 +65,13 @@ var polisher = {
       var violations = phaseInfo.report;
       var fragment = document.createDocumentFragment();
       if (!phaseInfo.pass) fragment.appendChild(createElementWith('pre', ['error-content', 'red-color'], 'Violations of ' + phaseName + ' detected'));
-      var detail = document.createDocumentFragment();
+      var detail = createElementWith('div', 'violations');
       for (var i in violations) {
         var oneViolation = createPreWithText(violations[i]);
         oneViolation.classList.add('violations');
         detail.appendChild(oneViolation);
       }
+      fragment.appendChild(createHideElementBtn(detail));
       fragment.appendChild(detail);
       return fragment;
     }
@@ -304,7 +305,7 @@ var polisher = {
     function getScoreDiv(phase, score, total, pass) {
       var nodesToBeAppended = [
         createElementWith('span', 'score-text', phase.description + " : You've got "),
-        createElementWith('span', (score == total ? 'score-text' : ['score-text', 'non-pass']), String(score)),
+        createElementWith('span', (score >= total ? 'score-text' : ['score-text', 'non-pass']), String(score)),
         createElementWith('span', 'score-text', ' of the total of ' + total + ' point' + (total == 1 ? '' : 's'))
       ];
       if (typeof(phase.url) == 'string' && !pass) {

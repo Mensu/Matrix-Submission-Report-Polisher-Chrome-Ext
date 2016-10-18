@@ -217,7 +217,7 @@ try {
       studentAnswerAreaObj.update(formattedCodes);
     } else if (formattedCodes) {
       var supportedFiles = {};
-      reportWrapper.problemInfo.files.forEach(function(one) {
+      reportWrapper.problemInfo.supportedFiles.forEach(function(one) {
         supportedFiles[one.name] = formattedCodes[one.name];
         formattedCodes[one.name] = undefined;
       });
