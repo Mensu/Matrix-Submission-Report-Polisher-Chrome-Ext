@@ -216,14 +216,18 @@ try {
       studentAnswerAreaObj = studentAnswerArea.studentAnswerAreaObj;
       studentAnswerAreaObj.update(formattedCodes);
     } else if (formattedCodes) {
-      studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, 'cpp');
+      var supportedFiles = {};
+      reportWrapper.problemInfo.files.forEach(function(one) {
+        supportedFiles[one.name] = formattedCodes[one.name];
+        formattedCodes[one.name] = undefined;
+      });
+      studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, supportedFiles, 'cpp');
       studentAnswerArea = studentAnswerAreaObj.getNode();
       gradeWrapper.parentNode.insertBefore(studentAnswerArea, gradeWrapper);
     }
 
     polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;
     polishedReport['formattedCodes'] = formattedCodes;
-    
 
     gradeWrapper.classList.add('hidden');
     switchBtn['gradeWrapper'] = gradeWrapper;

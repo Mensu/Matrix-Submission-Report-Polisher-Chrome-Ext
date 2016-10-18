@@ -1,24 +1,35 @@
 var hljs = require('./highlight.pack.js');
 var createElementWith = require('../lib/createElementWith.js');
 
-function StudentAnswerArea(formattedCodes, language) {
+function StudentAnswerArea(formattedCodes, supportedFiles, language) {
   this.tabsUl = createElementWith('ul', 'answerfiles-ul');
   this.codeArea = createElementWith('div', 'code-area');
   this.codeBlocks = [];
-  for (var name in formattedCodes) {
-    var oneCodeBlock = createElementWith('code', 'language-' + language, formattedCodes[name]);
-    oneCodeBlock['codeFilename'] = name;
-    this.codeBlocks.push(oneCodeBlock);
-    var oneCodePre = createElementWith('pre', ['language-' + language, 'hidden'], oneCodeBlock);
-    this.codeArea.appendChild(oneCodePre);
+  this.supportedCodeBlocks = [];
+  var self = this;
+  function addTabs(files, supported) {
+    for (var name in files) {
+      if (!files[name]) continue;
+      var oneCodeBlock = createElementWith('code', 'language-' + language, files[name]);
+      oneCodeBlock['codeFilename'] = name;
+      if (supported) {
+        self.supportedCodeBlocks.push(oneCodeBlock);
+      } else {
+        self.codeBlocks.push(oneCodeBlock);
+      }
+      var oneCodePre = createElementWith('pre', ['language-' + language, 'hidden'], oneCodeBlock);
+      self.codeArea.appendChild(oneCodePre);
 
-    var oneTab = createElementWith('a', 'answerfile-bar', name);
-    oneTab['studentAnswerAreaObj'] = this;
-    oneTab['codePre'] = oneCodePre;
-    oneTab.addEventListener('click', switchFileTab, false);
-    var oneTabWrapper = createElementWith('li', 'answerfile-bar-li', oneTab);
-    this.tabsUl.appendChild(oneTabWrapper);
+      var oneTab = createElementWith('li', 'answerfile-bar-li', name);
+      oneTab['studentAnswerAreaObj'] = self;
+      oneTab['codePre'] = oneCodePre;
+      oneTab.addEventListener('click', switchFileTab, false);
+      self.tabsUl.appendChild(oneTab);
+    }
   }
+  addTabs(formattedCodes, false);
+  addTabs(supportedFiles, true);
+  
   this.filesTabsContainer = createElementWith('div', 'answerfile-bar-container', this.tabsUl);
 
   this.codeArea.id = 'code-area';
@@ -35,32 +46,46 @@ StudentAnswerArea.prototype = {
   "getNode": function() {
     return this.wrapper;
   },
+  "highlightOneBlock": function(one) {
+    var result = one.className.match(/language-[\w]{1,}/);
+    if (!result) return;
+    hljs.highlightBlock(one);
+  },
   "init": function() {
-    this.codeBlocks.forEach(function(one) {
-      var result = one.className.match(/language-[\w]{1,}/);
-      if (!result) return;
-      hljs.highlightBlock(one);
-    });
-    var firstFileTab = this.tabsUl.querySelector('a');
-    if (firstFileTab) firstFileTab.click();
+    this.supportedCodeBlocks.forEach(this.highlightOneBlock);
+    this.fix();
+  },
+  "fix": function() {
+    this.codeBlocks.forEach(this.highlightOneBlock);
+    var original = this.tabsUl.querySelector('li.files-tab-active');
+    if (original) {
+      original.click();
+    } else {
+      var firstFileTab = this.tabsUl.querySelector('li');
+      if (firstFileTab) {
+        firstFileTab.click();
+      }
+    }
   },
   "update": function(formattedCodes) {
+    this.supportedCodeBlocks.forEach(function(one) {
+      one.parentNode.classList.add('hidden');
+    });
     this.codeBlocks.forEach(function(one) {
       one.parentNode.classList.add('hidden');
       one.textContent = formattedCodes[one.codeFilename];
     });
-    this.init();
+    this.fix();
   }
 };
 
 function switchFileTab() {
-  var original = this.studentAnswerAreaObj.tabsUl.querySelector('a.answerfile-bar-active');
+  var original = this.studentAnswerAreaObj.tabsUl.querySelector('li.files-tab-active');
   if (original) {
-    if (original.isSameNode(this)) return;
-    original.classList.remove('answerfile-bar-active');
+    original.classList.remove('files-tab-active');
     original.codePre.classList.add('hidden');
   }
-  this.classList.add('answerfile-bar-active');
+  this.classList.add('files-tab-active');
   this.codePre.classList.remove('hidden');
 }
 

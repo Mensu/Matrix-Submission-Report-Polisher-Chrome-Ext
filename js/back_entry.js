@@ -67,7 +67,9 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     .then(function() {
         function sendReportObjToFront(body) {
           if (param.reportBody.data == null) return Promise.reject();
-          if (param.problemInfo) param.problemInfo.totalPoints['google style'] = 0;
+          if (param.problemInfo) {
+            param.problemInfo.totalPoints['google style'] = 0;
+          }
 
           var reportObject = new ReportObject(param.reportBody);
           if (reportObject === null || param.submitTime == null) return;
@@ -256,9 +258,19 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     return matrix.getStudentSubmission(param);
   }).then(function(body) {
     param['reportBody'] = body;
+    return matrix.getProblemInfo(param);
+  }).then(function(body) {
+    var answers = param.reportBody.data.answers.slice();
+    if (body.data && body.data.file) {
+      body.data.file.forEach(function(one) {
+        one.dontCheckStyle = true;
+        answers.push(one);
+      });
+      param.reportBody['files'] = body.data.file;
+    }
     return matrix.getGoogleStyleReport({
       "answers": {
-        "files": body.data.answers,
+        "files": answers,
         "config": {
           "getFormattedCodes": true
         }
@@ -270,8 +282,10 @@ chrome.webRequest.onCompleted.addListener(function(details) {
   }).then(function(body) {
     if (param.reportBody.data == null) return Promise.reject();
     var config = JSON.parse(param.reportBody.data.config);
+
     param['problemInfo'] = config;
     param.problemInfo['totalPoints'] = config.grading;
+    param.problemInfo['files'] = param.reportBody.files;
 
     param.problemInfo.totalPoints['google style'] = 0;
 

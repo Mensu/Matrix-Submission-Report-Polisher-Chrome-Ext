@@ -4,8 +4,25 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
 
 */
 .clang-formatted {
-  code {
-    font-size: 14px;
+  li.answerfile-bar-li {
+    &.files-tab-active {
+      border-top: 3px solid #f26e6e;
+      color: #f26e6e;
+    }
+    cursor: pointer;
+    text-decoration: none;
+    color: #ccc;
+    padding: 3px 10px !important;
+    font-size: 16px;
+    line-height: 16px;
+    letter-spacing: .5px;
+    width: auto;
+  }
+  pre {
+    overflow-x: hidden;
+    code {
+      font-size: 14px;
+    }
   }
   .hljs {
     display: inline-block;
@@ -14,16 +31,16 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
     background: #23241f;
 
     border-radius: 3px;
-    max-height: 700px;
+    max-height: 400px;
     overflow-y: auto;
   }
   .hljs {
     counter-reset: lines;
   }
-  .hljs > .line {
+  .hljs .line {
     counter-increment: lines;
   }
-  .hljs > .line::before {
+  .hljs .line::before {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -108,8 +125,12 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
   }
 
   .hljs-comment,
-  .hljs-deletion {
+  .hljs-deletion,
+  .hljs-comment ~ .line {
     color: #75715e;
+    &::before {
+      font-style: normal;
+    }
   }
 
 

@@ -116,7 +116,9 @@
 	    .then(function() {
 	        function sendReportObjToFront(body) {
 	          if (param.reportBody.data == null) return Promise.reject();
-	          if (param.problemInfo) param.problemInfo.totalPoints['google style'] = 0;
+	          if (param.problemInfo) {
+	            param.problemInfo.totalPoints['google style'] = 0;
+	          }
 	
 	          var reportObject = new ReportObject(param.reportBody);
 	          if (reportObject === null || param.submitTime == null) return;
@@ -305,9 +307,19 @@
 	    return matrix.getStudentSubmission(param);
 	  }).then(function(body) {
 	    param['reportBody'] = body;
+	    return matrix.getProblemInfo(param);
+	  }).then(function(body) {
+	    var answers = param.reportBody.data.answers.slice();
+	    if (body.data && body.data.file) {
+	      body.data.file.forEach(function(one) {
+	        one.dontCheckStyle = true;
+	        answers.push(one);
+	      });
+	      param.reportBody['files'] = body.data.file;
+	    }
 	    return matrix.getGoogleStyleReport({
 	      "answers": {
-	        "files": body.data.answers,
+	        "files": answers,
 	        "config": {
 	          "getFormattedCodes": true
 	        }
@@ -319,8 +331,10 @@
 	  }).then(function(body) {
 	    if (param.reportBody.data == null) return Promise.reject();
 	    var config = JSON.parse(param.reportBody.data.config);
+	
 	    param['problemInfo'] = config;
 	    param.problemInfo['totalPoints'] = config.grading;
+	    param.problemInfo['files'] = param.reportBody.files;
 	
 	    param.problemInfo.totalPoints['google style'] = 0;
 	
@@ -3708,10 +3722,11 @@
 	 * @param {boolean} [toReadable] - true: to Normal;
 	 *                                 false: to ISO;
 	 *                                 omitted: toggle between Normal and ISO
+	 * @param {boolean} [useMillisecond] - whether to use millisecond
 	 * @return {string} resulted string representing time
 	 * independent
 	 */
-	function toSubmitAt(str, toReadable) {
+	function toSubmitAt(str, toReadable, useMillisecond) {
 	  var date = new Date();
 	  function prefixZero(str, digitNum) {
 	    digitNum = digitNum || 1;
@@ -3725,8 +3740,8 @@
 	    date = new Date(str);
 	    return date.getFullYear() + '-' + prefixZero(parseInt(date.getMonth()) + 1) + '-'
 	      + prefixZero(date.getDate()) + ' ' + prefixZero(date.getHours()) + ':'
-	      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) + '.'
-	      + prefixZero(prefixZero(date.getMilliseconds()), 2);
+	      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) +
+	      + (useMillisecond ? '.' + prefixZero(prefixZero(date.getMilliseconds()), 2) : '');
 	  }
 	  if (str.endsWith('Z')) {
 	      if (toReadable || toReadable === undefined) return toNormal();

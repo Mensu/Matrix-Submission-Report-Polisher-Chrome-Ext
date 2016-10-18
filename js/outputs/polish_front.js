@@ -265,14 +265,18 @@
 	      studentAnswerAreaObj = studentAnswerArea.studentAnswerAreaObj;
 	      studentAnswerAreaObj.update(formattedCodes);
 	    } else if (formattedCodes) {
-	      studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, 'cpp');
+	      var supportedFiles = {};
+	      reportWrapper.problemInfo.files.forEach(function(one) {
+	        supportedFiles[one.name] = formattedCodes[one.name];
+	        formattedCodes[one.name] = undefined;
+	      });
+	      studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, supportedFiles, 'cpp');
 	      studentAnswerArea = studentAnswerAreaObj.getNode();
 	      gradeWrapper.parentNode.insertBefore(studentAnswerArea, gradeWrapper);
 	    }
 	
 	    polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;
 	    polishedReport['formattedCodes'] = formattedCodes;
-	    
 	
 	    gradeWrapper.classList.add('hidden');
 	    switchBtn['gradeWrapper'] = gradeWrapper;
@@ -451,10 +455,11 @@
 	 * @param {boolean} [toReadable] - true: to Normal;
 	 *                                 false: to ISO;
 	 *                                 omitted: toggle between Normal and ISO
+	 * @param {boolean} [useMillisecond] - whether to use millisecond
 	 * @return {string} resulted string representing time
 	 * independent
 	 */
-	function toSubmitAt(str, toReadable) {
+	function toSubmitAt(str, toReadable, useMillisecond) {
 	  var date = new Date();
 	  function prefixZero(str, digitNum) {
 	    digitNum = digitNum || 1;
@@ -468,8 +473,8 @@
 	    date = new Date(str);
 	    return date.getFullYear() + '-' + prefixZero(parseInt(date.getMonth()) + 1) + '-'
 	      + prefixZero(date.getDate()) + ' ' + prefixZero(date.getHours()) + ':'
-	      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) + '.'
-	      + prefixZero(prefixZero(date.getMilliseconds()), 2);
+	      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) +
+	      + (useMillisecond ? '.' + prefixZero(prefixZero(date.getMilliseconds()), 2) : '');
 	  }
 	  if (str.endsWith('Z')) {
 	      if (toReadable || toReadable === undefined) return toNormal();
@@ -1546,24 +1551,35 @@
 	var hljs = __webpack_require__(/*! ./highlight.pack.js */ 23);
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	
-	function StudentAnswerArea(formattedCodes, language) {
+	function StudentAnswerArea(formattedCodes, supportedFiles, language) {
 	  this.tabsUl = createElementWith('ul', 'answerfiles-ul');
 	  this.codeArea = createElementWith('div', 'code-area');
 	  this.codeBlocks = [];
-	  for (var name in formattedCodes) {
-	    var oneCodeBlock = createElementWith('code', 'language-' + language, formattedCodes[name]);
-	    oneCodeBlock['codeFilename'] = name;
-	    this.codeBlocks.push(oneCodeBlock);
-	    var oneCodePre = createElementWith('pre', ['language-' + language, 'hidden'], oneCodeBlock);
-	    this.codeArea.appendChild(oneCodePre);
+	  this.supportedCodeBlocks = [];
+	  var self = this;
+	  function addTabs(files, supported) {
+	    for (var name in files) {
+	      if (!files[name]) continue;
+	      var oneCodeBlock = createElementWith('code', 'language-' + language, files[name]);
+	      oneCodeBlock['codeFilename'] = name;
+	      if (supported) {
+	        self.supportedCodeBlocks.push(oneCodeBlock);
+	      } else {
+	        self.codeBlocks.push(oneCodeBlock);
+	      }
+	      var oneCodePre = createElementWith('pre', ['language-' + language, 'hidden'], oneCodeBlock);
+	      self.codeArea.appendChild(oneCodePre);
 	
-	    var oneTab = createElementWith('a', 'answerfile-bar', name);
-	    oneTab['studentAnswerAreaObj'] = this;
-	    oneTab['codePre'] = oneCodePre;
-	    oneTab.addEventListener('click', switchFileTab, false);
-	    var oneTabWrapper = createElementWith('li', 'answerfile-bar-li', oneTab);
-	    this.tabsUl.appendChild(oneTabWrapper);
+	      var oneTab = createElementWith('li', 'answerfile-bar-li', name);
+	      oneTab['studentAnswerAreaObj'] = self;
+	      oneTab['codePre'] = oneCodePre;
+	      oneTab.addEventListener('click', switchFileTab, false);
+	      self.tabsUl.appendChild(oneTab);
+	    }
 	  }
+	  addTabs(formattedCodes, false);
+	  addTabs(supportedFiles, true);
+	  
 	  this.filesTabsContainer = createElementWith('div', 'answerfile-bar-container', this.tabsUl);
 	
 	  this.codeArea.id = 'code-area';
@@ -1580,32 +1596,46 @@
 	  "getNode": function() {
 	    return this.wrapper;
 	  },
+	  "highlightOneBlock": function(one) {
+	    var result = one.className.match(/language-[\w]{1,}/);
+	    if (!result) return;
+	    hljs.highlightBlock(one);
+	  },
 	  "init": function() {
-	    this.codeBlocks.forEach(function(one) {
-	      var result = one.className.match(/language-[\w]{1,}/);
-	      if (!result) return;
-	      hljs.highlightBlock(one);
-	    });
-	    var firstFileTab = this.tabsUl.querySelector('a');
-	    if (firstFileTab) firstFileTab.click();
+	    this.supportedCodeBlocks.forEach(this.highlightOneBlock);
+	    this.fix();
+	  },
+	  "fix": function() {
+	    this.codeBlocks.forEach(this.highlightOneBlock);
+	    var original = this.tabsUl.querySelector('li.files-tab-active');
+	    if (original) {
+	      original.click();
+	    } else {
+	      var firstFileTab = this.tabsUl.querySelector('li');
+	      if (firstFileTab) {
+	        firstFileTab.click();
+	      }
+	    }
 	  },
 	  "update": function(formattedCodes) {
+	    this.supportedCodeBlocks.forEach(function(one) {
+	      one.parentNode.classList.add('hidden');
+	    });
 	    this.codeBlocks.forEach(function(one) {
 	      one.parentNode.classList.add('hidden');
 	      one.textContent = formattedCodes[one.codeFilename];
 	    });
-	    this.init();
+	    this.fix();
 	  }
 	};
 	
 	function switchFileTab() {
-	  var original = this.studentAnswerAreaObj.tabsUl.querySelector('a.answerfile-bar-active');
+	  var original = this.studentAnswerAreaObj.tabsUl.querySelector('li.files-tab-active');
 	  if (original) {
-	    if (original.isSameNode(this)) return;
-	    original.classList.remove('answerfile-bar-active');
+	    original.classList.remove('files-tab-active');
 	    original.codePre.classList.add('hidden');
 	  }
-	  this.classList.add('answerfile-bar-active');
+	  this.classList.add('files-tab-active');
 	  this.codePre.classList.remove('hidden');
 	}
 	

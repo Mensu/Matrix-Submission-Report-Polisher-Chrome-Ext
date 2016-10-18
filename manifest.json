@@ -1,29 +1,21 @@
 {
   "manifest_version": 2,
-  "name": "Matrix Submission Report Polisher",  // 在扩展管理中的名字
+  "name": "Matrix Submission Report Polisher",
   "version": "0.1.6",
-  "description": "polish your submission report on Matrix",  // 在扩展管理中的描述
+  "description": "polish your submission report on Matrix",
   "icons": {
-    "16": "img/online.png",  // 右键菜单的图标
-    "48": "img/online.png",  // 扩展管理中的图标
-    "128": "img/online.png"  // 点击权限
+    "16": "img/online.png",
+    "48": "img/online.png",
+    "128": "img/online.png"
   },
   "page_action": {
     "default_icon": {
-      "19": "img/online.png",  // 初始图标
+      "19": "img/online.png",
       "38": "img/online.png"
     },
-    "default_title": "Matrix Submission Report Polisher",  // 鼠标放到图标上
-    "default_popup": "popup.html"  // 点击弹出的小窗口
+    "default_title": "Matrix Submission Report Polisher",
+    "default_popup": "popup.html"
   },
-  // "page_action": {
-    // "default_icon": {
-    //   "19": "img/icon_wechat.png",  // 初始图标
-    //   "38": "img/offline.png"
-    // },
-    // "default_title": "brower_action_default_title",  // 鼠标放到图标上
-    // "default_popup": "popup.html"  // 点击弹出的小窗口
-  // },
   "background": {
     "scripts": [
       "./js/outputs/polish_back.js"
@@ -31,9 +23,8 @@
   },
   "content_scripts": [
     {
-      "matches": [  // 需要注入代码（修改）的网站
+      "matches": [
         "https://vmatrix.org.cn:*/*"
-        // "file://mac/Home/Desktop/*"
       ],
       "css": [
         "./css/polish.css"
@@ -43,15 +34,12 @@
       ]
     }
   ],
-  "options_page": "options.html",  // 右键图标，选项，时弹出的页面
+  "options_page": "options.html",
   "permissions": [
-    "https://vmatrix.org.cn:*/*",  // 可以向这个网站请求
+    "https://vmatrix.org.cn:*/*",
     "http://119.29.146.176:3000/*",
     "http://localhost:3000/*",
     "tabs",
     "webRequest"
   ]
-  // "web_accessible_resources": [
-  //   "img/*.png"
-  // ]
 }

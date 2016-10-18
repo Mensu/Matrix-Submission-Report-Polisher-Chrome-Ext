@@ -4,10 +4,11 @@
  * @param {boolean} [toReadable] - true: to Normal;
  *                                 false: to ISO;
  *                                 omitted: toggle between Normal and ISO
+ * @param {boolean} [useMillisecond] - whether to use millisecond
  * @return {string} resulted string representing time
  * independent
  */
-function toSubmitAt(str, toReadable) {
+function toSubmitAt(str, toReadable, useMillisecond) {
   var date = new Date();
   function prefixZero(str, digitNum) {
     digitNum = digitNum || 1;
@@ -21,8 +22,8 @@ function toSubmitAt(str, toReadable) {
     date = new Date(str);
     return date.getFullYear() + '-' + prefixZero(parseInt(date.getMonth()) + 1) + '-'
       + prefixZero(date.getDate()) + ' ' + prefixZero(date.getHours()) + ':'
-      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) + '.'
-      + prefixZero(prefixZero(date.getMilliseconds()), 2);
+      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) +
+      + (useMillisecond ? '.' + prefixZero(prefixZero(date.getMilliseconds()), 2) : '');
   }
   if (str.endsWith('Z')) {
       if (toReadable || toReadable === undefined) return toNormal();
