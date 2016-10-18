@@ -2,7 +2,7 @@
 
 # Thanks To
 
-- [``Chan Hsu``](https://github.com/chenxu2048) without whose generously lending me his netID, this extension wouldn't have come out this soon.
+- [``Chan Hsu``](https://github.com/chenxu2048) without whose generously lending me his netID and server, this extension wouldn't have come out this soon.
 
 - [``Neil Fraser``](https://github.com/NeilFraser) whose famous [diff implementation](https://code.google.com/p/google-diff-match-patch/) lays a foundation for this extension
 
@@ -10,16 +10,13 @@
 
 [``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.5.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.5.zip)
 
+[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.6-alpha.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.6-alpha.zip)
+
 # Installation
 
 - Go to [``chrome://extensions``](chrome://extensions)
 - Check the box of Developer mode
-- Click Load unpacked extension…
-- Navigate to the extension’s folder and click OK
-
-<img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-check.png" alt="check box">
-
-<img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-confirm.png" alt="confirm">
+- Drag the **unpacked** extension folder to the page
 
 - It is suggested that you check the "auto polish" box
 

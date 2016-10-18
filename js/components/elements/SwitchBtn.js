@@ -37,6 +37,7 @@ function createSwitchBtn(elementToShow, elementToHide, buttonText) {
   elementToHide.classList.add('hidden');
   return switchBtn;
 }
+
 (function exportModuleUniversally(root, factory) {
   if (typeof(exports) === 'object' && typeof(module) === 'object')
     module.exports = factory();

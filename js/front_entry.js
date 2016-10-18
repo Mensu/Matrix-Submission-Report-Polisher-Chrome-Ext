@@ -3,9 +3,8 @@ var polisher = require(componentsPath + 'polisher.js');
 var FilesCmp = require(componentsPath + 'FilesCmp.js');
 var createPolishedReportDiv = polisher.getPolishedReportDiv;
 var customElements = require(componentsPath + 'elements/customElements.js');
+var StudentAnswerArea = require(componentsPath + 'elements/StudentAnswerArea.js');
 document.body.appendChild(require(componentsPath + 'elements/backToTop.js'));
-
-
 
   // get the reportObject from the back,
   // use it to create polished report div and attach it to the page
@@ -202,6 +201,30 @@ try {
           "hide": 'show original report'
         });
 
+    var studentAnswerArea = document.querySelector('.answer-wrapper.clang-formatted');
+    var formattedCodes = null;
+    var studentAnswerAreaObj = null;
+    if (reportObject['google style']) {
+      formattedCodes = reportObject['google style'].formatted;
+    }
+    if (studentAnswerArea) {
+      if (!formattedCodes) {
+        formattedCodes = {
+          "Server Error.c": 'Google Style Server Error'
+        }
+      }
+      studentAnswerAreaObj = studentAnswerArea.studentAnswerAreaObj;
+      studentAnswerAreaObj.update(formattedCodes);
+    } else if (formattedCodes) {
+      studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, 'cpp');
+      studentAnswerArea = studentAnswerAreaObj.getNode();
+      gradeWrapper.parentNode.insertBefore(studentAnswerArea, gradeWrapper);
+    }
+
+    polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;
+    polishedReport['formattedCodes'] = formattedCodes;
+    
+
     gradeWrapper.classList.add('hidden');
     switchBtn['gradeWrapper'] = gradeWrapper;
     switchBtn.addEventListener('click', showOrginalGrade, false);
@@ -305,32 +328,32 @@ function afterClose(event) {
 }
 function switchReport() {
   var username = this.title;
-  if (username) {
-    var wrapper = this.hideElement.parentNode;
-    var newReport = wrapper.querySelector('.polished-report-success[title="' + username + '"]');
-    var oldReport = wrapper.querySelector('.polished-report-success:not(.hidden)');
-    var oldSwitchBtn = wrapper.querySelector('.switch-btn:not(.hidden):not(.files-cmp-switch-btn)');
-    if (newReport) {
-      if (oldReport == null || !newReport.isSameNode(oldReport)) {
-        if (oldSwitchBtn) {
-          oldSwitchBtn.classList.add('hidden');
-        }
-        if (oldReport) {
-          oldReport.classList.add('hidden');
-        }
-        
-        newReport.switchBtn.classList.remove('hidden');
-        newReport.switchBtn.click(), newReport.switchBtn.click();
-
-        var newReportParent = newReport.parentNode;
-        var insertPoint = newReportParent.querySelector('.switch-btn:last-of-type');
-        if (insertPoint) insertPoint = insertPoint.nextElementSibling;
-        if (null === insertPoint) insertPoint = newReportParent.firstChild;
-        newReportParent.insertBefore(newReport, insertPoint);
-        this.parentUl.querySelector('.files-cmp-li').fix();
+  if (!username) return;
+  var wrapper = this.hideElement.parentNode;
+  var newReport = wrapper.querySelector('.polished-report-success[title="' + username + '"]');
+  var oldReport = wrapper.querySelector('.polished-report-success:not(.hidden)');
+  var oldSwitchBtn = wrapper.querySelector('.switch-btn:not(.hidden):not(.files-cmp-switch-btn)');
+  if (newReport) {
+    if (oldReport == null || !newReport.isSameNode(oldReport)) {
+      if (oldSwitchBtn) {
+        oldSwitchBtn.classList.add('hidden');
       }
-      newReport.sideNav.fix();
+      if (oldReport) {
+        oldReport.classList.add('hidden');
+      }
+      
+      newReport.switchBtn.classList.remove('hidden');
+      newReport.switchBtn.click(), newReport.switchBtn.click();
+
+      var newReportParent = newReport.parentNode;
+      var insertPoint = newReportParent.querySelector('.switch-btn:last-of-type');
+      if (insertPoint) insertPoint = insertPoint.nextElementSibling;
+      if (null === insertPoint) insertPoint = newReportParent.firstChild;
+      newReportParent.insertBefore(newReport, insertPoint);
+      this.parentUl.querySelector('.files-cmp-li').fix();
     }
+    newReport.sideNav.fix();
+    newReport.studentAnswerAreaObj.update(newReport.formattedCodes);
   }
 }
 function addListenersForTabs() {

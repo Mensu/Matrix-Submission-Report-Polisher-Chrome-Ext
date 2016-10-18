@@ -358,6 +358,108 @@ span.one-diff-content {
 .files-diff-part th.th-grade {
   width: 40%;
 }
+/*
+
+Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-license.org/
+
+*/
+.clang-formatted code {
+  font-size: 14px;
+}
+.clang-formatted .hljs {
+  display: inline-block;
+  min-width: 100%;
+  padding: 0.5em;
+  background: #23241f;
+  border-radius: 3px;
+  max-height: 700px;
+  overflow-y: auto;
+}
+.clang-formatted .hljs {
+  counter-reset: lines;
+}
+.clang-formatted .hljs > .line {
+  counter-increment: lines;
+}
+.clang-formatted .hljs > .line::before {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  content: counter(lines);
+  text-align: right;
+  display: inline-block;
+  width: 2em;
+  padding-right: 0.5em;
+  margin-right: 0.5em;
+  color: #BBB;
+  border-right: solid 1px;
+}
+.clang-formatted .hljs,
+.clang-formatted .hljs-tag,
+.clang-formatted .hljs-subst {
+  color: #f8f8f2;
+}
+.clang-formatted .hljs-strong,
+.clang-formatted .hljs-emphasis {
+  color: #a8a8a2;
+}
+.clang-formatted .hljs-bullet,
+.clang-formatted .hljs-quote,
+.clang-formatted .hljs-number,
+.clang-formatted .hljs-regexp,
+.clang-formatted .hljs-literal,
+.clang-formatted .hljs-link {
+  color: #ae81ff;
+}
+.clang-formatted .hljs-code,
+.clang-formatted .hljs-title,
+.clang-formatted .hljs-section,
+.clang-formatted .hljs-selector-class {
+  color: #a6e22e;
+}
+.clang-formatted .hljs-strong {
+  font-weight: bold;
+}
+.clang-formatted .hljs-emphasis {
+  font-style: italic;
+}
+.clang-formatted .hljs-keyword,
+.clang-formatted .hljs-selector-tag,
+.clang-formatted .hljs-name,
+.clang-formatted .hljs-attr,
+.clang-formatted .hljs-meta,
+.clang-formatted .hljs-meta-keyword {
+  color: #f92672;
+}
+.clang-formatted .hljs-symbol,
+.clang-formatted .hljs-attribute {
+  color: #66d9ef;
+}
+.clang-formatted .hljs-params,
+.clang-formatted .hljs-class .hljs-title {
+  color: #f8f8f2;
+}
+.clang-formatted .hljs-string,
+.clang-formatted .hljs-selector-id,
+.clang-formatted .hljs-selector-attr,
+.clang-formatted .hljs-selector-pseudo,
+.clang-formatted .hljs-addition,
+.clang-formatted .hljs-variable,
+.clang-formatted .hljs-template-variable,
+.clang-formatted .hljs-meta-string {
+  color: #e6db74;
+}
+.clang-formatted .hljs-type,
+.clang-formatted .hljs-built_in,
+.clang-formatted .hljs-builtin-name {
+  color: #00bcd4;
+}
+.clang-formatted .hljs-comment,
+.clang-formatted .hljs-deletion {
+  color: #75715e;
+}
 .no-validation-login {
   width: 326px;
   height: 45px;

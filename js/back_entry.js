@@ -7,6 +7,7 @@ var FilesDiff = require(componentsPath + 'FilesDiff.js');
 
 var matrix = new MatrixObject({
   "rootUrl": 'https://vmatrix.org.cn',
+  // "googleStyleUrl": 'http://localhost:3000/'
   "googleStyleUrl": 'http://119.29.146.176:3000/'
 });
 require(componentsPath + 'checkIsOnline.js')(matrix);
@@ -257,7 +258,10 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     param['reportBody'] = body;
     return matrix.getGoogleStyleReport({
       "answers": {
-        "files": body.data.answers
+        "files": body.data.answers,
+        "config": {
+          "getFormattedCodes": true
+        }
       }
     });
   }).catch(function(err) {
@@ -268,6 +272,7 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     var config = JSON.parse(param.reportBody.data.config);
     param['problemInfo'] = config;
     param.problemInfo['totalPoints'] = config.grading;
+
     param.problemInfo.totalPoints['google style'] = 0;
 
     var reportObject = new ReportObject(param.reportBody);

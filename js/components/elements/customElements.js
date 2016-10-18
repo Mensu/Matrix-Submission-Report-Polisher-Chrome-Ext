@@ -2,6 +2,7 @@ var customPre = require('./customPre.js');
 var createHideElementBtn = require('./HideElementBtn.js');
 var createViewInHexSpan = require('./ViewInHexSpan.js');
 var createSwitchBtn = require('./SwitchBtn.js');
+var createStudentAnswerArea = require('./StudentAnswerArea.js');
 var customElements = {
   "extendFrom": function(parent) {
     for (var name in parent) this[name] = parent[name];

@@ -56,6 +56,7 @@
 	
 	var matrix = new MatrixObject({
 	  "rootUrl": 'https://vmatrix.org.cn',
+	  // "googleStyleUrl": 'http://localhost:3000/'
 	  "googleStyleUrl": 'http://119.29.146.176:3000/'
 	});
 	__webpack_require__(/*! . */ 12)(componentsPath + 'checkIsOnline.js')(matrix);
@@ -306,7 +307,10 @@
 	    param['reportBody'] = body;
 	    return matrix.getGoogleStyleReport({
 	      "answers": {
-	        "files": body.data.answers
+	        "files": body.data.answers,
+	        "config": {
+	          "getFormattedCodes": true
+	        }
 	      }
 	    });
 	  }).catch(function(err) {
@@ -317,6 +321,7 @@
 	    var config = JSON.parse(param.reportBody.data.config);
 	    param['problemInfo'] = config;
 	    param.problemInfo['totalPoints'] = config.grading;
+	
 	    param.problemInfo.totalPoints['google style'] = 0;
 	
 	    var reportObject = new ReportObject(param.reportBody);
@@ -3698,33 +3703,37 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	/** 
-	 * switch string's format between "2015-11-11 11:11:11" (Normal) and "2015-11-11T03:11:11.000Z"(000Z)
-	 * @param {string} str - a string in format "Normal" or "000Z"
+	 * switch string's format between "2015-11-11 11:11:11" (Normal) and "2015-11-11T03:11:11.000Z"(ISO)
+	 * @param {string} str - a string in format "Normal" or "ISO"
 	 * @param {boolean} [toReadable] - true: to Normal;
-	 *                                 false: to 000Z;
-	 *                                 omitted: toggle between Normal and 000Z
+	 *                                 false: to ISO;
+	 *                                 omitted: toggle between Normal and ISO
 	 * @return {string} resulted string representing time
 	 * independent
 	 */
 	function toSubmitAt(str, toReadable) {
 	  var date = new Date();
-	  function prefixZero(str) {
-	    return (String(str).length - 1) ? String(str) : '0' + str;
+	  function prefixZero(str, digitNum) {
+	    digitNum = digitNum || 1;
+	    return (String(str).length - digitNum) ? String(str) : '0' + str;
 	  }
-	  function to000Z() {
-	    date.setFullYear(str.substring(0, 4)), date.setMonth(parseInt(str.substring(5, 7)) - 1), date.setDate(str.substring(8, 10)), date.setHours(str.substring(11, 13)), date.setMinutes(str.substring(14, 16)), date.setSeconds(str.substring(17, 19));
-	    return date.getUTCFullYear() + '-' + prefixZero(parseInt(date.getUTCMonth()) + 1) + '-' + prefixZero(date.getUTCDate()) + 'T' + prefixZero(date.getUTCHours()) + ':' + prefixZero(date.getUTCMinutes()) + ':' + prefixZero(date.getUTCSeconds()) + '.000Z';
+	  function toISO() {
+	    date = new Date(str);
+	    return date.toISOString();
 	  }
 	  function toNormal() {
-	    date.setUTCFullYear(str.substring(0, 4)), date.setUTCMonth(parseInt(str.substring(5, 7)) - 1), date.setUTCDate(str.substring(8, 10)), date.setUTCHours(str.substring(11, 13)), date.setUTCMinutes(str.substring(14, 16)), date.setUTCSeconds(str.substring(17, 19));
-	    return date.getFullYear() + '-' + prefixZero(parseInt(date.getMonth()) + 1) + '-' + prefixZero(date.getDate()) + ' ' + prefixZero(date.getHours()) + ':' + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds());
+	    date = new Date(str);
+	    return date.getFullYear() + '-' + prefixZero(parseInt(date.getMonth()) + 1) + '-'
+	      + prefixZero(date.getDate()) + ' ' + prefixZero(date.getHours()) + ':'
+	      + prefixZero(date.getMinutes()) + ':' + prefixZero(date.getSeconds()) + '.'
+	      + prefixZero(prefixZero(date.getMilliseconds()), 2);
 	  }
-	  if (~str.indexOf('.000Z')) {
+	  if (str.endsWith('Z')) {
 	      if (toReadable || toReadable === undefined) return toNormal();
 	      else return str;
 	  } else {
 	      if (toReadable) return str;
-	      else return to000Z();
+	      else return toISO();
 	  }
 	}
 	

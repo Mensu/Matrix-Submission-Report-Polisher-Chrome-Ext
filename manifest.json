@@ -47,6 +47,7 @@
   "permissions": [
     "https://vmatrix.org.cn:*/*",  // 可以向这个网站请求
     "http://119.29.146.176:3000/*",
+    "http://localhost:3000/*",
     "tabs",
     "webRequest"
   ]
