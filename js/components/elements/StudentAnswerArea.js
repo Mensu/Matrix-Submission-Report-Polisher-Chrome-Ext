@@ -1,4 +1,4 @@
-var hljs = require('./highlight.pack.js');
+var hljs = require('../lib/highlight.pack.js');
 var createElementWith = require('../lib/createElementWith.js');
 
 function StudentAnswerArea(formattedCodes, supportedFiles, language) {

@@ -19,7 +19,12 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
     width: auto;
   }
   pre {
-    overflow-x: hidden;
+    max-height: 400px;
+    border-style: solid;
+    border-color: #f7f7f7;
+    border-width: 20px 10px 20px 20px;
+    padding: 0;
+    border-radius: 3px;
     code {
       font-size: 14px;
     }
@@ -27,12 +32,10 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
   .hljs {
     display: inline-block;
     min-width: 100%;
+    box-sizing: border-box;
+    border-radius: 3px;
     padding: 0.5em;
     background: #23241f;
-
-    border-radius: 3px;
-    max-height: 400px;
-    overflow-y: auto;
   }
   .hljs {
     counter-reset: lines;

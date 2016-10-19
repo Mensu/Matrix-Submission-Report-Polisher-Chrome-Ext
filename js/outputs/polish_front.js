@@ -1549,7 +1549,7 @@
   \*****************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var hljs = __webpack_require__(/*! ./highlight.pack.js */ 23);
+	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 23);
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	
 	function StudentAnswerArea(formattedCodes, supportedFiles, language) {
@@ -1665,9 +1665,9 @@
 
 /***/ },
 /* 23 */
-/*!**************************************************!*\
-  !*** ./js/components/elements/highlight.pack.js ***!
-  \**************************************************/
+/*!*********************************************!*\
+  !*** ./js/components/lib/highlight.pack.js ***!
+  \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	/*! highlight.js v9.6.0 | BSD3 License | git.io/hljslicense */
