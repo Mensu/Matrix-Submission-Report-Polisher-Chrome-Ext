@@ -1246,6 +1246,12 @@
 	    }
 	    this['diff'] = Diff.diffLines(this.stdOutput, this.yourOutput);
 	    this.diff.forEach(function(oneDiff, index, self) {
+	      var isReversed = (index && index + 1 == self.length && self[index - 1].added && self[index].removed);
+	      if (isReversed) {
+	        var temp = self[index - 1];
+	        self[index - 1] = self[index];
+	        self[index] = temp;
+	      }
 	        // if the case is [removed] [added] and the two blocks contain the same number of lines
 	      if (index && self[index - 1].removed && self[index].added) {
 	        var removedLines = self[index - 1].value;
@@ -1277,6 +1283,11 @@
 	          });
 	        }
 	      }
+	      // if (isReversed) {
+	      //   var temp = self[index - 1];
+	      //   self[index - 1] = self[index];
+	      //   self[index] = temp;
+	      // }
 	    });
 	  }
 	
