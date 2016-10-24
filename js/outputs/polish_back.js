@@ -3977,7 +3977,14 @@
 	    if (details.tabId == -1) return;
 	
 	      // show icon and register
-	    chrome.pageAction.show(details.tabId);
+	      chrome.tabs.query({}, function(tabArray) {
+	        tabArray.forEach(function(oneTab) {
+	          if (oneTab.id == details.tabId) {
+	            if (!isVisitingMatrix(oneTab)) return;
+	          }
+	        });
+	      });
+	    
 	    // return;
 	      // set interval to check whether we have internet access to Matrix
 	    if (intervalId === null) {

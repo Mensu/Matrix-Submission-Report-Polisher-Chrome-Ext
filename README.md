@@ -10,14 +10,11 @@
 
 # Downloads
 
-[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.5.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.5.zip)
-
-[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.6-alpha.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.6-alpha.zip)
+[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.6-beta.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.6-beta.zip)
 
 # Installation
 
 - Go to [``chrome://extensions``](chrome://extensions)
-- Check the box of Developer mode
 - Drag the **unpacked** extension folder to and drop it onto the extension page
 
 <img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-drag-installation.png" alt="drag and drop to install">
