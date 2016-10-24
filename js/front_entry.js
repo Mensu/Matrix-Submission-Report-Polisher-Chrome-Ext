@@ -121,7 +121,11 @@ try {
       var noValidationLogin = document.createElement('input');
       var usernameInput = document.querySelector('#username');
       var passwordInput = document.querySelector('#password');
-      passwordInput.focus();
+      if (usernameInput.value.length) {
+        passwordInput.focus();
+      } else {
+        usernameInput.focus();
+      }
       noValidationLogin.type = 'button';
       noValidationLogin.value = 'Log in';
       noValidationLogin.classList.add('no-validation-login');
