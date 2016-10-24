@@ -137,6 +137,7 @@ try {
       });
       noValidationLogin.addEventListener('click', function() {
         document.activeElement.blur();
+        var username = usernameInput.value;
         chrome.runtime.sendMessage({
           "signal": 'loginWithoutValidation',
           "param": {
@@ -146,7 +147,7 @@ try {
         }, function(response) {
           var status = response.status;
           if (status == 'OK') {
-            window.location.replace(window.location.origin + '/#/');
+            window.location.replace(window.location.origin + '/#/' + response.data.username);
           } else {
             var text = '登录失败：';
             var textMap = {
@@ -168,9 +169,9 @@ try {
             function clickOk(event) {
               if (event.key != 'Enter') return;
               if (status == 'USER_NOT_FOUND') {
-                username.focus(), username.select();
+                usernameInput.focus(), usernameInput.select();
               } else if (status == 'WRONG_PASSWORD') {
-                password.focus(), password.select();              
+                passwordInput.focus(), passwordInput.select();              
               }
               okButton.tabIndex = undefined;
               okButton.click();
