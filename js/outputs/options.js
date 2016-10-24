@@ -3,7 +3,7 @@ var autoPolishCheckBox = document.getElementById('autoPolish');
 var maxStdCaseNumInput = document.getElementById('maxStdCaseNum');
 var maxRanCaseNumInput = document.getElementById('maxRanCaseNum');
 var maxMemCaseNumInput = document.getElementById('maxMemCaseNum');
-var noValidationLoginCheckBox = document.getElementById('noValidationLogin');
+// var noValidationLoginCheckBox = document.getElementById('noValidationLogin');
 var saveButton = document.getElementById('save');
 var savedSuccessfully = document.getElementById('savedSuccessfully');
 var maxCaseNums = [
@@ -29,7 +29,7 @@ var maxCaseNums = [
 function init() {
   showCRCheckBox.checked = localStorage.showCR;
   autoPolishCheckBox.checked = localStorage.autoPolish;
-  noValidationLoginCheckBox.checked = localStorage.noValidationLogin;
+  // noValidationLoginCheckBox.checked = localStorage.noValidationLogin;
   for (var i in maxCaseNums)
     maxCaseNums[i].input.value = localStorage[maxCaseNums[i].id] || maxCaseNums[i]['default'];
 }
@@ -39,7 +39,7 @@ saveButton.addEventListener('click', function() {
     if (checkBox.checked) localStorage[name] = true;
     else localStorage.removeItem(name);
   };
-  saveCheckBox(showCRCheckBox, 'showCR'), saveCheckBox(autoPolishCheckBox, 'autoPolish'), saveCheckBox(noValidationLoginCheckBox, 'noValidationLogin');
+  saveCheckBox(showCRCheckBox, 'showCR'), saveCheckBox(autoPolishCheckBox, 'autoPolish');//, saveCheckBox(noValidationLoginCheckBox, 'noValidationLogin');
   
   var saveCaseNumber = function(Input, name, description) {
     if ((Input.value.match(/^(\d){1,2}$/)

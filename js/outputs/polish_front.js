@@ -168,30 +168,30 @@
 	      var originalLogin = document.querySelector('input[value="Log in"]');
 	      if (!originalLogin) return setTimeout(removeLoginValidation, 1000);
 	      var noValidationLogin = document.createElement('input');
+	      var usernameInput = document.querySelector('#username');
+	      var passwordInput = document.querySelector('#password');
+	      passwordInput.focus();
 	      noValidationLogin.type = 'button';
-	      noValidationLogin.value = 'Login (without validation)';
+	      noValidationLogin.value = 'Log in';
 	      noValidationLogin.classList.add('no-validation-login');
 	      var form = originalLogin.parentNode;
 	      form.insertBefore(noValidationLogin, originalLogin);
 	      form.removeChild(originalLogin);
-	      form.addEventListener('keyup', function(event) {
-	        event.preventDefault();
-	        if (event.keyCode == 13) noValidationLogin.click();
+	      form.addEventListener('keydown', function(event) {
+	        if (event.key == 'Enter') noValidationLogin.click();
 	      });
 	      noValidationLogin.addEventListener('click', function() {
 	        document.activeElement.blur();
-	        var username = document.querySelector('#username').value;
-	        var password = document.querySelector('#password').value;
 	        chrome.runtime.sendMessage({
 	          "signal": 'loginWithoutValidation',
 	          "param": {
-	            "username": username,
-	            "password": password
+	            "username": usernameInput.value,
+	            "password": passwordInput.value
 	          }
 	        }, function(response) {
 	          var status = response.status;
 	          if (status == 'OK') {
-	            window.location.reload();
+	            window.location.replace(window.location.origin + '/#/');
 	          } else {
 	            var text = '登录失败：';
 	            var textMap = {
@@ -199,20 +199,27 @@
 	              "WRONG_PASSWORD": '密码不对。请仔细核对您的密码并再试一次',
 	              "IP_INVALID": '您当前的IP被禁止登陆。请去指定的平台进行登陆'
 	            }
-	            text += textMap[status];
-	            if (text === undefined) {
-	              text += '发生了辣鸡插件开发者没有想到的错误。代码：' + status + '。信息：' + response.msg;
+	            if (textMap[status] === undefined) {
+	              text += '发生了插件没想到的错误。\n\n代码：' + status + '\n信息：' + response.msg;
+	            } else {
+	              text += textMap[status];
 	            }
 	            matrixAlert = polisher.createMatrixAlert(text);
 	            document.querySelector('#matrix-main').appendChild(matrixAlert);
-	            matrixAlert.input.focus();
-	            matrixAlert.input.addEventListener('keyup', function(event) {
+	            var okButton = matrixAlert.button;
+	            okButton.tabIndex = -1;
+	            okButton.focus();
+	            okButton.addEventListener('keydown', clickOk, false);
+	            function clickOk(event) {
+	              if (event.key != 'Enter') return;
 	              if (status == 'USER_NOT_FOUND') {
-	                document.querySelector('#username').focus();
+	                username.focus(), username.select();
 	              } else if (status == 'WRONG_PASSWORD') {
-	                document.querySelector('#password').focus();              
+	                password.focus(), password.select();              
 	              }
-	            });
+	              okButton.tabIndex = undefined;
+	              okButton.click();
+	            }
 	          }
 	        });
 	      }, false);
@@ -4828,23 +4835,24 @@
 	  var textContainer = createElementWith('div', 'container', text);
 	  var alertContent = createElementWith('div', 'alert-content',
 	                           createElementWith('span', 'wrapper', textContainer));
-	  var input = createElementWith('input', 'faraway');
-	  input.type = 'text';
+	  // var input = createElementWith('input', 'faraway');
+	  // input.type = 'text';
 	  var button = createElementWith('div', 'alert-button', '好吧');
 	  var wrapper = createElementWith('div', 'matrix-alert-outer-wrapper',
 	    createElementWith('div', 'matrix-alert',
 	      createElementWith('div', 'matrix-alert-wrapper',
-	        createElementWith('div', 'matrix-alert-container', [ alertContent, input, button ])
+	        createElementWith('div', 'matrix-alert-container', [ alertContent/*, input*/, button ])
 	      )
 	    )
 	  );
 	  button['wrapper'] = wrapper;
-	  wrapper['input'] = input;
+	  // wrapper['input'] = input;
 	  wrapper.id = 'matrix-alert';
-	  input['button'] = button;
-	  input.addEventListener('keyup', function(event) {
-	    if (event.keyCode == 13) this.button.click();
-	  });
+	  // input['button'] = button;
+	  wrapper['button'] = button;
+	  // input.addEventListener('keyup', function(event) {
+	  //   if (event.keyCode == 13) this.button.click();
+	  // });
 	  button.addEventListener('click', closeMe, false);
 	  return wrapper;
 	}

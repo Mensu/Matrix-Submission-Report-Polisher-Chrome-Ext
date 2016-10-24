@@ -6,23 +6,24 @@ function createMatrixAlert(text) {
   var textContainer = createElementWith('div', 'container', text);
   var alertContent = createElementWith('div', 'alert-content',
                            createElementWith('span', 'wrapper', textContainer));
-  var input = createElementWith('input', 'faraway');
-  input.type = 'text';
+  // var input = createElementWith('input', 'faraway');
+  // input.type = 'text';
   var button = createElementWith('div', 'alert-button', '好吧');
   var wrapper = createElementWith('div', 'matrix-alert-outer-wrapper',
     createElementWith('div', 'matrix-alert',
       createElementWith('div', 'matrix-alert-wrapper',
-        createElementWith('div', 'matrix-alert-container', [ alertContent, input, button ])
+        createElementWith('div', 'matrix-alert-container', [ alertContent/*, input*/, button ])
       )
     )
   );
   button['wrapper'] = wrapper;
-  wrapper['input'] = input;
+  // wrapper['input'] = input;
   wrapper.id = 'matrix-alert';
-  input['button'] = button;
-  input.addEventListener('keyup', function(event) {
-    if (event.keyCode == 13) this.button.click();
-  });
+  // input['button'] = button;
+  wrapper['button'] = button;
+  // input.addEventListener('keyup', function(event) {
+  //   if (event.keyCode == 13) this.button.click();
+  // });
   button.addEventListener('click', closeMe, false);
   return wrapper;
 }

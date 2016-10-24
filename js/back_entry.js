@@ -214,12 +214,15 @@ chrome.webRequest.onCompleted.addListener(function(details) {
 });
 
 chrome.webRequest.onCompleted.addListener(function(details) {
-  if (details.tabId == -1 || !localStorage.noValidationLogin) return;
-  chrome.tabs.sendMessage(details.tabId, {
-    "signal": 'noValidationLogin'
-  }, function(response) {
-    console.log(response);
-  })
+  if (details.tabId == -1) return;
+  setTimeout(function() {
+    chrome.tabs.sendMessage(details.tabId, {
+      "signal": 'noValidationLogin'
+    }, function(response) {
+      console.log(response);
+    });
+  }, 500);
+  
 }, {
   "urls": [
     matrix.rootUrl + 'api/users/login'

@@ -10,6 +10,7 @@
   transition: background-color .2s;
   -webkit-appearance: push-button;
   -webkit-user-select: none;
+  outline: none;
   padding: 2px 6px 3px;
   white-space: pre;
   align-items: flex-start;
@@ -22,7 +23,20 @@
     outline: 0;
   }
 }
-input.faraway {
-  position: absolute;
-  left: -1000000px;
+#matrix-login-register {
+  form.login label[for=remember-username] {
+    margin-left: 5px;
+  }
+}
+
+.matrix-alert .matrix-alert-wrapper .matrix-alert-container {
+  .alert-content .wrapper .container {
+    white-space: pre-wrap;
+  }
+  .alert-button {
+    &:focus {
+      outline: none;
+    }
+  }
+  
 }

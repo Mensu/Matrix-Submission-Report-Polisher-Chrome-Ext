@@ -500,6 +500,7 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
   transition: background-color 0.2s;
   -webkit-appearance: push-button;
   -webkit-user-select: none;
+  outline: none;
   padding: 2px 6px 3px;
   white-space: pre;
   -webkit-box-align: start;
@@ -515,9 +516,14 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
 .no-validation-login:focus {
   outline: 0;
 }
-input.faraway {
-  position: absolute;
-  left: -1000000px;
+#matrix-login-register form.login label[for=remember-username] {
+  margin-left: 5px;
+}
+.matrix-alert .matrix-alert-wrapper .matrix-alert-container .alert-content .wrapper .container {
+  white-space: pre-wrap;
+}
+.matrix-alert .matrix-alert-wrapper .matrix-alert-container .alert-button:focus {
+  outline: none;
 }
 #backtotop {
   position: fixed;
