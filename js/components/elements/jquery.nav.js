@@ -17,6 +17,10 @@
  * });
  */
 function getOffsetTop(element) {
+	if (element === undefined) {
+		console.log(new Error('element undefined'));
+		return 0;
+	}
 	var ret = element.offsetTop;
 	var parent = element.offsetParent;
 	while (parent !== null) {

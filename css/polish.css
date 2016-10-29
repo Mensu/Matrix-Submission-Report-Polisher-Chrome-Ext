@@ -516,8 +516,11 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
 .no-validation-login:focus {
   outline: 0;
 }
-#matrix-login-register form.login label[for=remember-username] {
+#matrix-login-register .login-register-wrapper .login-register-container .login-register-form .login-register-tabs-container form.login label[for=remember-username] {
   margin-left: 5px;
+}
+#matrix-login-register .login-register-wrapper .login-register-container .login-register-form .login-register-tabs-container form.login input.hidden {
+  display: none;
 }
 .matrix-alert .matrix-alert-wrapper .matrix-alert-container .alert-content .wrapper .container {
   white-space: pre-wrap;

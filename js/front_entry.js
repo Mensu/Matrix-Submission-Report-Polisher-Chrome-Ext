@@ -131,10 +131,14 @@ try {
       noValidationLogin.classList.add('no-validation-login');
       var form = originalLogin.parentNode;
       form.insertBefore(noValidationLogin, originalLogin);
+      originalLogin.classList.add('hidden');
       form.removeChild(originalLogin);
-      form.addEventListener('keydown', function(event) {
-        if (event.key == 'Enter') noValidationLogin.click();
-      });
+      if (!form.noValidationLogin) {
+        form.addEventListener('keydown', function(event) {
+          if (event.key == 'Enter') this.noValidationLogin.click();
+        }, false);
+      }
+      form['noValidationLogin'] = noValidationLogin;
       noValidationLogin.addEventListener('click', function() {
         document.activeElement.blur();
         var username = usernameInput.value;
@@ -147,7 +151,11 @@ try {
         }, function(response) {
           var status = response.status;
           if (status == 'OK') {
-            window.location.replace(window.location.origin + '/#/' + response.data.username);
+            form.appendChild(originalLogin);
+            originalLogin.click();
+            setTimeout(function() {
+              window.location.assign(window.location.origin + '/#/' + response.data.username);
+            }, 500);
           } else {
             var text = '登录失败：';
             var textMap = {
@@ -165,16 +173,19 @@ try {
             var okButton = matrixAlert.button;
             okButton.tabIndex = -1;
             okButton.focus();
-            okButton.addEventListener('keydown', clickOk, false);
-            function clickOk(event) {
+            okButton.addEventListener('keydown', function(event) {
               if (event.key != 'Enter') return;
+              this.click();
+            }, false);
+            okButton.addEventListener('click', clickOk, false);
+            function clickOk(event) {
               if (status == 'USER_NOT_FOUND') {
                 usernameInput.focus(), usernameInput.select();
               } else if (status == 'WRONG_PASSWORD') {
                 passwordInput.focus(), passwordInput.select();              
               }
               okButton.tabIndex = undefined;
-              okButton.click();
+              okButton.closeMe();
             }
           }
         });

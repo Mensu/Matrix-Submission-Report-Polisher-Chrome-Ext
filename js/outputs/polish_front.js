@@ -180,10 +180,14 @@
 	      noValidationLogin.classList.add('no-validation-login');
 	      var form = originalLogin.parentNode;
 	      form.insertBefore(noValidationLogin, originalLogin);
+	      originalLogin.classList.add('hidden');
 	      form.removeChild(originalLogin);
-	      form.addEventListener('keydown', function(event) {
-	        if (event.key == 'Enter') noValidationLogin.click();
-	      });
+	      if (!form.noValidationLogin) {
+	        form.addEventListener('keydown', function(event) {
+	          if (event.key == 'Enter') this.noValidationLogin.click();
+	        }, false);
+	      }
+	      form['noValidationLogin'] = noValidationLogin;
 	      noValidationLogin.addEventListener('click', function() {
 	        document.activeElement.blur();
 	        var username = usernameInput.value;
@@ -196,7 +200,11 @@
 	        }, function(response) {
 	          var status = response.status;
 	          if (status == 'OK') {
-	            window.location.replace(window.location.origin + '/#/' + response.data.username);
+	            form.appendChild(originalLogin);
+	            originalLogin.click();
+	            setTimeout(function() {
+	              window.location.assign(window.location.origin + '/#/' + response.data.username);
+	            }, 500);
 	          } else {
 	            var text = '登录失败：';
 	            var textMap = {
@@ -214,16 +222,19 @@
 	            var okButton = matrixAlert.button;
 	            okButton.tabIndex = -1;
 	            okButton.focus();
-	            okButton.addEventListener('keydown', clickOk, false);
-	            function clickOk(event) {
+	            okButton.addEventListener('keydown', function(event) {
 	              if (event.key != 'Enter') return;
+	              this.click();
+	            }, false);
+	            okButton.addEventListener('click', clickOk, false);
+	            function clickOk(event) {
 	              if (status == 'USER_NOT_FOUND') {
 	                usernameInput.focus(), usernameInput.select();
 	              } else if (status == 'WRONG_PASSWORD') {
 	                passwordInput.focus(), passwordInput.select();              
 	              }
 	              okButton.tabIndex = undefined;
-	              okButton.click();
+	              okButton.closeMe();
 	            }
 	          }
 	        });
@@ -4840,25 +4851,18 @@
 	  var textContainer = createElementWith('div', 'container', text);
 	  var alertContent = createElementWith('div', 'alert-content',
 	                           createElementWith('span', 'wrapper', textContainer));
-	  // var input = createElementWith('input', 'faraway');
-	  // input.type = 'text';
 	  var button = createElementWith('div', 'alert-button', '好吧');
 	  var wrapper = createElementWith('div', 'matrix-alert-outer-wrapper',
 	    createElementWith('div', 'matrix-alert',
 	      createElementWith('div', 'matrix-alert-wrapper',
-	        createElementWith('div', 'matrix-alert-container', [ alertContent/*, input*/, button ])
+	        createElementWith('div', 'matrix-alert-container', [ alertContent, button ])
 	      )
 	    )
 	  );
 	  button['wrapper'] = wrapper;
-	  // wrapper['input'] = input;
 	  wrapper.id = 'matrix-alert';
-	  // input['button'] = button;
 	  wrapper['button'] = button;
-	  // input.addEventListener('keyup', function(event) {
-	  //   if (event.keyCode == 13) this.button.click();
-	  // });
-	  button.addEventListener('click', closeMe, false);
+	  button['closeMe'] = closeMe;
 	  return wrapper;
 	}
 	
@@ -15078,6 +15082,10 @@
 	 * });
 	 */
 	function getOffsetTop(element) {
+		if (element === undefined) {
+			console.log(new Error('element undefined'));
+			return 0;
+		}
 		var ret = element.offsetTop;
 		var parent = element.offsetParent;
 		while (parent !== null) {
