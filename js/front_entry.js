@@ -153,9 +153,6 @@ try {
           if (status == 'OK') {
             form.appendChild(originalLogin);
             originalLogin.click();
-            // setTimeout(function() {
-            //   window.location.assign(window.location.origin + '/#/' + response.data.username);
-            // }, 500);
           } else {
             var text = '登录失败：';
             var textMap = {

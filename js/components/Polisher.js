@@ -84,7 +84,14 @@ var polisher = {
       var index = 1;
       var maxCaseNum = std ? maxStdCaseNum : maxRanCaseNum;
       if (phaseInfo.failedCaseNum) {
-        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's') + ' failed to pass'));
+        var failedMessage = null;
+        if (std) {
+          failedMessage = phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's');
+        } else {
+          failedMessage = 'Some tests';
+        }
+        failedMessage += ' failed to pass';
+        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], failedMessage));
       }
       var getSummary = function(caseInfo) {
         var summary = createElementWith('div', 'tests-check-summary');

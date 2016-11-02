@@ -202,9 +202,6 @@
 	          if (status == 'OK') {
 	            form.appendChild(originalLogin);
 	            originalLogin.click();
-	            // setTimeout(function() {
-	            //   window.location.assign(window.location.origin + '/#/' + response.data.username);
-	            // }, 500);
 	          } else {
 	            var text = '登录失败：';
 	            var textMap = {
@@ -651,7 +648,14 @@
 	      var index = 1;
 	      var maxCaseNum = std ? maxStdCaseNum : maxRanCaseNum;
 	      if (phaseInfo.failedCaseNum) {
-	        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's') + ' failed to pass'));
+	        var failedMessage = null;
+	        if (std) {
+	          failedMessage = phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's');
+	        } else {
+	          failedMessage = 'Some tests';
+	        }
+	        failedMessage += ' failed to pass';
+	        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], failedMessage));
 	      }
 	      var getSummary = function(caseInfo) {
 	        var summary = createElementWith('div', 'tests-check-summary');
@@ -15082,10 +15086,6 @@
 	 * });
 	 */
 	function getOffsetTop(element) {
-		if (element === undefined) {
-			console.log(new Error('element undefined'));
-			return 0;
-		}
 		var ret = element.offsetTop;
 		var parent = element.offsetParent;
 		while (parent !== null) {
@@ -15234,7 +15234,10 @@
 			getSection: function(windowPos) {
 				var returnValue = null;
 				var windowHeight = Math.round(this.$win.height() * this.config.scrollThreshold);
-				var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
+				var endPos = null;
+				if (this.config.endSelector && $(this.config.endSelector)[0]) {
+					endPos = getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height();
+				}
 				var allZero = true;
 				for(var section in this.sections) {
 					if (this.sections[section]) allZero = false;
@@ -15342,7 +15345,10 @@
 					var $parent = this.$elem.find('.' + this.config.currentClass);
 					$parent.removeClass(this.config.currentClass);
 					var navInternalOffset = 0;
-					var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
+					var endPos = null;
+					if (this.config.endSelector && $(this.config.endSelector).length) {
+						endPos = getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height();
+					}
 					if (endPos !== null && windowTop > endPos) navInternalOffset = this.$nav.last().parent()[0].offsetTop;
 					if (navInternalOffset != this.$elem.scrollTop() + this.$elem.height() - this.$nav.last().parent().height()) this.$elem.animate({
 						scrollTop: navInternalOffset

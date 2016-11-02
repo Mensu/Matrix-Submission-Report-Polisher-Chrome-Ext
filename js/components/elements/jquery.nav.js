@@ -17,10 +17,6 @@
  * });
  */
 function getOffsetTop(element) {
-	if (element === undefined) {
-		console.log(new Error('element undefined'));
-		return 0;
-	}
 	var ret = element.offsetTop;
 	var parent = element.offsetParent;
 	while (parent !== null) {
@@ -169,7 +165,10 @@ function getOffsetTop(element) {
 		getSection: function(windowPos) {
 			var returnValue = null;
 			var windowHeight = Math.round(this.$win.height() * this.config.scrollThreshold);
-			var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
+			var endPos = null;
+			if (this.config.endSelector && $(this.config.endSelector)[0]) {
+				endPos = getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height();
+			}
 			var allZero = true;
 			for(var section in this.sections) {
 				if (this.sections[section]) allZero = false;
@@ -277,7 +276,10 @@ function getOffsetTop(element) {
 				var $parent = this.$elem.find('.' + this.config.currentClass);
 				$parent.removeClass(this.config.currentClass);
 				var navInternalOffset = 0;
-				var endPos = this.config.endSelector ? getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height() : null;
+				var endPos = null;
+				if (this.config.endSelector && $(this.config.endSelector).length) {
+					endPos = getOffsetTop($(this.config.endSelector)[0]) + $(this.config.endSelector).height();
+				}
 				if (endPos !== null && windowTop > endPos) navInternalOffset = this.$nav.last().parent()[0].offsetTop;
 				if (navInternalOffset != this.$elem.scrollTop() + this.$elem.height() - this.$nav.last().parent().height()) this.$elem.animate({
 					scrollTop: navInternalOffset
