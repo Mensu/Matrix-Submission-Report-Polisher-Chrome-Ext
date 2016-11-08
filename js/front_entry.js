@@ -142,17 +142,22 @@ try {
       noValidationLogin.addEventListener('click', function() {
         document.activeElement.blur();
         var username = usernameInput.value;
+        var param = {
+          "username": usernameInput.value,
+          "password": passwordInput.value
+        };
         chrome.runtime.sendMessage({
           "signal": 'loginWithoutValidation',
-          "param": {
-            "username": usernameInput.value,
-            "password": passwordInput.value
-          }
-        }, function(response) {
-          var status = response.status;
+          "param": param
+        }, function(body) {
+          var status = body.status;
           if (status == 'OK') {
-            form.appendChild(originalLogin);
-            originalLogin.click();
+            if (body.data && body.data.is_valid) {
+              window.location.assign(window.location.origin + '/#/' + body.data.username);
+            } else {
+              form.appendChild(originalLogin);
+              originalLogin.click();
+            }
           } else {
             var text = '登录失败：';
             var textMap = {
@@ -161,7 +166,7 @@ try {
               "IP_INVALID": '您当前的IP被禁止登陆。请去指定的平台进行登陆'
             }
             if (textMap[status] === undefined) {
-              text += '发生了插件没想到的错误。\n\n代码：' + status + '\n信息：' + response.msg;
+              text += '发生了插件没想到的错误。\n\n代码：' + status + '\n信息：' + body.msg;
             } else {
               text += textMap[status];
             }

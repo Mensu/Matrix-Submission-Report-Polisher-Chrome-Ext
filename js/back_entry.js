@@ -282,10 +282,10 @@ chrome.webRequest.onCompleted.addListener(function(details) {
       }
     });
   }).catch(function(err) {
-    console.log('Error occurs when fetching Google Style: ', err);
+    console.log('Error occurred: ', err);
     return null;
   }).then(function(body) {
-    if (param.reportBody.data == null) return Promise.reject();
+    if (!param.reportBody || param.reportBody.data === null) return Promise.reject('Error with param.reportBody: (param = )', param);
     var config = JSON.parse(param.reportBody.data.config);
 
     param['problemInfo'] = config;
@@ -318,6 +318,8 @@ chrome.webRequest.onCompleted.addListener(function(details) {
     }, function(response) {
       console.log(response);
     });
+  }, function(err) {
+    console.log("Error: ", err);
   });
   
 }, {
@@ -353,6 +355,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     return true;
   } else if (message.signal == 'loginWithoutValidation') {
     matrix.login(message.param).then(function(body) {
+      if (sender.tab.incognito) {
+        body.data.is_valid = false;
+      }
       sendResponse(body);
     });
     return true;

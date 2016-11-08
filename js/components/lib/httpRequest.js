@@ -3,16 +3,10 @@
  * @param {string} method
  * @param {string} url
  * @param {Object} param
- * @param {function(boolean, Object):void} callback - a function that looks like this:
- *      @param {boolean} error
- *      @param {Object} [response] - present when no error occurred
- *   function(error, response) {
- * 
- *   }
  * @return {void}
  * independent
  */
-function httpRequest(method, url, param, callback) {
+function httpRequest(method, url, param) {
   return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       method = method.toLowerCase();

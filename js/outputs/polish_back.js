@@ -331,10 +331,10 @@
 	      }
 	    });
 	  }).catch(function(err) {
-	    console.log('Error occurs when fetching Google Style: ', err);
+	    console.log('Error occurred: ', err);
 	    return null;
 	  }).then(function(body) {
-	    if (param.reportBody.data == null) return Promise.reject();
+	    if (!param.reportBody || param.reportBody.data === null) return Promise.reject('Error with param.reportBody: (param = )', param);
 	    var config = JSON.parse(param.reportBody.data.config);
 	
 	    param['problemInfo'] = config;
@@ -367,6 +367,8 @@
 	    }, function(response) {
 	      console.log(response);
 	    });
+	  }, function(err) {
+	    console.log("Error: ", err);
 	  });
 	  
 	}, {
@@ -402,6 +404,9 @@
 	    return true;
 	  } else if (message.signal == 'loginWithoutValidation') {
 	    matrix.login(message.param).then(function(body) {
+	      if (sender.tab.incognito) {
+	        body.data.is_valid = false;
+	      }
 	      sendResponse(body);
 	    });
 	    return true;
@@ -745,16 +750,10 @@
 	 * @param {string} method
 	 * @param {string} url
 	 * @param {Object} param
-	 * @param {function(boolean, Object):void} callback - a function that looks like this:
-	 *      @param {boolean} error
-	 *      @param {Object} [response] - present when no error occurred
-	 *   function(error, response) {
-	 * 
-	 *   }
 	 * @return {void}
 	 * independent
 	 */
-	function httpRequest(method, url, param, callback) {
+	function httpRequest(method, url, param) {
 	  return new Promise(function(resolve, reject) {
 	      var xhr = new XMLHttpRequest();
 	      method = method.toLowerCase();
@@ -866,8 +865,8 @@
 	  },
 	  /** 
 	   * refactor the original report object from Matrix
-	   * @param {string | object} body - object or stringified object representing report from Matrix
-	   * @return {object} refactored report object
+	   * @param {string | Object} body - object or stringified object representing report from Matrix
+	   * @return {Object} refactored report object
 	   *
 	   * dependent of
 	   *   {function} genDiffInfo
@@ -943,13 +942,24 @@
 	    };
 	
 	    /** 
+	     * return [obj] if the obj is not an array, or obj itself otherwise
+	     * @param {*} obj - the obj to be wrapped to an array
+	     * @return {[obj]}
+	     * 
+	     * independent
+	     */
+	    function toArray(obj) {
+	      return Object.prototype.toString.apply(obj) != '[object Array]' ? [obj] : obj;
+	    }
+	
+	    /** 
 	     * refactor standard/random tests
 	     * @param {string} phaseName - the type of the tests (standard or random)
-	     * @param {object} info - 
+	     * @param {Object} info - infomation of tests
 	     * @return {undefined}
 	     * 
 	     * private and dependent of 
-	     *     {object} reportObject
+	     *     {Object} reportObject
 	     */
 	    function refactorTests(phaseName, info) {
 	      var curPhase = reportObject[phaseName];
@@ -1058,7 +1068,7 @@
 	          ++failedCaseNum;
 	        }
 	
-	        if ( Object.prototype.toString.apply(errors) != '[object Array]') errors = new Array(errors);
+	        errors = toArray(errors);
 	        // for (j in errors) {
 	        errors.forEach(function(oneError, j) {
 	          // var oneError = errors[j];
@@ -1080,24 +1090,19 @@
 	            }
 	          }
 	
-	          if ( Object.prototype.toString.apply(auxwhat) != '[object Array]' ) auxwhat = [auxwhat];
+	          auxwhat = toArray(auxwhat);
 	          content += 'Behavior: ' + wrapWithMissing(behavior) + '\n';
-	          if ( Object.prototype.toString.apply(stack) != '[object Array]' ) stack = [stack];
+	          stack = toArray(stack);
 	
-	          // for (k in stack) {
 	          stack.forEach(function(frame, index) {
-	            // var frame = stack[k].frame;
-	            frame = frame.frame;
-	            if ( Object.prototype.toString.apply(frame) != '[object Array]' ) frame = [frame];
-	            if (index == 0) content += '  ';
-	            else content += ' ' + auxwhat[index - 1] + ':\n  ';
-	            // for (l in frame) {
+	            frame = toArray(frame.frame);
+	            if (index == 0) content += '   ';
+	            else content += ' ' + auxwhat[index - 1] + ':\n   ';
 	            frame.forEach(function(funcInfo, funcIndex) {
-	              // var funcInfo = frame[l];
 	              if (funcIndex) content += 'by:';
 	              else content += 'at:';
-	              if (funcInfo.file && funcInfo.line) content += ' ' + funcInfo.file + ' Line ' + funcInfo.line + '\n  ' + '  ' + funcInfo.fn + '\n  ';
-	              else content += ' ' + (funcInfo.fn || 'some func') + ' precompiled in ' + funcInfo.obj + '\n  ';
+	              if (funcInfo.file && funcInfo.line) content += ' ' + funcInfo.file + ' Line ' + funcInfo.line + '\n  ' + '  ' + funcInfo.fn + '\n   ';
+	              else content += ' ' + (funcInfo.fn || 'some func') + ' precompiled in ' + funcInfo.obj + '\n   ';
 	            });
 	            content += '\n';
 	          });
