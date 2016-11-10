@@ -966,10 +966,8 @@
 	      curPhase['error'] = null;
 	      curPhase['report'] = [];
 	      var failedCaseNum = 0;
-	      // for (var i = 0, oneTest = info[i]; i < info.length; ++i, oneTest = info[i]) {
 	      info.forEach(function(oneTest, i, self) {
 	        var oneCase = new CaseObject();
-	        
 	        if ((oneTest.error || (oneTest.message && oneTest.message != 'Program finished running.'))) {
 	          var msg = (oneTest.error) ? oneTest.error : oneTest.message;
 	          oneCase.extendFrom({
@@ -1040,13 +1038,10 @@
 	      var curPhase = reportObject[phaseName];
 	      curPhase['report'] = [];
 	      curPhase['error'] = null;
-	
 	      var pass = true;
 	      var failedCaseNum = 0;
-	      // for (i in info) {
 	      info.forEach(function(test, i) {
 	        var oneCase = {};
-	        // var test = info[i];
 	        var stdin = test.stdin;
 	        oneCase['error'] = null;
 	        oneCase['memory errors'] = [];
@@ -1055,7 +1050,7 @@
 	          oneCase['error'] = msg;
 	          oneCase['input'] = stdin || 'No Input.';
 	          curPhase['report'].push(oneCase);
-	          pass = false;
+	          ++failedCaseNum;
 	          return;
 	        }
 	        oneCase['input'] = stdin || 'No Input.';
@@ -1064,14 +1059,11 @@
 	          curPhase['report'].push(oneCase);
 	          return;
 	        } else {
-	          // pass = false;
 	          ++failedCaseNum;
 	        }
 	
 	        errors = toArray(errors);
-	        // for (j in errors) {
 	        errors.forEach(function(oneError, j) {
-	          // var oneError = errors[j];
 	          var behavior = oneError.what;
 	          var content = '';
 	          var auxwhat = oneError.auxwhat, stack = oneError.stack;

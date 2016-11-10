@@ -196,11 +196,17 @@ try {
     })();
   } else if (body.signal == 'startStudentSubmission') {
     var reportObject = body.reportObject;
-    var reportWrapper = document.querySelector('.report-container');
+    var reportWrapper = document.querySelector('.grade-wrapper + matrix-report');
+    // var reportWrapper = document.querySelector('.report-container');
     var matrixSecondBar = document.querySelector('.choice-tab ul');
     if (reportWrapper === null) {
-      return callback("front couldn't find the grade Tab.");
+      if (null === document.querySelector('.original-report')) {
+        return callback("front couldn't find <matrix-report> or .original-report");
+      }
+    } else {
+      reportWrapper.outerHTML = '<div class="report-wrapper"><div class="original-report">' + reportWrapper.outerHTML + '</div></div>';
     }
+    reportWrapper = document.querySelector('.report-wrapper');
     if (body.problemInfo) {
       reportWrapper['problemInfo'] = body.problemInfo;
     }
@@ -211,7 +217,7 @@ try {
         oldSwitchBtn = reportWrapper.querySelector('.switch-btn:not(.hidden)'),
         otherStudentReport = reportWrapper.querySelector('.polished-report-success:not(.hidden)'),
         gradeWrapper = reportWrapper.parentNode.parentNode.querySelector('.grade-wrapper');
-        originalReport = reportWrapper.querySelector('#matrixui-programming-report');
+        originalReport = reportWrapper.querySelector('.original-report');
 
     var polishedReport = createPolishedReportDiv(reportObject, {
           "showCR": body.configs.showCR,
