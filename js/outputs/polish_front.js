@@ -245,36 +245,36 @@
 	    })();
 	  } else if (body.signal == 'startStudentSubmission') {
 	    var reportObject = body.reportObject;
-	    var reportWrapper = document.querySelector('.grade-wrapper + matrix-report');
-	    // var reportWrapper = document.querySelector('.report-container');
+	    var reportsContainer = document.querySelector('.grade-wrapper + matrix-report');
+	    // var reportsContainer = document.querySelector('.report-container');
 	    var matrixSecondBar = document.querySelector('.choice-tab ul');
-	    if (reportWrapper === null) {
+	    if (reportsContainer === null) {
 	      if (null === document.querySelector('.original-report')) {
 	        return callback("front couldn't find <matrix-report> or .original-report");
 	      }
 	    } else {
-	      reportWrapper.outerHTML = '<div class="report-wrapper"><div class="original-report">' + reportWrapper.outerHTML + '</div></div>';
+	      reportsContainer.outerHTML = '<div class="report-container"><div class="original-report">' + reportsContainer.outerHTML + '</div></div>';
 	    }
-	    reportWrapper = document.querySelector('.report-wrapper');
+	    reportsContainer = document.querySelector('.report-container');
 	    if (body.problemInfo) {
-	      reportWrapper['problemInfo'] = body.problemInfo;
+	      reportsContainer['problemInfo'] = body.problemInfo;
 	    }
 	    var selectedStudentId = matrixSecondBar.querySelector('li.choice-tab-active').title;
 	    
 	      // get div components
-	    var oldPolishedReport = reportWrapper.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
-	        oldSwitchBtn = reportWrapper.querySelector('.switch-btn:not(.hidden)'),
-	        otherStudentReport = reportWrapper.querySelector('.polished-report-success:not(.hidden)'),
-	        gradeWrapper = reportWrapper.parentNode.parentNode.querySelector('.grade-wrapper');
-	        originalReport = reportWrapper.querySelector('.original-report');
+	    var oldPolishedReport = reportsContainer.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
+	        oldSwitchBtn = reportsContainer.querySelector('.switch-btn:not(.hidden)'),
+	        otherStudentReport = reportsContainer.querySelector('.polished-report-success:not(.hidden)'),
+	        gradeWrapper = reportsContainer.parentNode.parentNode.querySelector('.grade-wrapper');
+	        originalReport = reportsContainer.querySelector('.original-report');
 	
 	    var polishedReport = createPolishedReportDiv(reportObject, {
 	          "showCR": body.configs.showCR,
 	          "maxStdCaseNum": body.configs.maxStdCaseNum,
 	          "maxRanCaseNum": body.configs.maxRanCaseNum,
 	          "maxMemCaseNum": body.configs.maxMemCaseNum,
-	          "limits": reportWrapper.problemInfo.limits,
-	          "totalPoints": reportWrapper.problemInfo.totalPoints,
+	          "limits": reportsContainer.problemInfo.limits,
+	          "totalPoints": reportsContainer.problemInfo.totalPoints,
 	        }),
 	        switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
 	          "show": 'show polished report',
@@ -297,7 +297,7 @@
 	      studentAnswerAreaObj.update(formattedCodes);
 	    } else if (formattedCodes) {
 	      var supportedFiles = {};
-	      reportWrapper.problemInfo.supportedFiles.forEach(function(one) {
+	      reportsContainer.problemInfo.supportedFiles.forEach(function(one) {
 	        supportedFiles[one.name] = formattedCodes[one.name];
 	        formattedCodes[one.name] = undefined;
 	      });
@@ -314,11 +314,11 @@
 	    switchBtn.addEventListener('click', showOrginalGrade, false);
 	
 	      // insert newly created div and perform initialization
-	    reportWrapper.insertBefore(switchBtn, reportWrapper.firstChild);
+	    reportsContainer.insertBefore(switchBtn, reportsContainer.firstChild);
 	
 	    polishedReport['title'] = selectedStudentId;
 	    polishedReport['switchBtn'] = switchBtn;
-	    reportWrapper.insertBefore(polishedReport, reportWrapper.querySelector('div'));
+	    reportsContainer.insertBefore(polishedReport, reportsContainer.querySelector('div'));
 	    
 	    var sideNav = polishedReport.sideNav;
 	    if (sideNav) {
@@ -328,7 +328,7 @@
 	      // rid the wrapper of the old divs
 	    if (oldPolishedReport) {
 	      if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
-	      reportWrapper.removeChild(oldPolishedReport);
+	      reportsContainer.removeChild(oldPolishedReport);
 	    }
 	    if (otherStudentReport) {
 	      otherStudentReport.classList.add('hidden');
@@ -659,13 +659,8 @@
 	      var index = 1;
 	      var maxCaseNum = std ? maxStdCaseNum : maxRanCaseNum;
 	      if (phaseInfo.failedCaseNum) {
-	        var failedMessage = null;
-	        if (std) {
-	          failedMessage = phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's');
-	        } else {
-	          failedMessage = 'Some tests';
-	        }
-	        failedMessage += ' failed to pass';
+	        // failedMessage = phaseInfo.failedCaseNum + ' of the total of ' + cases.length + ' test' + (cases.length == 1 ? '' : 's');
+	        var failedMessage = 'Some tests failed to pass';
 	        detail.appendChild(createElementWith('pre', ['error-content', 'red-color'], failedMessage));
 	      }
 	      var getSummary = function(caseInfo) {

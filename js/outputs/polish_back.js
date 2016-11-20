@@ -1075,21 +1075,16 @@
 	            } else if (oneError.kind == 'Leak_PossiblyLost') {
 	              behavior = 'Possible memory leak';
 	              auxwhat = oneError.xwhat.text;
-	            } else {
-	              content += 'Behavior: ' + wrapWithMissing(behavior) + '\n';
-	              content += '\n' + oneError + '\n';
-	              return;
 	            }
 	          }
 	
 	          auxwhat = toArray(auxwhat);
 	          content += 'Behavior: ' + wrapWithMissing(behavior) + '\n';
 	          stack = toArray(stack);
-	
 	          stack.forEach(function(frame, index) {
 	            frame = toArray(frame.frame);
 	            if (index == 0) content += '   ';
-	            else content += ' ' + auxwhat[index - 1] + ':\n   ';
+	            else content += ' ' + wrapWithMissing(auxwhat[index - 1]) + ':\n   ';
 	            frame.forEach(function(funcInfo, funcIndex) {
 	              if (funcIndex) content += 'by:';
 	              else content += 'at:';
