@@ -17,15 +17,18 @@ pre.plain-text-wrapper {
 .polished-report-success div.report-detail pre.error-content {
   max-height: none !important;
 }
+
+@line-num-col-width: 4em;
 pre.line-numbers-wrapper {
-  padding-left: 4em;
+  padding-left: @line-num-col-width + 0.8em;
   & > pre {
     margin: 0 0;
     padding-left: 1em;
   }
 }
+
 pre.diffPre {
-  padding-left: 6.7em;
+  padding-left: 2 * @line-num-col-width;
 }
 .one-diff-content-one-row-binary {
   color: rgba(95, 95, 95, 1);
@@ -49,7 +52,7 @@ pre.diffPre {
   top: 0;
   font-size: 100%;
   left: 0em;
-  width: 3.3em;
+  width: @line-num-col-width;
   letter-spacing: -1px;
   border-right: 1px solid #999;
   -webkit-user-select: none;
@@ -60,7 +63,7 @@ pre.diffPre {
     text-align: right;
   }
   &.line-numbers-rows-right {
-    left: 3.4em;
+    left: @line-num-col-width + 0.1em;
   }
 }
 

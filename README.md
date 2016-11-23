@@ -8,9 +8,11 @@
 
 - [``highlight.js``](https://github.com/isagalaev/highlight.js) whose implementation of codes highlighting also lays a foundation for this extension ( see also [Mensu's simple linenum edition](https://github.com/Mensu/highlight.js), which is actually used )
 
+承蒙各位大佬对鄙人这款小扩展的肯定、否定乃至支持，我也从这个扩展的开发中学到了很多。之前应该是 Matrix 还有更主要的开发任务亟待完成，对 Report 并没有投入足够的精力。我也想学学怎么做一个简单的扩展，于是就有了它。今非昔比，鉴于现在 Matrix 的 Report 正在越做越好，至少对我来说，这款扩展也该逐步退出历史舞台了。对我而言它最大的不足，就是代码除了侧边栏几乎都是用原生，而且事先没有构思好清晰的结构，导致复制粘贴严重，几乎没有可维护性。最后请大家支持官方的 Report:)
+
 # Downloads
 
-[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.6-beta.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.6-beta.zip)
+[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.1.6-beta2.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.1.6-beta2.zip)
 
 # Installation
 

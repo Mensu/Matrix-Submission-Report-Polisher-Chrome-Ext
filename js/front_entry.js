@@ -23,7 +23,7 @@ try {
       // get div components
     var oldPolishedReport = reportWrapper.querySelector('.polished-report-success'),
         oldSwitchBtn = reportWrapper.querySelector('.switch-btn'),
-        originalReport = reportWrapper.querySelector('.report-success:not(.polished-report-success)'),
+        originalReport = reportWrapper.querySelector('#matrix-programming-report:not(.polished-ver)'),
         polishedReport = createPolishedReportDiv(reportObject, {
             "showCR": body.configs.showCR,
             "maxStdCaseNum": body.configs.maxStdCaseNum,
@@ -94,7 +94,7 @@ try {
       reportWrapper['problemInfo'] = body.problemInfo;
     }
       // get div components
-    var originalReport = reportWrapper.querySelector('matrix-report'),
+    var originalReport = reportWrapper.querySelector('#matrix-programming-report:not(.polished-ver)'),
         polishedReport = createPolishedReportDiv(reportObject, {
             "showCR": body.configs.showCR,
             "maxStdCaseNum": body.configs.maxStdCaseNum,
@@ -196,17 +196,23 @@ try {
     })();
   } else if (body.signal == 'startStudentSubmission') {
     var reportObject = body.reportObject;
-    var reportsContainer = document.querySelector('.grade-wrapper + matrix-report');
-    // var reportsContainer = document.querySelector('.report-container');
+    var unmodifiedOriginalReport = document.querySelector('#matrix-programming-report:not(.polished-ver):not(.original-report)');
     var matrixSecondBar = document.querySelector('.choice-tab ul');
-    if (reportsContainer === null) {
+    var reportsContainer = document.querySelector('.reports-container');
+    if (unmodifiedOriginalReport === null) {
       if (null === document.querySelector('.original-report')) {
-        return callback("front couldn't find <matrix-report> or .original-report");
-      }
+        return callback("front couldn't find #matrix-programming-report:not(.original-report):not(.polished-ver) or .original-report");
+      }  // else: original report was modified. just go on
+
     } else {
-      reportsContainer.outerHTML = '<div class="report-container"><div class="original-report">' + reportsContainer.outerHTML + '</div></div>';
+      unmodifiedOriginalReport.classList.add('original-report');
+      reportsContainer = document.createElement('div');
+      unmodifiedOriginalReport.parentNode.insertBefore(reportsContainer, unmodifiedOriginalReport);
+      reportsContainer.outerHTML = '<div class="reports-container"><div class="last-div"></div></div>';
+      reportsContainer = unmodifiedOriginalReport.parentNode.querySelector('.reports-container');
+      reportsContainer.insertBefore(unmodifiedOriginalReport, reportsContainer.firstChild);
     }
-    reportsContainer = document.querySelector('.report-container');
+  
     if (body.problemInfo) {
       reportsContainer['problemInfo'] = body.problemInfo;
     }
@@ -216,8 +222,8 @@ try {
     var oldPolishedReport = reportsContainer.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
         oldSwitchBtn = reportsContainer.querySelector('.switch-btn:not(.hidden)'),
         otherStudentReport = reportsContainer.querySelector('.polished-report-success:not(.hidden)'),
-        gradeWrapper = reportsContainer.parentNode.parentNode.querySelector('.grade-wrapper');
-        originalReport = reportsContainer.querySelector('.original-report');
+        gradeWrapper = reportsContainer.parentNode.querySelector('#matrix-programming-report.original-report .report-section:first-child');
+        originalReport = reportsContainer.parentNode.querySelector('.original-report');
 
     var polishedReport = createPolishedReportDiv(reportObject, {
           "showCR": body.configs.showCR,
@@ -254,7 +260,7 @@ try {
       });
       studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, supportedFiles, 'cpp');
       studentAnswerArea = studentAnswerAreaObj.getNode();
-      gradeWrapper.parentNode.insertBefore(studentAnswerArea, gradeWrapper);
+      reportsContainer.parentNode.insertBefore(studentAnswerArea, reportsContainer);
     }
 
     polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;

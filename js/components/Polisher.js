@@ -23,15 +23,18 @@ var polisher = {
     }
     var report = createElementWith('div', ['report-success', 'polished-report-success']);
     var submitTimeText = reportObject.submitTime === null ? '' : '(submitted at ' + wrap(reportObject.submitTime) + ')';
+    var sectionsWrapper = createElementWith('div', 'polished-ver');
+    sectionsWrapper.id = 'matrix-programming-report';
+    report.appendChild(sectionsWrapper);
+    var gradeSection = createElementWith('div', 'report-section');
     if (reportObject.msg !== null) {
-      report.appendChild(createElementWith('pre', 'success', reportObject.msg + '  ' + submitTimeText));
+      gradeSection.appendChild(createElementWith('div', 'score', reportObject.msg + '  ' + submitTimeText));
+      sectionsWrapper.appendChild(gradeSection);
       return report;
     } else {
-      report.appendChild(createElementWith('pre', 'success', 'Your Grade: ' + reportObject.grade + '  ' + submitTimeText));
+      gradeSection.appendChild(createElementWith('div', 'score', 'Grade: ' + reportObject.grade + '  ' + submitTimeText));
+      sectionsWrapper.appendChild(gradeSection);
     }
-    var sectionsWrapper = createElementWith('div');
-    sectionsWrapper.id = 'matrix-programming-report';
-    report.appendChild(createElementWith('matrix-report', 'polished-ver', sectionsWrapper));
     var sideNav = new SideNav();
     var sectionId = 1;
     var resultText = {
@@ -44,8 +47,6 @@ var polisher = {
       "RE": 'Runtime Error',
       "null": 'Unexpected Error'
     };
-    
-    
 
     function compileCheckDetail(phaseInfo) {
       // var detail = createPreWithText(phaseInfo.report);
@@ -418,9 +419,9 @@ var polisher = {
 
   "getFilesCmpDiv": function(filesDiff, configs) {
     var report = createElementWith('div', ['report-success', 'polished-report-success']);
-    var sectionsWrapper = createElementWith('div');
+    var sectionsWrapper = createElementWith('div', 'polished-ver');
     sectionsWrapper.id = 'matrix-programming-report';
-    report.appendChild(createElementWith('matrix-report', 'polished-ver', sectionsWrapper));
+    report.appendChild(sectionsWrapper);
     var sideNav = new SideNav();
 
     filesDiff.files.forEach(function(oneCommonFile) {

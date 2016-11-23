@@ -33,7 +33,7 @@ input.switch-btn:disabled:hover {
   border-radius: 5px;
   padding: 36px;
   margin-top: 0;
-  font-family: Courier, Arial;
+  /*font-family: Courier, Arial;*/
   font-size: 24px;
   color: #479ea2;
   line-height: 24px;
@@ -115,13 +115,16 @@ input.switch-btn:disabled:hover {
   font-family: "Heiti SC", Arial;
   color: #479ea2;
 }
-#course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-wrapper .report-container .polished-report-success {
+ui-view.ng-scope #course-assignment-one-submission-program .submission-container {
+  /*max-width: 1005px;*/
+}
+ui-view.ng-scope #course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-container .polished-report-success {
   padding-right: unset;
 }
-#course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-wrapper .report-container .polished-report-success pre.success {
+ui-view.ng-scope #course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-container .polished-report-success pre.success {
   width: auto;
 }
-#course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-wrapper .report-container #matrix-programming-report .report-section {
+ui-view.ng-scope #course-assignment-one-submission-program .submission-container .onesubmission-content .course-assignment-one-submission-wrapper .course-assignment-one-submission-container .report-container #matrix-programming-report .report-section {
   width: auto;
 }
 /*#course-assignment-one-submission-program, #course-assignment-programming {
@@ -150,14 +153,14 @@ pre.plain-text-wrapper .one-diff-wrapper {
   max-height: none !important;
 }
 pre.line-numbers-wrapper {
-  padding-left: 4em;
+  padding-left: 4.8em;
 }
 pre.line-numbers-wrapper > pre {
   margin: 0 0;
   padding-left: 1em;
 }
 pre.diffPre {
-  padding-left: 6.7em;
+  padding-left: 8em;
 }
 .one-diff-content-one-row-binary {
   color: #5f5f5f;
@@ -173,7 +176,7 @@ pre.diffPre {
   top: 0;
   font-size: 100%;
   left: 0em;
-  width: 3.3em;
+  width: 4em;
   letter-spacing: -1px;
   border-right: 1px solid #999;
   -webkit-user-select: none;
@@ -185,7 +188,7 @@ pre.diffPre {
   text-align: right;
 }
 .line-numbers-rows.line-numbers-rows-right {
-  left: 3.4em;
+  left: 4.1em;
 }
 pre.diff-removed-bg,
 div.diff-removed-bg,
@@ -348,6 +351,9 @@ span.one-diff-content {
 }
 .select-choice-part > div {
   margin-bottom: 30px;
+}
+.files-diff-part .files-cmp-selected-part-wrapper {
+  margin-bottom: 20px;
 }
 .files-diff-part #matrix-programming-report {
   margin-left: 36px;
