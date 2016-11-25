@@ -7,7 +7,7 @@ var createDiffPre = customElements.createDiffPre;
 var createHideElementBtn = customElements.createHideElementBtn;
 var createViewInHexSpan = customElements.createViewInHexSpan;
 var SideNav = require('./elements/SideNav.js');
-
+var registerSelectAll = require('./registerSelectAll.js');
 var polisher = {
   "getPolishedReportDiv": function(reportObject, configs) {
     var showCR = (configs.showCR === undefined) ? false : Boolean(configs.showCR);
@@ -142,7 +142,11 @@ var polisher = {
           if (oneCase.error) {
               caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
               var content = createLinenumPreWithText(oneCase.input);
-              caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+              var inputPre = createElementWith('pre', 'error-content', content);
+              registerSelectAll(inputPre, function(event) {
+                return this.firstChild;
+              });
+              caseInnerWrapper.appendChild(inputPre);
           } else {
             inoutTests.forEach(function(oneSection) {
               var title = createElementWith('pre', 'label', oneSection.label);
@@ -152,7 +156,13 @@ var polisher = {
 
               var content = createLinenumPreWithText(oneCase[oneSection.id]);
               caseInnerWrapper.appendChild(createHideElementBtn(content));
-              caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+              var contentPre = createElementWith('pre', 'error-content', content);
+              if (oneSection.id == 'input') {
+                registerSelectAll(contentPre, function(event) {
+                  return this.firstChild;
+                });
+              }
+              caseInnerWrapper.appendChild(contentPre);
             });
           }
           if (!cr && oneCase.diff) {
@@ -233,6 +243,9 @@ var polisher = {
           if (oneCase.error) {
             caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
             var content = createLinenumPreWithText(oneCase.input);
+            registerSelectAll(content, function(event) {
+              return this;
+            });
             caseInnerWrapper.appendChild(createHideElementBtn(content));
             caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
           } else {
@@ -245,6 +258,11 @@ var polisher = {
               var content = (oneSection.label == 'Memory Errors' ? oneSection.content() : createLinenumPreWithText(oneCase[oneSection.id]));
               caseInnerWrapper.appendChild(createHideElementBtn(content));
               if (sectionIndex) content.classList.add('error-content');
+              if (oneSection.id == 'input') {
+                registerSelectAll(content, function(event) {
+                  return this;
+                });
+              }
               caseInnerWrapper.appendChild(content);
             });
           }

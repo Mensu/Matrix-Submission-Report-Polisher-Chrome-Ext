@@ -1,5 +1,6 @@
 var hljs = require('../lib/highlight.pack.js');
 var createElementWith = require('../lib/createElementWith.js');
+var registerSelectAll = require('../registerSelectAll.js');
 
 function StudentAnswerArea(formattedCodes, supportedFiles, language) {
   this.tabsUl = createElementWith('ul', 'answerfiles-ul');
@@ -55,6 +56,11 @@ StudentAnswerArea.prototype = {
     this.supportedCodeBlocks.forEach(this.highlightOneBlock);
     this.fix();
   },
+  "initSelectAll": function() {
+    registerSelectAll(this.oneStudentArea, function(event) {
+      return this.querySelector('pre:not(.hidden) code');
+    });
+  },
   "fix": function() {
     this.codeBlocks.forEach(this.highlightOneBlock);
     var original = this.tabsUl.querySelector('li.files-tab-active');
@@ -66,6 +72,7 @@ StudentAnswerArea.prototype = {
         firstFileTab.click();
       }
     }
+    this.initSelectAll();
   },
   "update": function(formattedCodes) {
     this.supportedCodeBlocks.forEach(function(one) {
@@ -88,7 +95,6 @@ function switchFileTab() {
   this.classList.add('files-tab-active');
   this.codePre.classList.remove('hidden');
 }
-
 
 (function exportModuleUniversally(root, factory) {
   if (typeof(exports) === 'object' && typeof(module) === 'object')

@@ -49,11 +49,11 @@
 
 	var componentsPath = './components/';
 	var polisher = __webpack_require__(/*! . */ 14)(componentsPath + 'polisher.js');
-	var FilesCmp = __webpack_require__(/*! . */ 28)(componentsPath + 'FilesCmp.js');
+	var FilesCmp = __webpack_require__(/*! . */ 29)(componentsPath + 'FilesCmp.js');
 	var createPolishedReportDiv = polisher.getPolishedReportDiv;
-	var customElements = __webpack_require__(/*! . */ 30)(componentsPath + 'elements/customElements.js');
-	var StudentAnswerArea = __webpack_require__(/*! . */ 31)(componentsPath + 'elements/StudentAnswerArea.js');
-	document.body.appendChild(__webpack_require__(/*! . */ 32)(componentsPath + 'elements/backToTop.js'));
+	var customElements = __webpack_require__(/*! . */ 31)(componentsPath + 'elements/customElements.js');
+	var StudentAnswerArea = __webpack_require__(/*! . */ 32)(componentsPath + 'elements/StudentAnswerArea.js');
+	document.body.appendChild(__webpack_require__(/*! . */ 33)(componentsPath + 'elements/backToTop.js'));
 	
 	  // get the reportObject from the back,
 	  // use it to create polished report div and attach it to the page
@@ -580,15 +580,15 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 16);
-	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 24);
+	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 25);
 	var createElementWith = customElements.createElementWith;
 	var createLinenumPreWithText = customElements.createLinenumPreWithText;
 	var createPreWithText = customElements.createPreWithText;
 	var createDiffPre = customElements.createDiffPre;
 	var createHideElementBtn = customElements.createHideElementBtn;
 	var createViewInHexSpan = customElements.createViewInHexSpan;
-	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 25);
-	
+	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 26);
+	var registerSelectAll = __webpack_require__(/*! ./registerSelectAll.js */ 24);
 	var polisher = {
 	  "getPolishedReportDiv": function(reportObject, configs) {
 	    var showCR = (configs.showCR === undefined) ? false : Boolean(configs.showCR);
@@ -723,7 +723,11 @@
 	          if (oneCase.error) {
 	              caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
 	              var content = createLinenumPreWithText(oneCase.input);
-	              caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+	              var inputPre = createElementWith('pre', 'error-content', content);
+	              registerSelectAll(inputPre, function(event) {
+	                return this.firstChild;
+	              });
+	              caseInnerWrapper.appendChild(inputPre);
 	          } else {
 	            inoutTests.forEach(function(oneSection) {
 	              var title = createElementWith('pre', 'label', oneSection.label);
@@ -733,7 +737,13 @@
 	
 	              var content = createLinenumPreWithText(oneCase[oneSection.id]);
 	              caseInnerWrapper.appendChild(createHideElementBtn(content));
-	              caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
+	              var contentPre = createElementWith('pre', 'error-content', content);
+	              if (oneSection.id == 'input') {
+	                registerSelectAll(contentPre, function(event) {
+	                  return this.firstChild;
+	                });
+	              }
+	              caseInnerWrapper.appendChild(contentPre);
 	            });
 	          }
 	          if (!cr && oneCase.diff) {
@@ -814,6 +824,9 @@
 	          if (oneCase.error) {
 	            caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
 	            var content = createLinenumPreWithText(oneCase.input);
+	            registerSelectAll(content, function(event) {
+	              return this;
+	            });
 	            caseInnerWrapper.appendChild(createHideElementBtn(content));
 	            caseInnerWrapper.appendChild(createElementWith('pre', 'error-content', content));
 	          } else {
@@ -826,6 +839,11 @@
 	              var content = (oneSection.label == 'Memory Errors' ? oneSection.content() : createLinenumPreWithText(oneCase[oneSection.id]));
 	              caseInnerWrapper.appendChild(createHideElementBtn(content));
 	              if (sectionIndex) content.classList.add('error-content');
+	              if (oneSection.id == 'input') {
+	                registerSelectAll(content, function(event) {
+	                  return this;
+	                });
+	              }
 	              caseInnerWrapper.appendChild(content);
 	            });
 	          }
@@ -1591,6 +1609,7 @@
 
 	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 23);
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var registerSelectAll = __webpack_require__(/*! ../registerSelectAll.js */ 24);
 	
 	function StudentAnswerArea(formattedCodes, supportedFiles, language) {
 	  this.tabsUl = createElementWith('ul', 'answerfiles-ul');
@@ -1646,6 +1665,11 @@
 	    this.supportedCodeBlocks.forEach(this.highlightOneBlock);
 	    this.fix();
 	  },
+	  "initSelectAll": function() {
+	    registerSelectAll(this.oneStudentArea, function(event) {
+	      return this.querySelector('pre:not(.hidden) code');
+	    });
+	  },
 	  "fix": function() {
 	    this.codeBlocks.forEach(this.highlightOneBlock);
 	    var original = this.tabsUl.querySelector('li.files-tab-active');
@@ -1657,6 +1681,7 @@
 	        firstFileTab.click();
 	      }
 	    }
+	    this.initSelectAll();
 	  },
 	  "update": function(formattedCodes) {
 	    this.supportedCodeBlocks.forEach(function(one) {
@@ -1679,7 +1704,6 @@
 	  this.classList.add('files-tab-active');
 	  this.codePre.classList.remove('hidden');
 	}
-	
 	
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
@@ -4856,6 +4880,67 @@
 /***/ },
 /* 24 */
 /*!********************************************!*\
+  !*** ./js/components/registerSelectAll.js ***!
+  \********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	function registerSelectAll(listener, callback) {
+	  listener.removeEventListener('click', changeSelectionTarget);
+	  listener.addEventListener('click', changeSelectionTarget);
+	  listener.changeSelectionTarget = callback;
+	  document.body.removeEventListener('click', clearSelectionTarget);
+	  document.body.addEventListener('click', clearSelectionTarget);
+	  document.body.removeEventListener('keydown', selectAll);
+	  document.body.addEventListener('keydown', selectAll);
+	}
+	function changeSelectionTarget(event) {
+	  this.selectionTarget = this.changeSelectionTarget(event);
+	  document.body.selectionTargetWrapper = this;
+	}
+	function clearSelectionTarget(event) {
+	  var body = this;
+	  var targetIsInPath = event.path.some(function(one) {
+	    return one == body.selectionTargetWrapper;
+	  });
+	  if (targetIsInPath) return;
+	  body.selectionTargetWrapper = null;
+	}
+	function selectAll(event) {
+	  var ctrlPressed = ((navigator.platform == 'MacIntel' && event.metaKey) || event.ctrlKey);
+	  if (!document.body.selectionTargetWrapper || !(ctrlPressed && event.key == 'a')) return;
+	  var range = document.createRange();
+	  var selection = window.getSelection();
+	  range.selectNodeContents(document.body.selectionTargetWrapper.selectionTarget);
+	  selection.removeAllRanges();
+	  selection.addRange(range);
+	  event.preventDefault();
+	}
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['registerSelectAll'] = factory();
+	  else
+	    root['registerSelectAll'] = factory();
+	})(this, function factory() {
+	  return registerSelectAll;
+	});
+
+
+/***/ },
+/* 25 */
+/*!********************************************!*\
   !*** ./js/components/createMatrixAlert.js ***!
   \********************************************/
 /***/ function(module, exports, __webpack_require__) {
@@ -4906,14 +4991,14 @@
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /*!*******************************************!*\
   !*** ./js/components/elements/SideNav.js ***!
   \*******************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var $ = __webpack_require__(/*! ../jquery.js */ 26);
-	__webpack_require__(/*! ./jquery.nav.js */ 27)(this, $);
+	var $ = __webpack_require__(/*! ../jquery.js */ 27);
+	__webpack_require__(/*! ./jquery.nav.js */ 28)(this, $);
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	function SideNav() {
 	  this.wrapper = createElementWith('div', 'side-nav');
@@ -4991,7 +5076,7 @@
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /*!*********************************!*\
   !*** ./js/components/jquery.js ***!
   \*********************************/
@@ -15074,7 +15159,7 @@
 
 
 /***/ },
-/* 27 */
+/* 28 */
 /*!**********************************************!*\
   !*** ./js/components/elements/jquery.nav.js ***!
   \**********************************************/
@@ -15117,10 +15202,10 @@
 	        // that require this pattern but the window provided is a noop
 	        // if it's defined (how jquery works)
 	        if ( typeof window !== 'undefined' ) {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 26);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 27);
 	        }
 	        else {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 26)(root);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 27)(root);
 	        }
 	      }
 	      factory(jQuery);
@@ -15128,7 +15213,7 @@
 	    };
 	  } if (true) {
 	    // AMD. Register as an anonymous module.
-	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 26)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 27)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  } else {
 	    // Browser globals
 	    factory(jQuery);
@@ -15406,14 +15491,14 @@
 	}));
 
 /***/ },
-/* 28 */
+/* 29 */
 /*!*****************************!*\
   !*** ./js ^.*FilesCmp\.js$ ***!
   \*****************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/FilesCmp.js": 29
+		"./components/FilesCmp.js": 30
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -15426,11 +15511,11 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 28;
+	webpackContext.id = 29;
 
 
 /***/ },
-/* 29 */
+/* 30 */
 /*!***********************************!*\
   !*** ./js/components/FilesCmp.js ***!
   \***********************************/
@@ -15817,7 +15902,7 @@
 
 
 /***/ },
-/* 30 */
+/* 31 */
 /*!*********************************************!*\
   !*** ./js ^.*elements\/customElements\.js$ ***!
   \*********************************************/
@@ -15837,11 +15922,11 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 30;
+	webpackContext.id = 31;
 
 
 /***/ },
-/* 31 */
+/* 32 */
 /*!************************************************!*\
   !*** ./js ^.*elements\/StudentAnswerArea\.js$ ***!
   \************************************************/
@@ -15861,18 +15946,18 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 31;
+	webpackContext.id = 32;
 
 
 /***/ },
-/* 32 */
+/* 33 */
 /*!****************************************!*\
   !*** ./js ^.*elements\/backToTop\.js$ ***!
   \****************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/elements/backToTop.js": 33
+		"./components/elements/backToTop.js": 34
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -15885,11 +15970,11 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 32;
+	webpackContext.id = 33;
 
 
 /***/ },
-/* 33 */
+/* 34 */
 /*!*********************************************!*\
   !*** ./js/components/elements/backToTop.js ***!
   \*********************************************/
