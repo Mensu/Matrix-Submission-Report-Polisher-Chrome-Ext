@@ -1070,12 +1070,11 @@
 	          
 	          if (!behavior) {
 	            if (oneError.kind == 'Leak_DefinitelyLost') {
-	              behavior = 'Memory leak';
-	              auxwhat = oneError.xwhat.text;
+	              behavior = 'Memory leak -> ' + oneError.xwhat.text;
 	            } else if (oneError.kind == 'Leak_PossiblyLost') {
-	              behavior = 'Possible memory leak';
-	              auxwhat = oneError.xwhat.text;
+	              behavior = 'Possible memory leak -> ' + oneError.xwhat.text;
 	            }
+	            auxwhat = oneError.xwhat.text;
 	          }
 	
 	          auxwhat = toArray(auxwhat);

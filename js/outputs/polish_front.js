@@ -184,7 +184,7 @@
 	      form.removeChild(originalLogin);
 	      if (!form.noValidationLogin) {
 	        form.addEventListener('keydown', function(event) {
-	          if (event.key == 'Enter') this.noValidationLogin.click();
+	          if ((event.key || event.keyIdentifier) == 'Enter') this.noValidationLogin.click();
 	        }, false);
 	      }
 	      form['noValidationLogin'] = noValidationLogin;
@@ -225,7 +225,7 @@
 	            okButton.tabIndex = -1;
 	            okButton.focus();
 	            okButton.addEventListener('keydown', function(event) {
-	              if (event.key != 'Enter') return;
+	              if ((event.key || event.keyIdentifier) != 'Enter') return;
 	              this.click();
 	            }, false);
 	            okButton.addEventListener('click', clickOk, false);
@@ -4907,7 +4907,7 @@
 	}
 	function selectAll(event) {
 	  var ctrlPressed = ((navigator.platform == 'MacIntel' && event.metaKey) || event.ctrlKey);
-	  if (!document.body.selectionTargetWrapper || !(ctrlPressed && event.key == 'a')) return;
+	  if (!document.body.selectionTargetWrapper || !(ctrlPressed && (event.key || event.keyIdentifier) == 'a')) return;
 	  var range = document.createRange();
 	  var selection = window.getSelection();
 	  range.selectNodeContents(document.body.selectionTargetWrapper.selectionTarget);
