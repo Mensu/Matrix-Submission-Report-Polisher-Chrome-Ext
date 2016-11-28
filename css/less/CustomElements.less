@@ -42,7 +42,18 @@ pre.diffPre {
       display: none;
     }
   }
-    
+  &.hideAdded {
+    .line-numbers-rows .diff-added-bg,
+    .diff-added-bg {
+      display: none;
+    }
+  }
+  &.hideRemoved {
+    .line-numbers-rows.diff-removed-bg,
+    .diff-removed-bg {
+      display: none;
+    }
+  }
 }
 
 

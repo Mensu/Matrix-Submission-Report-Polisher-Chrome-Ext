@@ -49,11 +49,11 @@
 
 	var componentsPath = './components/';
 	var polisher = __webpack_require__(/*! . */ 14)(componentsPath + 'polisher.js');
-	var FilesCmp = __webpack_require__(/*! . */ 29)(componentsPath + 'FilesCmp.js');
+	var FilesCmp = __webpack_require__(/*! . */ 30)(componentsPath + 'FilesCmp.js');
 	var createPolishedReportDiv = polisher.getPolishedReportDiv;
-	var customElements = __webpack_require__(/*! . */ 31)(componentsPath + 'elements/customElements.js');
-	var StudentAnswerArea = __webpack_require__(/*! . */ 32)(componentsPath + 'elements/StudentAnswerArea.js');
-	document.body.appendChild(__webpack_require__(/*! . */ 33)(componentsPath + 'elements/backToTop.js'));
+	var customElements = __webpack_require__(/*! . */ 32)(componentsPath + 'elements/customElements.js');
+	var StudentAnswerArea = __webpack_require__(/*! . */ 33)(componentsPath + 'elements/StudentAnswerArea.js');
+	document.body.appendChild(__webpack_require__(/*! . */ 34)(componentsPath + 'elements/backToTop.js'));
 	
 	  // get the reportObject from the back,
 	  // use it to create polished report div and attach it to the page
@@ -471,6 +471,7 @@
 	  }
 	}
 
+
 /***/ },
 /* 1 */,
 /* 2 */,
@@ -580,20 +581,21 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 16);
-	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 25);
+	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 26);
 	var createElementWith = customElements.createElementWith;
 	var createLinenumPreWithText = customElements.createLinenumPreWithText;
 	var createPreWithText = customElements.createPreWithText;
 	var createDiffPre = customElements.createDiffPre;
 	var createHideElementBtn = customElements.createHideElementBtn;
 	var createViewInHexSpan = customElements.createViewInHexSpan;
-	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 26);
-	var registerSelectAll = __webpack_require__(/*! ./registerSelectAll.js */ 24);
+	var createStdYourDiffRadioGroup = customElements.createStdYourDiffRadioGroup;
+	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 27);
+	var registerSelectAll = __webpack_require__(/*! ./registerSelectAll.js */ 25);
 	var polisher = {
 	  "getPolishedReportDiv": function(reportObject, configs) {
 	    var showCR = (configs.showCR === undefined) ? false : Boolean(configs.showCR);
 	    var maxStdCaseNum = (configs.maxStdCaseNum === undefined) ? 5 : configs.maxStdCaseNum;
-	    var maxRanCaseNum = (configs.maxRanCaseNum === undefined) ? 2 : configs.maxRanCaseNum;
+	    var maxRanCaseNum = (configs.maxRanCaseNum === undefined) ? 5 : configs.maxRanCaseNum;
 	    var maxMemCaseNum = (configs.maxMemCaseNum === undefined) ? 2 : configs.maxMemCaseNum;
 	    var memoryLimit = (configs.limits.memory === undefined) ? null : configs.limits.memory + 'MB';
 	    var timeLimit = (configs.limits.time === undefined) ? null : configs.limits.time + 'ms';
@@ -677,7 +679,7 @@
 	          summary.appendChild(createElementWith('br'));
 	          summary.appendChild(createElementWith('pre', 'not-executing-check', 'Error: ' + caseInfo.error));
 	        } else {
-	          summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultText[caseInfo.resultCode]));
+	          summary.appendChild(createElementWith('pre', (caseInfo.resultCode != 'CR' ? ['result-code', 'non-pass'] : 'result-code'), 'Result: ' + resultText[caseInfo.resultCode]));
 	          summary.appendChild(createElementWith('br'));
 	          summary.appendChild(createElementWith('pre', 'limit-use', [
 	              createElementWith('span', 'limit-text', '\nMemory Used: '),
@@ -710,15 +712,11 @@
 	                "id": 'yourOutput'
 	              }
 	            );
-	          } else {
+	          } else if (oneCase.resultCode != 'WA' && oneCase.stdOutput.length) {
 	            inoutTests.push({
-	                "label": 'Standard Answer Output',
-	                "id": 'stdOutput'
-	              }, {
-	                "label": 'Your Output',
-	                "id": 'yourOutput'
-	              }
-	            );
+	              "label": 'Standard Answer Output',
+	              "id": 'stdOutput'
+	            });
 	          }
 	          if (oneCase.error) {
 	              caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
@@ -747,14 +745,17 @@
 	            });
 	          }
 	          if (!cr && oneCase.diff) {
-	            var title = createElementWith('pre', 'label', 'Difference');
+	            var title = createElementWith('pre', 'label', 'Details');
 	            caseInnerWrapper.appendChild(title);
 	            title.id = caseInnerWrapper.id + '-diff';
-	            sideNav.add('Difference', title.id, 5);
+	            sideNav.add('Details', title.id, 5);
 	
 	            var diffPre = createDiffPre(oneCase.diff);
 	            caseInnerWrapper.appendChild(createHideElementBtn(diffPre));
-	            caseInnerWrapper.appendChild(createViewInHexSpan(sectionId));
+	            var radioGroup = createStdYourDiffRadioGroup(sectionId, caseInnerWrapper);
+	            caseInnerWrapper.appendChild(radioGroup);
+	            radioGroup.querySelector('input').click();
+	            caseInnerWrapper.appendChild(createViewInHexSpan(sectionId, caseInnerWrapper));
 	            caseInnerWrapper.classList.add('hideHex');
 	            var errorContent = createElementWith('pre', 'error-content', diffPre); 
 	            caseInnerWrapper.appendChild(errorContent);
@@ -1096,8 +1097,9 @@
 	var customPre = __webpack_require__(/*! ./customPre.js */ 17);
 	var createHideElementBtn = __webpack_require__(/*! ./HideElementBtn.js */ 19);
 	var createViewInHexSpan = __webpack_require__(/*! ./ViewInHexSpan.js */ 20);
-	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 21);
-	var createStudentAnswerArea = __webpack_require__(/*! ./StudentAnswerArea.js */ 22);
+	var createStdYourDiffRadioGroup = __webpack_require__(/*! ./StdYourDiffRadioGroup.js */ 21);
+	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 22);
+	var createStudentAnswerArea = __webpack_require__(/*! ./StudentAnswerArea.js */ 23);
 	var customElements = {
 	  "extendFrom": function(parent) {
 	    for (var name in parent) this[name] = parent[name];
@@ -1108,7 +1110,8 @@
 	  "createElementWith": __webpack_require__(/*! ../lib/createElementWith */ 18),
 	  "createHideElementBtn": createHideElementBtn,
 	  "createViewInHexSpan": createViewInHexSpan,
-	  "createSwitchBtn": createSwitchBtn
+	  "createSwitchBtn": createSwitchBtn,
+	  "createStdYourDiffRadioGroup": createStdYourDiffRadioGroup
 	});
 	
 	(function exportModuleUniversally(root, factory) {
@@ -1487,7 +1490,7 @@
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	function toggleViewInHex() {
 	  var checkbox = this;
-	  var parent = checkbox.parentNode.parentNode;
+	  var parent = checkbox.parent;
 	  if (checkbox.checked) parent.classList.remove('hideHex');
 	  else parent.classList.add('hideHex');
 	}
@@ -1499,9 +1502,9 @@
 	 *   {function} createElementWith
 	 *   {function} toggleViewInHex
 	 */
-	function createViewInHexSpan(checkboxId) {
+	function createViewInHexSpan(checkboxId, parent) {
 	  var checkbox = createElementWith('input', 'view-in-hex-checkbox');
-	  checkbox.type = 'checkbox';
+	  checkbox.type = 'checkbox', checkbox.parent = parent;
 	  var label = createElementWith('label', 'view-in-hex-label', 'view in hex');
 	  var wrapper = createElementWith('span', 'view-in-hex-wrapper', [checkbox, label]);
 	  label.htmlFor = checkbox.id = 'view-in-hex-' + checkboxId;
@@ -1533,6 +1536,89 @@
 
 /***/ },
 /* 21 */
+/*!*********************************************************!*\
+  !*** ./js/components/elements/StdYourDiffRadioGroup.js ***!
+  \*********************************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	function stdOnClick() {
+	  var radio = this;
+	  var parent = radio.parentNode.parentNode.parent;
+	  if (radio.checked) {
+	    parent.classList.remove('hideAdded');
+	    parent.classList.add('hideRemoved');
+	  }
+	}
+	function yourOnClick() {
+	  var radio = this;
+	  var parent = radio.parentNode.parentNode.parent;
+	  if (radio.checked) {
+	    parent.classList.remove('hideRemoved');
+	    parent.classList.add('hideAdded');
+	  }
+	}
+	function diffOnClick() {
+	  var radio = this;
+	  var parent = radio.parentNode.parentNode.parent;
+	  if (radio.checked) {
+	    parent.classList.remove('hideRemoved');
+	    parent.classList.remove('hideAdded');
+	  }
+	}
+	function createOneRadio(radioId, config) {
+	  var radio = createElementWith('input', 'std-your-diff-radio-group-radio');
+	  radio.type = 'radio';
+	  var label = createElementWith('label', 'std-your-diff-radio-group-label', config.label);
+	  var wrapper = createElementWith('span', 'std-your-diff-radio-group-wrapper', [radio, label]);
+	  radio.name = 'std-your-diff-radio-group-' + radioId;
+	  label.htmlFor = radio.id = radio.name + '-' + config.label.toLowerCase().replace(' ', '-');
+	  radio.addEventListener('click', config.onclick, false);
+	  return wrapper;
+	}
+	var config = [{
+	  "label": 'Difference',
+	  "onclick": diffOnClick
+	}, {
+	  "label": 'Standard Output',
+	  "onclick": stdOnClick
+	}, {
+	  "label": 'Your Output',
+	  "onclick": yourOnClick
+	}];
+	function createStdYourDiffRadioGroup(radioId, parent) {
+	  var group = createElementWith('span', 'std-your-diff-radio-group');
+	  group.parent = parent;
+	  config.forEach(function(oneConfig) {
+	    group.appendChild(createOneRadio(radioId, oneConfig));
+	  });
+	  return group;
+	}
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['createStdYourDiffRadioGroup'] = factory();
+	  else
+	    root['createStdYourDiffRadioGroup'] = factory();
+	})(this, function factory() {
+	  return createStdYourDiffRadioGroup;
+	});
+
+
+/***/ },
+/* 22 */
 /*!*********************************************!*\
   !*** ./js/components/elements/SwitchBtn.js ***!
   \*********************************************/
@@ -1601,15 +1687,15 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /*!*****************************************************!*\
   !*** ./js/components/elements/StudentAnswerArea.js ***!
   \*****************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 23);
+	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 24);
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
-	var registerSelectAll = __webpack_require__(/*! ../registerSelectAll.js */ 24);
+	var registerSelectAll = __webpack_require__(/*! ../registerSelectAll.js */ 25);
 	
 	function StudentAnswerArea(formattedCodes, supportedFiles, language) {
 	  this.tabsUl = createElementWith('ul', 'answerfiles-ul');
@@ -1728,7 +1814,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /*!*********************************************!*\
   !*** ./js/components/lib/highlight.pack.js ***!
   \*********************************************/
@@ -4878,7 +4964,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /*!********************************************!*\
   !*** ./js/components/registerSelectAll.js ***!
   \********************************************/
@@ -4939,7 +5025,7 @@
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /*!********************************************!*\
   !*** ./js/components/createMatrixAlert.js ***!
   \********************************************/
@@ -4991,14 +5077,14 @@
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /*!*******************************************!*\
   !*** ./js/components/elements/SideNav.js ***!
   \*******************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var $ = __webpack_require__(/*! ../jquery.js */ 27);
-	__webpack_require__(/*! ./jquery.nav.js */ 28)(this, $);
+	var $ = __webpack_require__(/*! ../jquery.js */ 28);
+	__webpack_require__(/*! ./jquery.nav.js */ 29)(this, $);
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
 	function SideNav() {
 	  this.wrapper = createElementWith('div', 'side-nav');
@@ -5076,7 +5162,7 @@
 
 
 /***/ },
-/* 27 */
+/* 28 */
 /*!*********************************!*\
   !*** ./js/components/jquery.js ***!
   \*********************************/
@@ -15159,7 +15245,7 @@
 
 
 /***/ },
-/* 28 */
+/* 29 */
 /*!**********************************************!*\
   !*** ./js/components/elements/jquery.nav.js ***!
   \**********************************************/
@@ -15202,10 +15288,10 @@
 	        // that require this pattern but the window provided is a noop
 	        // if it's defined (how jquery works)
 	        if ( typeof window !== 'undefined' ) {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 27);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 28);
 	        }
 	        else {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 27)(root);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 28)(root);
 	        }
 	      }
 	      factory(jQuery);
@@ -15213,7 +15299,7 @@
 	    };
 	  } if (true) {
 	    // AMD. Register as an anonymous module.
-	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 27)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 28)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  } else {
 	    // Browser globals
 	    factory(jQuery);
@@ -15491,14 +15577,14 @@
 	}));
 
 /***/ },
-/* 29 */
+/* 30 */
 /*!*****************************!*\
   !*** ./js ^.*FilesCmp\.js$ ***!
   \*****************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/FilesCmp.js": 30
+		"./components/FilesCmp.js": 31
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -15511,11 +15597,11 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 29;
+	webpackContext.id = 30;
 
 
 /***/ },
-/* 30 */
+/* 31 */
 /*!***********************************!*\
   !*** ./js/components/FilesCmp.js ***!
   \***********************************/
@@ -15523,7 +15609,7 @@
 
 	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 18);
 	var toSubmitAt = __webpack_require__(/*! ./lib/toSubmitAt.js */ 9);
-	var createSwitchBtn = __webpack_require__(/*! ./elements/SwitchBtn.js */ 21);
+	var createSwitchBtn = __webpack_require__(/*! ./elements/SwitchBtn.js */ 22);
 	var polisher = __webpack_require__(/*! ./polisher.js */ 15);
 	
 	function toArray(arrayLike) {
@@ -15902,7 +15988,7 @@
 
 
 /***/ },
-/* 31 */
+/* 32 */
 /*!*********************************************!*\
   !*** ./js ^.*elements\/customElements\.js$ ***!
   \*********************************************/
@@ -15922,42 +16008,18 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 31;
+	webpackContext.id = 32;
 
 
 /***/ },
-/* 32 */
+/* 33 */
 /*!************************************************!*\
   !*** ./js ^.*elements\/StudentAnswerArea\.js$ ***!
   \************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/elements/StudentAnswerArea.js": 22
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 32;
-
-
-/***/ },
-/* 33 */
-/*!****************************************!*\
-  !*** ./js ^.*elements\/backToTop\.js$ ***!
-  \****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/elements/backToTop.js": 34
+		"./components/elements/StudentAnswerArea.js": 23
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -15975,6 +16037,30 @@
 
 /***/ },
 /* 34 */
+/*!****************************************!*\
+  !*** ./js ^.*elements\/backToTop\.js$ ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var map = {
+		"./components/elements/backToTop.js": 35
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 34;
+
+
+/***/ },
+/* 35 */
 /*!*********************************************!*\
   !*** ./js/components/elements/backToTop.js ***!
   \*********************************************/

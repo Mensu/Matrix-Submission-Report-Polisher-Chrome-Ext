@@ -66,8 +66,9 @@
 	chrome.webRequest.onCompleted.addListener(function(details) {
 	  var requiringLatest = false;
 	  if (details.tabId == -1
-	    || (!/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url)
-	      && !(requiringLatest = /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url)) )) return;
+	      || details.method == 'POST'
+	      || (!/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url)
+	        && !(requiringLatest = /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url)) )) return;
 	
 	  var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'];
 	  var param = {
@@ -220,6 +221,7 @@
 	chrome.webRequest.onCompleted.addListener(function(details) {
 	  if (details.tabId == -1
 	    || !localStorage.autoPolish
+	    || details.method == 'POST'
 	    || (!/libraries\/(\d*)\/problems\/(\d{1,})$/.test(details.url) )) return;
 	
 	  var libraryId = RegExp['$1'], problemId = RegExp['$2'];
@@ -280,7 +282,8 @@
 	
 	chrome.webRequest.onCompleted.addListener(function(details) {
 	  if (details.tabId == -1
-	    || (!/\/courses\/(\d{1,})%20%20%20%20%20%20%20%20\/assignments\/(\d{1,})\/submissions\/(\d{1,})\?user_id=(\d{1,})$/.test(details.url) )) return;
+	      || details.method == 'POST'
+	      || (!/\/courses\/(\d{1,})%20%20%20%20%20%20%20%20\/assignments\/(\d{1,})\/submissions\/(\d{1,})\?user_id=(\d{1,})$/.test(details.url) )) return;
 	
 	  var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'], userId = RegExp['$4'];
 	  var param = {
@@ -411,11 +414,7 @@
 	    });
 	    return true;
 	  }
-	  
 	});
-	
-	
-	
 
 
 /***/ },
@@ -1074,7 +1073,9 @@
 	            } else if (oneError.kind == 'Leak_PossiblyLost') {
 	              behavior = 'Possible memory leak -> ' + oneError.xwhat.text;
 	            }
-	            auxwhat = oneError.xwhat.text;
+	            if (oneError.xwhat) {
+	              auxwhat = oneError.xwhat.text;
+	            }
 	          }
 	
 	          auxwhat = toArray(auxwhat);

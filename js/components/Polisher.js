@@ -6,13 +6,14 @@ var createPreWithText = customElements.createPreWithText;
 var createDiffPre = customElements.createDiffPre;
 var createHideElementBtn = customElements.createHideElementBtn;
 var createViewInHexSpan = customElements.createViewInHexSpan;
+var createStdYourDiffRadioGroup = customElements.createStdYourDiffRadioGroup;
 var SideNav = require('./elements/SideNav.js');
 var registerSelectAll = require('./registerSelectAll.js');
 var polisher = {
   "getPolishedReportDiv": function(reportObject, configs) {
     var showCR = (configs.showCR === undefined) ? false : Boolean(configs.showCR);
     var maxStdCaseNum = (configs.maxStdCaseNum === undefined) ? 5 : configs.maxStdCaseNum;
-    var maxRanCaseNum = (configs.maxRanCaseNum === undefined) ? 2 : configs.maxRanCaseNum;
+    var maxRanCaseNum = (configs.maxRanCaseNum === undefined) ? 5 : configs.maxRanCaseNum;
     var maxMemCaseNum = (configs.maxMemCaseNum === undefined) ? 2 : configs.maxMemCaseNum;
     var memoryLimit = (configs.limits.memory === undefined) ? null : configs.limits.memory + 'MB';
     var timeLimit = (configs.limits.time === undefined) ? null : configs.limits.time + 'ms';
@@ -96,7 +97,7 @@ var polisher = {
           summary.appendChild(createElementWith('br'));
           summary.appendChild(createElementWith('pre', 'not-executing-check', 'Error: ' + caseInfo.error));
         } else {
-          summary.appendChild(createElementWith('pre', 'result-code', 'Result: ' + resultText[caseInfo.resultCode]));
+          summary.appendChild(createElementWith('pre', (caseInfo.resultCode != 'CR' ? ['result-code', 'non-pass'] : 'result-code'), 'Result: ' + resultText[caseInfo.resultCode]));
           summary.appendChild(createElementWith('br'));
           summary.appendChild(createElementWith('pre', 'limit-use', [
               createElementWith('span', 'limit-text', '\nMemory Used: '),
@@ -129,15 +130,11 @@ var polisher = {
                 "id": 'yourOutput'
               }
             );
-          } else {
+          } else if (oneCase.resultCode != 'WA' && oneCase.stdOutput.length) {
             inoutTests.push({
-                "label": 'Standard Answer Output',
-                "id": 'stdOutput'
-              }, {
-                "label": 'Your Output',
-                "id": 'yourOutput'
-              }
-            );
+              "label": 'Standard Answer Output',
+              "id": 'stdOutput'
+            });
           }
           if (oneCase.error) {
               caseInnerWrapper.appendChild(createElementWith('pre', 'label', 'Standard Input'));
@@ -166,14 +163,17 @@ var polisher = {
             });
           }
           if (!cr && oneCase.diff) {
-            var title = createElementWith('pre', 'label', 'Difference');
+            var title = createElementWith('pre', 'label', 'Details');
             caseInnerWrapper.appendChild(title);
             title.id = caseInnerWrapper.id + '-diff';
-            sideNav.add('Difference', title.id, 5);
+            sideNav.add('Details', title.id, 5);
 
             var diffPre = createDiffPre(oneCase.diff);
             caseInnerWrapper.appendChild(createHideElementBtn(diffPre));
-            caseInnerWrapper.appendChild(createViewInHexSpan(sectionId));
+            var radioGroup = createStdYourDiffRadioGroup(sectionId, caseInnerWrapper);
+            caseInnerWrapper.appendChild(radioGroup);
+            radioGroup.querySelector('input').click();
+            caseInnerWrapper.appendChild(createViewInHexSpan(sectionId, caseInnerWrapper));
             caseInnerWrapper.classList.add('hideHex');
             var errorContent = createElementWith('pre', 'error-content', diffPre); 
             caseInnerWrapper.appendChild(errorContent);

@@ -77,6 +77,10 @@ input.switch-btn:disabled:hover {
   margin-top: 0;
   margin-bottom: 0;
 }
+.report-detail .case-inner-wrapper .view-in-hex-wrapper,
+.report-detail .case-inner-wrapper .std-your-diff-radio-group-wrapper {
+  margin-left: 10px;
+}
 .tests-check-summary {
   margin-top: 20px;
 }
@@ -168,6 +172,14 @@ pre.diffPre {
 }
 .case-inner-wrapper.hideHex .line-numbers-rows .line-numbers-one-row-binary,
 .case-inner-wrapper.hideHex .one-diff-content .one-diff-content-one-row-binary {
+  display: none;
+}
+.case-inner-wrapper.hideAdded .line-numbers-rows .diff-added-bg,
+.case-inner-wrapper.hideAdded .diff-added-bg {
+  display: none;
+}
+.case-inner-wrapper.hideRemoved .line-numbers-rows.diff-removed-bg,
+.case-inner-wrapper.hideRemoved .diff-removed-bg {
   display: none;
 }
 .line-numbers-rows {

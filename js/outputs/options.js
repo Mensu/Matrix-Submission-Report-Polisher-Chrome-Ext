@@ -17,7 +17,7 @@ var maxCaseNums = [
     "id": 'maxRanCaseNum',
     "input": maxRanCaseNumInput,
     "description": '随机测试最大样例数',
-    "default": 2
+    "default": 5
   },
   {
     "id": 'maxMemCaseNum',
@@ -41,17 +41,21 @@ saveButton.addEventListener('click', function() {
   };
   saveCheckBox(showCRCheckBox, 'showCR'), saveCheckBox(autoPolishCheckBox, 'autoPolish');//, saveCheckBox(noValidationLoginCheckBox, 'noValidationLogin');
   
-  var saveCaseNumber = function(Input, name, description) {
+  function saveCaseNumber(Input, name, description) {
     if ((Input.value.match(/^(\d){1,2}$/)
         && 0 < parseInt(Input.value) && parseInt(Input.value) < 100)
-      || (Input.value.match(/^(\d){3}$/) && parseInt(Input.value) == 100))
-      return localStorage[name] = Input.value, false;
-    else return alert(description + '应该是一个1到100的整数'), true;
+      || (Input.value.match(/^(\d){3}$/) && parseInt(Input.value) == 100)) {
+        localStorage[name] = Input.value
+        return false;
+    } else {
+      savedSuccessfully.innerHTML = description + '应该是一个1到100的整数';
+      return true;
+    }
   };
   var errOccurred = false;
   for (var i in maxCaseNums) {
     if (!errOccurred) errOccurred |= saveCaseNumber(maxCaseNums[i].input, maxCaseNums[i].id, maxCaseNums[i].description);
   }
-  if (errOccurred) return savedSuccessfully.innerHTML = "";
+  if (errOccurred) return false;
   else return savedSuccessfully.innerHTML = "    保存成功", init();
 }, false);

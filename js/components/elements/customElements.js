@@ -1,6 +1,7 @@
 var customPre = require('./customPre.js');
 var createHideElementBtn = require('./HideElementBtn.js');
 var createViewInHexSpan = require('./ViewInHexSpan.js');
+var createStdYourDiffRadioGroup = require('./StdYourDiffRadioGroup.js');
 var createSwitchBtn = require('./SwitchBtn.js');
 var createStudentAnswerArea = require('./StudentAnswerArea.js');
 var customElements = {
@@ -13,7 +14,8 @@ customElements.extendFrom({
   "createElementWith": require('../lib/createElementWith'),
   "createHideElementBtn": createHideElementBtn,
   "createViewInHexSpan": createViewInHexSpan,
-  "createSwitchBtn": createSwitchBtn
+  "createSwitchBtn": createSwitchBtn,
+  "createStdYourDiffRadioGroup": createStdYourDiffRadioGroup
 });
 
 (function exportModuleUniversally(root, factory) {

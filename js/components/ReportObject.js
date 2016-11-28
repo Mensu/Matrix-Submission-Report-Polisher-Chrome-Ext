@@ -226,7 +226,9 @@ ReportObject.prototype = {
             } else if (oneError.kind == 'Leak_PossiblyLost') {
               behavior = 'Possible memory leak -> ' + oneError.xwhat.text;
             }
-            auxwhat = oneError.xwhat.text;
+            if (oneError.xwhat) {
+              auxwhat = oneError.xwhat.text;
+            }
           }
 
           auxwhat = toArray(auxwhat);

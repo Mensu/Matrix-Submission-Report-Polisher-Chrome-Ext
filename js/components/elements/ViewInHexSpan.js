@@ -1,7 +1,7 @@
 var createElementWith = require('../lib/createElementWith.js');
 function toggleViewInHex() {
   var checkbox = this;
-  var parent = checkbox.parentNode.parentNode;
+  var parent = checkbox.parent;
   if (checkbox.checked) parent.classList.remove('hideHex');
   else parent.classList.add('hideHex');
 }
@@ -13,9 +13,9 @@ function toggleViewInHex() {
  *   {function} createElementWith
  *   {function} toggleViewInHex
  */
-function createViewInHexSpan(checkboxId) {
+function createViewInHexSpan(checkboxId, parent) {
   var checkbox = createElementWith('input', 'view-in-hex-checkbox');
-  checkbox.type = 'checkbox';
+  checkbox.type = 'checkbox', checkbox.parent = parent;
   var label = createElementWith('label', 'view-in-hex-label', 'view in hex');
   var wrapper = createElementWith('span', 'view-in-hex-wrapper', [checkbox, label]);
   label.htmlFor = checkbox.id = 'view-in-hex-' + checkboxId;
