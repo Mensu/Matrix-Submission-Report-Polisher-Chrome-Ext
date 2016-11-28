@@ -1,5 +1,5 @@
 var createElementWith = require('../lib/createElementWith.js');
-function stdOnClick() {
+function yourOnClick() {
   var radio = this;
   var parent = radio.parentNode.parentNode.parent;
   if (radio.checked) {
@@ -7,7 +7,7 @@ function stdOnClick() {
     parent.classList.add('hideRemoved');
   }
 }
-function yourOnClick() {
+function stdOnClick() {
   var radio = this;
   var parent = radio.parentNode.parentNode.parent;
   if (radio.checked) {
@@ -37,7 +37,7 @@ var config = [{
   "label": 'Difference',
   "onclick": diffOnClick
 }, {
-  "label": 'Standard Output',
+  "label": 'Standard Answer Output',
   "onclick": stdOnClick
 }, {
   "label": 'Your Output',

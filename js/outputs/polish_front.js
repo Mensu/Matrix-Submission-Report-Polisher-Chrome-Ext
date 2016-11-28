@@ -1542,7 +1542,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
-	function stdOnClick() {
+	function yourOnClick() {
 	  var radio = this;
 	  var parent = radio.parentNode.parentNode.parent;
 	  if (radio.checked) {
@@ -1550,7 +1550,7 @@
 	    parent.classList.add('hideRemoved');
 	  }
 	}
-	function yourOnClick() {
+	function stdOnClick() {
 	  var radio = this;
 	  var parent = radio.parentNode.parentNode.parent;
 	  if (radio.checked) {
@@ -1580,7 +1580,7 @@
 	  "label": 'Difference',
 	  "onclick": diffOnClick
 	}, {
-	  "label": 'Standard Output',
+	  "label": 'Standard Answer Output',
 	  "onclick": stdOnClick
 	}, {
 	  "label": 'Your Output',
