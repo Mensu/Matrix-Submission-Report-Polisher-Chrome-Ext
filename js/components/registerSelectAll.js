@@ -21,7 +21,11 @@ function clearSelectionTarget(event) {
 }
 function selectAll(event) {
   var ctrlPressed = ((navigator.platform == 'MacIntel' && event.metaKey) || event.ctrlKey);
-  if (!document.body.selectionTargetWrapper || !(ctrlPressed && (event.key || event.keyIdentifier) == 'a')) return;
+  if (!document.body.selectionTargetWrapper
+     || !(ctrlPressed &&
+           (event.key == 'a' || event.keyIdentifier == 'U+0041' || event.keyCode == 65))) {
+      return;
+  }
   var range = document.createRange();
   var selection = window.getSelection();
   range.selectNodeContents(document.body.selectionTargetWrapper.selectionTarget);
