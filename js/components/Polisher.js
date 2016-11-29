@@ -130,7 +130,7 @@ var polisher = {
                 "id": 'yourOutput'
               }
             );
-          } else if (oneCase.resultCode != 'WA' && oneCase.stdOutput.length) {
+          } else if (oneCase.resultCode != 'WA' && oneCase.stdOutput && oneCase.stdOutput.length) {
             inoutTests.push({
               "label": 'Standard Answer Output',
               "id": 'stdOutput'
