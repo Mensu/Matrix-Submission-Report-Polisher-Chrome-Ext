@@ -153,7 +153,7 @@ try {
           var status = body.status;
           if (status == 'OK') {
             if (body.data && body.data.is_valid) {
-              window.location.assign(window.location.origin + '/#/' + body.data.username);
+              window.location.assign(window.location.origin + '/#!/' + body.data.username);
             } else {
               form.appendChild(originalLogin);
               originalLogin.click();

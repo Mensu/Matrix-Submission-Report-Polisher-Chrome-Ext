@@ -202,7 +202,7 @@
 	          var status = body.status;
 	          if (status == 'OK') {
 	            if (body.data && body.data.is_valid) {
-	              window.location.assign(window.location.origin + '/#/' + body.data.username);
+	              window.location.assign(window.location.origin + '/#!/' + body.data.username);
 	            } else {
 	              form.appendChild(originalLogin);
 	              originalLogin.click();
@@ -1023,7 +1023,7 @@
 	    sectionsWrapper.id = 'matrix-programming-report';
 	    report.appendChild(sectionsWrapper);
 	    var sideNav = new SideNav();
-	
+	    
 	    filesDiff.files.forEach(function(oneCommonFile) {
 	      var suffix = '';
 	      if (oneCommonFile.diff && oneCommonFile.diff.length == 1 && oneCommonFile.diff[0].common == true) {
@@ -1034,7 +1034,7 @@
 	      var scoreTextOnNav = null;
 	      reportSection.id = 'files-cmp-report-' + oneCommonFile.name.replace(/ |\./g, '-');
 	      sideNav.add(oneCommonFile.name + suffix, reportSection.id, 1, (suffix.length ? undefined : 'non-pass'));
-	      
+	
 	      var testContent = createElementWith('div', 'test-content');
 	      var detail = document.createDocumentFragment();
 	      var caseOuterWrapper = createElementWith('div', 'case-outer-wrapper');
@@ -1043,7 +1043,12 @@
 	      var hideBtn = createHideElementBtn(diffPre);
 	      caseInnerWrapper.appendChild(hideBtn);
 	      if (suffix.length) hideBtn.click();
-	      caseInnerWrapper.appendChild(createViewInHexSpan('view-hex-span-' + oneCommonFile.name.replace(/ |\./g, '-')));
+	      var radioGroup = createStdYourDiffRadioGroup(reportSection.id, caseInnerWrapper);
+	      caseInnerWrapper.appendChild(radioGroup);
+	      radioGroup.querySelector('input').click();
+	      radioGroup.querySelectorAll('.std-your-diff-radio-group-label')[1].textContent = configs.stdHeading;
+	      radioGroup.querySelectorAll('.std-your-diff-radio-group-label')[2].textContent = configs.yourHeading;
+	      caseInnerWrapper.appendChild(createViewInHexSpan('view-hex-span-' + oneCommonFile.name.replace(/ |\./g, '-'), caseInnerWrapper));
 	      caseInnerWrapper.classList.add('hideHex');
 	      var errorContent = createElementWith('pre', 'error-content', diffPre); 
 	      caseInnerWrapper.appendChild(errorContent);

@@ -374,6 +374,9 @@ span.one-diff-content {
 .files-diff-part th.th-grade {
   width: 40%;
 }
+#course-assignment-one-submission-program .choice-tab li.navli.files-cmp-li {
+  width: 180px;
+}
 /*
 
 Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-license.org/
