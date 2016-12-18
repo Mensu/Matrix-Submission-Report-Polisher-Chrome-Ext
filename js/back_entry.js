@@ -234,9 +234,9 @@ chrome.webRequest.onCompleted.addListener(function(details) {
 chrome.webRequest.onCompleted.addListener(function(details) {
   if (details.tabId == -1
       || details.method == 'POST'
-      || (!/\/courses\/(\d{1,})%20%20%20%20%20%20%20%20\/assignments\/(\d{1,})\/submissions\/(\d{1,})\?user_id=(\d{1,})$/.test(details.url) )) return;
+      || (!/\/courses\/(\d{1,})(%20){0,}\/assignments\/(\d{1,})\/submissions\/(\d{1,})\?user_id=(\d{1,})$/.test(details.url) )) return;
 
-  var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'], userId = RegExp['$4'];
+  var courseId = RegExp['$1'], problemId = RegExp['$3'], submissionId = RegExp['$4'], userId = RegExp['$5'];
   var param = {
       "tabId": details.tabId,
       "courseId": courseId,

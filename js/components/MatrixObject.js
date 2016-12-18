@@ -257,7 +257,7 @@ MatrixObject.prototype = {
   },
 
   "getStudentSubmission": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '%20%20%20%20%20%20%20%20/assignments/' + param.problemId + '/submissions/' + param.submissionId + '?user_id=' + param.userId);
+    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId + '?user_id=' + param.userId);
   },
 
   "getGoogleStyleReport": function(param) {
