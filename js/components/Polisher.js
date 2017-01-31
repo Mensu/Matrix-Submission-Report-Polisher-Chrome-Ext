@@ -162,7 +162,7 @@ var polisher = {
               caseInnerWrapper.appendChild(contentPre);
             });
           }
-          if (!cr && oneCase.diff) {
+          if (!cr && oneCase.resultCode == 'WA' && oneCase.diff) {
             var title = createElementWith('pre', 'label', 'Details');
             caseInnerWrapper.appendChild(title);
             title.id = caseInnerWrapper.id + '-diff';

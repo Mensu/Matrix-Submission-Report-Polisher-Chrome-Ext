@@ -18,52 +18,13 @@ function hideFilesCmp() {
   if (shouldAppear) {
     shouldAppear.classList.remove('ng-hide');
   }
-  // var username = this.title;
-  // if (username) {
-  //   var newReport = this.hideElement.parentNode.querySelector('.polished-report-success[title="' + username + '"]');
-  //   var oldReport = this.hideElement.parentNode.querySelector('.polished-report-success:not(.hidden)');
-  //   if (newReport) {
-  //     if (oldReport == null || !newReport.isSameNode(oldReport)) {
-  //       if (oldReport) oldReport.classList.add('hidden');
-  //       newReport.classList.remove('hidden');
-  //       newReport.parentNode.insertBefore(newReport, newReport.parentNode.firstChild.nextElementSibling);
-  //       this.parentUl.querySelector('.files-cmp-li').fix();
-  //     }
-  //     newReport.sideNav.fix();
-  //   }
-  // }
 }
-
-// function cancelBubble(event) {
-//   event.stopPropagation();
-//   var curLi = this.parentNode;
-//   var oldReport = curLi.hideElement.parentNode.querySelector('.polished-report-success[title*="' + curLi.title + '"]');
-//   if (oldReport) {
-//     oldReport.classList.add('hidden');
-//   }
-
-//   var liList = curLi.parentUl.querySelectorAll('li');
-  
-//   if (liList.length == 2 && ~liList[1].className.indexOf('files-cmp-li')) {
-//     liList[0].click();
-//   } else {
-//     var activeLi = curLi.parentUl.querySelector('.choice-tab-active');
-//     if (!activeLi) return;
-//     else activeLi.click();
-//   }
-
-// }
-
-// function clickOnMyTab() {
-//   this.connectedTab.click();
-// }
 
 function addListenersForTabs() {
     // add listener for other tabs
     // to hide our FilesCmp tab content when other tabs are clicked
   var curLi = this;
   var liList = curLi.parentNode.querySelectorAll('li');
-  // var allBlockLiList = document.querySelectorAll('#all-block .tab-list li');
   liList.forEach(function(oneLi) {
     oneLi['hideElement'] = curLi.hideElement;
     oneLi['parentUl'] = curLi.parentNode;
@@ -74,19 +35,6 @@ function addListenersForTabs() {
     oneLi.addEventListener('click', hideFilesCmp, false);
   });
 
-    // if (allBlockLiList[i]) {
-    //   allBlockLiList[i]['connectedTab'] = liList[i + 1];
-    //   allBlockLiList[i].removeEventListener('click', clickOnMyTab, false);
-    //   allBlockLiList[i].addEventListener('click', clickOnMyTab, false);
-    // }
-
-    // var close = liList[i].querySelector('i');
-
-    // if (close) {
-    //   close.removeEventListener('click', cancelBubble, false);
-    //   close.addEventListener('click', cancelBubble, false);
-    // }
-  // }
 }
 
 function SwitchSelectedTab() {
@@ -181,12 +129,8 @@ function showDifference() {
   if (filesDiffPart.cmpIds && filesDiffPart.cmpIds.oldId == oldId && filesDiffPart.cmpIds.newId == newId) return;
   
     // get courseId and problemId
-  var courseId = null;
-  var problemId = null;
-  var ids = /course\/(\d{1,})\/assignment\/(submission-)?programming\?problemId=(\d{1,})/.exec(document.URL);
-  courseId = ids[1];
-  problemId = ids[ids.length - 1];
-
+  var ids = /courses{0,1}\/([0-9]{1,})\/assignments{0,1}\/(?:submission-)?programming(?:\/|\?problemId=)([0-9]{1,})/.exec(document.URL);
+  const [, courseId, assignmentId] = ids;
     // remove old ones
   var oldFilesCmpDiv = filesDiffPart.querySelector('.polished-report-success');
   if (oldFilesCmpDiv) {
@@ -194,13 +138,8 @@ function showDifference() {
     oldFilesCmpDiv.parentNode.removeChild(oldFilesCmpDiv);
   }
   
-  chrome.runtime.sendMessage({
-    "signal": 'filesDiff',
-    "courseId": courseId,
-    "problemId": problemId,
-    "oldId": oldId,
-    "newId": newId
-  }, function(response) {
+  const message = { signal: 'filesDiff', courseId, assignmentId, oldId, newId };
+  chrome.runtime.sendMessage(message, function(response) {
     if (response.status != 'OK') {
       filesDiffPart.appendChild(createElementWith('div', 'polished-report-success', 'Failed to get files to compare'));
     } else {

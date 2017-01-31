@@ -173,21 +173,22 @@ try {
             matrixAlert = polisher.createMatrixAlert(text);
             document.querySelector('#matrix-main').appendChild(matrixAlert);
             var okButton = matrixAlert.button;
-            okButton.tabIndex = -1;
-            okButton.focus();
+            okButton.tabIndex = -1;     // 使div能和input一样获得焦点，然而目前是button，应该不用这句
+            okButton.focus();           // button获得焦点
             okButton.addEventListener('keydown', function(event) {
               if ((event.key || event.keyIdentifier) != 'Enter') return;
-              this.click();
+              this.click();             // 触发下面的click事件，即clickOk函数
             }, false);
             okButton.addEventListener('click', clickOk, false);
             function clickOk(event) {
+              // 根据错误信息，把焦点移动到适当的input并全选，方便用户修改
               if (status == 'USER_NOT_FOUND') {
                 usernameInput.focus(), usernameInput.select();
               } else if (status == 'WRONG_PASSWORD') {
                 passwordInput.focus(), passwordInput.select();              
               }
-              okButton.tabIndex = undefined;
-              okButton.closeMe();
+              okButton.tabIndex = undefined;   // 还原
+              okButton.closeMe();              // 移除Alert
             }
           }
         });

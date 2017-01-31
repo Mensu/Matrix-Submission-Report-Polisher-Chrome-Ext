@@ -1,233 +1,264 @@
-var httpRequest = require('./lib/httpRequest.js');
+const httpRequest = require('./lib/httpRequest.js');
+const genDriver = require('./lib/genDriver.js');
 
 /** 
  * parse a string to JSON without throwing an error if failed
- * @param {string} str - string to be parsed
+ * @param {String} str - string to be parsed
  * 
- * @return {boolean|Object} return JSON object if succeeded, or false if failed
+ * @return {Boolean|Object} return JSON object if succeeded, or false if failed
  * independent
  */
 function JSONParser(str) {
-  var ret = null;
+  let ret = null;
   try {
     ret = JSON.parse(str);
   } catch (e) {
-    ret = false;
-    console.log(e);
-    console.log('Error: Failed to parse the following string to JSON');
-    console.log(str);
+    console.error(e);
+    console.error('Error: Failed to parse the following string to JSON');
+    console.error(str);
     return e;
   }
   return ret;
 }
 
-/** 
- * @constructor
- * MatrixObject
- * @param {string|Object} newConfigs - Matrix's root url(string) or config object that looks like this:
- * {
- *   "rootUrl": Matrix's root url
- * }
- * 
- * dependent of 
- *   {function} httpRequest
- */
-function MatrixObject(configs) {
-  this.configs = ['rootUrl', 'googleStyleUrl'];
-  for (var i = 0; i != this.configs.length; ++i) {
-    var oneConfig = this.configs[i];
-    this[oneConfig] = null;
-  }
-    // wrap to config object
-  if (typeof(configs) == 'string') {
-    configs = {"rootUrl": configs};
-  }
-  this.configsSetter(configs);
-  if (!this.rootUrl.endsWith('/')) {
-    this.rootUrl += '/';
-  }
-  if (!this.googleStyleUrl.endsWith('/')) {
-    this.googleStyleUrl += '/';
-  }
-}
-
-
-
-MatrixObject.prototype = {
-  "constructor": MatrixObject,
-  "configsSetter": function(newConfigs) {
-    for (var i = 0; i != this.configs.length; ++i) {
-      var oneConfig = this.configs[i];
-      if (newConfigs[oneConfig] !== undefined) this[oneConfig] = newConfigs[oneConfig];
+class MatrixObject {
+  /** 
+   * @param {String|Object} newConfigs - Google Style server's root url (String) or config object that looks like this:
+   * {
+   *   rootUrl: Matrix's root url,
+   *   googleStyleUrl: Google Style Server's root url
+   * }
+   * 
+   */
+  constructor(newConfigs) {
+    const self = this;
+    self.configsNames = ['rootUrl', 'googleStyleUrl', 'patternUrl'];
+    for (const oneConfigName of self.configsNames) {
+      self[oneConfigName] = null;
     }
-  },
+    // wrap to config object
+    if (typeof newConfigs === 'string') {
+      newConfigs = { googleStyleUrl: newConfigs };
+    }
+    self.configsSetter(newConfigs);
+    if (!self.rootUrl.endsWith('/')) self.rootUrl += '/';
+    if (!self.googleStyleUrl.endsWith('/')) self.googleStyleUrl += '/';
+    if (!self.patternUrl.endsWith('/')) self.patternUrl += '/';
+  }
+
+  configsSetter(newConfigs) {
+    const self = this;
+    for (const oneConfigName of self.configsNames) {
+      if (Reflect.hasOwnProperty.call(newConfigs, oneConfigName)) {
+        self[oneConfigName] = newConfigs[oneConfigName]
+      }
+    }
+  }
 
   /** 
    * wrap an xhr request by trying parsing response data as JSON and catching possible errors
-   * @param {string} method - 'get' or 'post'
-   * @param {string} url - url to send request
-   * @param {Object} [param] - parameters
+   * @param {String} method       methods
+   * @param {String} resourceUrl  resource url to send request
+   * @param {String} [rootUrl]    Matrix's root url
+   * @param {Object} [param]      parameters
    * 
-   * @return {Object} Promise
-   * 
-   * @private
-   * dependent of 
-   *   {function} httpRequest
+   * @return {Object} response json
    */
-  "request": function(method, url, param) {
+  request(method, resourceUrl, rootUrl, param) {
+    const self = this;
     if (!param) param = null;
-    return httpRequest(method, url, param)
-      .then(function(body) {
-          body = JSONParser(body);
-          if (body instanceof Error) {
-            return Promise.reject(body);
-          } else {
-            return Promise.resolve(body);
-          }
-      }, function(err) {
-          return Promise.reject(err);
-      });
-  },
+
+    if (!rootUrl) {
+      rootUrl = self.rootUrl;
+    } else if (!rootUrl.endsWith('/')) {
+      rootUrl += '/';
+    }
+
+    if (resourceUrl.startsWith('/')) {
+      resourceUrl = resourceUrl.slice(0, -1);
+    }
+
+    return genDriver(function *() {
+      const body = JSONParser(yield httpRequest(method, rootUrl + resourceUrl, param));
+      if (body instanceof Error) throw body;
+      return body;
+    });
+  }
 
   /** 
    * test whether user has internet access to Matrix
-   * @return {Object} - Promise
-   * @Promise {fullfilled} null
-   * @Promise {rejected} true or an error object
-   * dependent of 
-   *   {function} httpRequest
+   * @param  {String} rootUrl  Matrix's root url
+   * @return {null}
    */
-  "testNetwork": function() {
-    return httpRequest('get', this.rootUrl + '/app-angular/course/self/views/list.client.view.html', null)
-      .then(function() {
-          return Promise.resolve(null);
-      }, function(err) {
-          return Promise.reject(err);
-      });
-  },
+  testNetwork(rootUrl) {
+    const self = this;
+    return genDriver(function *() {
+      yield httpRequest('get', `${rootUrl}app-angular/course/self/views/list.client.view.html`);
+      return null;
+    });
+  }
 
   /** 
-   * get one submission by courseId, problemId and submissionId (sub_ca_id)
+   * get one submission by courseId, assignmentId and submissionId (sub_ca_id)
    * @param {Object} param - object that looks like this
    *   {
-   *     "courseId": the course's id,
-   *     "problemId": the assignment's id,
-   *     "submissionId": the submission's id,
+   *     courseId: the course's id,
+   *     assignmentId: the assignment's id,
+   *     submissionId: the submission's id,
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getSubmission": function(param) {
-      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId);
-  },
+  getSubmission(param, rootUrl) {
+    const self = this;
+    const { courseId, assignmentId, submissionId } = param;
+    return self.request(
+      'get',
+      `api/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}`,
+      rootUrl
+    );
+  }
 
   /** 
-   * get the latest report by courseId and problemId
+   * get the latest report by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
-   *     "courseId": the course's id,
-   *     "problemId": the assignment's id
+   *     courseId: the course's id,
+   *     assignmentId: the assignment's id
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getLatestReport": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last/feedback');
-  },
+  getLatestReport(param, rootUrl) {
+    const self = this;
+    const { courseId, assignmentId } = param;
+    return self.request(
+      'get',
+      `api/courses/${courseId}/assignments/${assignmentId}/submissions/last/feedback`,
+      rootUrl
+    );
+  }
 
   /** 
-   * get the latest submission by courseId and problemId
+   * get the latest submission by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
-   *     "courseId": the course's id,
-   *     "problemId": the assignment's id
+   *     courseId: the course's id,
+   *     assignmentId: the assignment's id
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getLatestSubmission": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last');
-  },
+  getLatestSubmission(param, rootUrl) {
+    const self = this;
+    const { courseId, assignmentId } = param;
+    return self.request(
+      'get',
+      `api/courses/${courseId}/assignments/${assignmentId}/submissions/last`,
+      rootUrl
+    );
+  }
 
   /** 
-   * get one problem's information by courseId and problemId
+   * get one problem's information by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
-   *     "courseId": the course's id,
-   *     "problemId": the assignment's id
+   *     courseId: the course's id,
+   *     assignmentId: the assignment's id
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getProblemInfo": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId);
-  },
+  getProblemInfo(param, rootUrl) {
+    const self = this;
+    const { courseId, assignmentId } = param;
+    return self.request(
+      'get',
+      `api/courses/${courseId}/assignments/${assignmentId}`,
+      rootUrl
+    );
+  }
 
   /** 
-   * get submissions list of a problem by courseId and problemId
+   * get submissions list of a problem by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
-   *     "courseId": the course's id,
-   *     "problemId": the assignment's id
+   *     courseId: the course's id,
+   *     assignmentId: the assignment's id,
+   *    
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getSubmissionsList": function(param) {
-    if (param.isUsingUserId && param.userId) {
-      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions?user_id=' + param.userId);
-    } else {
-      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions');
+  getSubmissionsList(param, rootUrl) {
+    const self = this;
+    const { courseId, assignmentId, userId } = param;
+    let resourceUrl = `api/courses/${courseId}/assignments/${assignmentId}/submissions`;
+    if (userId) {
+      resourceUrl += `?user_id=${userId}`;
     }
-  },
+    return self.request(
+      'get',
+      resourceUrl,
+      rootUrl
+    );
+  }
 
   /** 
    * log in by username and password
    * @param {Object} param - object that looks like this
-   *   {
-   *     "username": username,
-   *     "passowrd": password
-   *   }
-   * dependent of 
-   *   {function} this.request
+   *   { username, password }
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "login": function(param) {
-    return this.request('post', this.rootUrl + 'api/users/login', {
-      "username": param.username,
-      "password": param.password
-    });
-  },
+  login(param, rootUrl) {
+    const self = this;
+    const { username, password } = param;
+    return self.request(
+      'post',
+      `api/users/login`,
+      rootUrl,
+      { username, password }
+    );
+  }
 
   /** 
    * log out
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "logout": function() {
-    return this.request('get', this.rootUrl + 'api/users/logout');
-  },
+  logout(rootUrl) {
+    const self = this;
+    return self.request(
+      'get',
+      `api/users/logout`,
+      rootUrl
+    );
+  }
 
   /** 
    * get courses list of currect user
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getCoursesList": function() {
-    return this.request('get', this.rootUrl + 'api/courses');
-  },
+  getCoursesList(rootUrl) {
+    const self = this;
+    return self.request(
+      'get',
+      `api/courses`,
+      rootUrl
+    );
+  }
 
   /** 
    * get one course by courseId
    * @param {Object} param - object that looks like this
    *   {
-   *     "courseId": the course's id
+   *     courseId: the course's id
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getCourseInfo": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/description');
-  },
+  getCourseInfo(param, rootUrl) {
+    const self = this;
+    const { courseId } = param;
+    return self.request(
+      'get',
+      `api/courses/${courseId}/description`,
+      rootUrl
+    );
+  }
 
   /** 
    * get problems list by courseId
@@ -235,35 +266,54 @@ MatrixObject.prototype = {
    *   {
    *     "courseId": the course's id
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getProblemsList": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments');
-  },
+  getProblemsList(param, rootUrl) {
+    const self = this;
+    const { courseId } = param;
+    return self.request(
+      'get',
+      `api/courses/${courseId}/assignments`,
+      rootUrl
+    );
+  }
 
   /** 
    * get problem info from a library by libraryId and problemId
    * @param {Object} param - object that looks like this
    *   {
-   *     "libraryId": the library's id
-   *     "problemId": the assignment's id
+   *     libraryId: the library's id
+   *     problemId: the problem's id
    *   }
-   * dependent of 
-   *   {function} this.request
+   * @param {String} [rootUrl]  Matrix's root url
    */
-  "getLibraryProblemInfo": function(param) {
-    return this.request('get', this.rootUrl + 'api/libraries/' + param.libraryId + '/problems/' + param.problemId);
-  },
-
-  "getStudentSubmission": function(param) {
-    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId + '?user_id=' + param.userId);
-  },
-
-  "getGoogleStyleReport": function(param) {
-    return this.request('post', this.googleStyleUrl + 'api/lint/google-style', param.answers);
+  getLibraryProblemInfo(param, rootUrl) {
+    const self = this;
+    const { libraryId, problemId } = param;
+    return self.request(
+      'get',
+      `api/libraries/${libraryId}/problems/${problemId}`,
+      rootUrl
+    );
   }
-};
+
+  /** 
+   * get Google Style Report from some server
+   * @param {Object} param - object that looks like this
+   *   {
+   *     ...
+   *   }
+   */
+  getGoogleStyleReport(param) {
+    const self = this;
+    return self.request(
+      'post',
+      `api/lint/google-style`,
+      self.googleStyleUrl,
+      param
+    );
+  }
+}
 
 (function exportModuleUniversally(root, factory) {
   if (typeof(exports) === 'object' && typeof(module) === 'object')

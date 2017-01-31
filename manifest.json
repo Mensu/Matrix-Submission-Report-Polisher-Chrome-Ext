@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Matrix Submission Report Polisher",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "polish your submission report on Matrix",
   "icons": {
     "16": "img/online.png",
@@ -24,7 +24,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://vmatrix.org.cn:*/*"
+        "https://*.vmatrix.org.cn:*/*"
       ],
       "css": [
         "./css/polish.css"
@@ -36,7 +36,7 @@
   ],
   "options_page": "options.html",
   "permissions": [
-    "https://vmatrix.org.cn:*/*",
+    "https://*.vmatrix.org.cn:*/*",
     "http://119.29.146.176:3000/*",
     "http://localhost:3000/*",
     "tabs",

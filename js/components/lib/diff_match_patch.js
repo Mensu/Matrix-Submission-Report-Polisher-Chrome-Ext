@@ -546,8 +546,9 @@ diff_match_patch.prototype.diff_onelineToWords_ = function(text1, text2) {
 
 diff_match_patch.prototype.toLineDiffResult = function(rawDiffs) {
   var rawDiffsLength = rawDiffs.length;
-  if (rawDiffsLength && 0 == rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
-  var lastDiffEndsWithNewLine = rawDiffs[rawDiffsLength - 1][1].endsWith('\n');
+  if (0 === rawDiffsLength) return [];
+  if (0 === rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
+  var lastDiffEndsWithNewLine = (rawDiffsLength && rawDiffs[rawDiffsLength - 1][1].endsWith('\n'));
   var secondLastDiffEndsWithNewLine = true;
   function appendNewLineTo(index) {
     rawDiffs[index][1] += '\n';

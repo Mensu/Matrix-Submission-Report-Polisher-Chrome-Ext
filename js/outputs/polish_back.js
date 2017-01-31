@@ -47,374 +47,366 @@
   \**************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var componentsPath = './components/';
+	const componentsPath = './components/';
 	
-	var MatrixObject = __webpack_require__(/*! . */ 1)(componentsPath + 'MatrixObject.js');
-	var ReportObject = __webpack_require__(/*! . */ 4)(componentsPath + 'ReportObject.js');
-	var toSubmitAt = __webpack_require__(/*! . */ 8)(componentsPath + 'lib/toSubmitAt.js');
-	var FilesDiff = __webpack_require__(/*! . */ 10)(componentsPath + 'FilesDiff.js');
+	const MatrixObject = __webpack_require__(/*! . */ 1)(componentsPath + 'MatrixObject.js');
+	const ReportObject = __webpack_require__(/*! . */ 5)(componentsPath + 'ReportObject.js');
+	const toSubmitAt = __webpack_require__(/*! . */ 9)(componentsPath + 'lib/toSubmitAt.js');
+	const genDriver = __webpack_require__(/*! . */ 11)(componentsPath + 'lib/genDriver.js');
+	const pick = __webpack_require__(/*! . */ 12)(componentsPath + 'lib/pick.js');
+	const setTimeoutAsync = __webpack_require__(/*! . */ 14)(componentsPath + 'lib/setTimeoutAsync.js');
+	const FilesDiff = __webpack_require__(/*! . */ 16)(componentsPath + 'FilesDiff.js');
 	
-	var matrix = new MatrixObject({
-	  "rootUrl": 'https://vmatrix.org.cn',
-	  // "googleStyleUrl": 'http://localhost:3000/'
-	  "googleStyleUrl": 'http://119.29.146.176:3000/'
+	const matrix = new MatrixObject({
+	  patternUrl: 'https://*.vmatrix.org.cn/',
+	  rootUrl: 'https://vmatrix.org.cn/',
+	  // googleStyleUrl: 'http://localhost:3000/',
+	  googleStyleUrl: 'http://119.29.146.176:3000/',
 	});
-	__webpack_require__(/*! . */ 12)(componentsPath + 'checkIsOnline.js')(matrix);
+	// require(componentsPath + 'checkIsOnline.js')(matrix);
 	
 	
-	  // listen for '/api/courses/*/assignments/*/submissions/*' or '/api/courses/*/assignments/*/submissions/last/feedback' 
-	chrome.webRequest.onCompleted.addListener(function(details) {
-	  var requiringLatest = false;
-	  if (details.tabId == -1
-	      || details.method == 'POST'
-	      || (!/courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/(\d{1,})$/.test(details.url)
-	        && !(requiringLatest = /courses\/(\d*)\/assignments\/(\d{1,})\/submissions\/last\/feedback$/.test(details.url)) )) return;
+	// listen for:
+	// /api/courses/*/assignments/*/submissions/*
+	// /api/courses/*/assignments/*/submissions/*?user_id=*
+	// /api/courses/*/assignments/*/submissions/last/feedback
+	chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
+	  urls: [
+	    `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`
+	  ]
+	});
 	
-	  var courseId = RegExp['$1'], problemId = RegExp['$2'], submissionId = RegExp['$3'];
-	  var param = {
-	      "tabId": details.tabId,
-	      "courseId": courseId,
-	      "problemId": problemId,
-	      "submissionId": submissionId
+	function getDataToPolishCourseReport(details) {
+	  return genDriver(function *() {
+	    const { matchRes, requiringLatest } = getMatchRes(details);
+	    if (!matchRes) return;
+	
+	    const rootUrl = getRootUrl(details.url);
+	    const [, courseId, assignmentId, submissionId, userId] = matchRes;
+	
+	    const param = {
+	      tabId: details.tabId,
+	      courseId,
+	      assignmentId,
+	      submissionId,
+	      userId,
 	    };
-	  function getSubmissionTime(data) {
-	    param['submissionsList'] = data;
-	    if (data == null || 0 == data.length) {
-	      param['submitTime'] = null;
-	      return;
-	    }
-	    param['submitTime'] = undefined;
-	        // get submission time
-	    if (requiringLatest) {
-	        param['submitTime'] = toSubmitAt(data[0].submit_at, true);
-	    } else {
-	        data.some(function(oneSubmission, index, self) {
-	            if (param.submissionId == oneSubmission.sub_ca_id) {
-	              param['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
-	              return true;
-	            } else {
-	              return false;
-	            }
-	        });
-	    }
-	  }
-	  matrix.getSubmissionsList(param)
-	    .then(function(body) {
-	        if (body.status == 'BAD_REQUEST') {
-	          param['userId'] = body.paramData.user.user_id;
-	          param['isUsingUserId'] = true;
-	          return matrix.getSubmissionsList(param).then(function(body) {
-	            getSubmissionTime(body.data);
-	          });
-	        } else {
-	          getSubmissionTime(body.data);
-	        }
-	    }, function(err) {
-	        console.log('Error: Failed to get submissions list');
-	        console.log('parameters: ', param);
-	    })
 	    
-	    .then(function() {
-	        function sendReportObjToFront(body) {
-	          if (param.reportBody.data == null) return Promise.reject();
-	          if (param.problemInfo) {
-	            param.problemInfo.totalPoints['google style'] = 0;
+	    const submissionList = yield getSubmissionsList(param);
+	    if (!submissionList) return;
+	
+	    const submitTime = getSubmitTime(submissionList, param);
+	
+	    const answers = yield getSubmission(param);
+	    if (!answers) return;
+	
+	    const googleStyleConfig = (userId ? { getFormattedCodes: true } : undefined);    
+	    yield getGoogleStyle(answers, googleStyleConfig, param);
+	
+	    const signal = (userId ? 'startStudentSubmission' : 'start')
+	    const response = yield sendReportObjToFront(param, signal);
+	    console.log(response);
+	
+	    function getMatchRes(details) {
+	      if (details.tabId === -1 || details.method === 'POST') return {};
+	      const submissionMatch = /\/courses\/([0-9]{1,})(?:%20){0,}\/assignments\/([0-9]{1,})\/submissions\/([0-9]{1,})(?:\?user_id=([0-9]{1,})){0,1}$/.exec(details.url);
+	      const requiringLatest = /courses\/([0-9]{1,})\/assignments\/([0-9]{1,})\/submissions\/last\/feedback$/.exec(details.url);
+	
+	      return { matchRes: (submissionMatch || requiringLatest), requiringLatest };
+	    }
+	
+	    function getSubmissionsList(param) {
+	      return genDriver(function *() {
+	        let body = null;
+	        try {
+	          body = yield matrix.getSubmissionsList(param, rootUrl);
+	        } catch (e) {
+	          return console.error(`Error: Failed to get submissions list with parameters`, param), false;
+	        }
+	        if (body.status === 'BAD_REQUEST') {
+	          param.userId = body.paramData.user.user_id;
+	          try {
+	            body = yield matrix.getSubmissionsList(param, rootUrl);
+	          } catch (e) {
+	            return console.error(`Error: Failed to get submissions list with parameters`, param), false;
 	          }
-	
-	          var reportObject = new ReportObject(param.reportBody);
-	          if (reportObject === null || param.submitTime == null) return;
-	          reportObject.submitTime = param.submitTime;
-	
-	          if (body && body.status == 'OK') reportObject['google style'] = body.data;
-	          else console.log('Google Style Error: ', body);
-	
-	
-	          // console.log(reportObject);
-	          chrome.tabs.sendMessage(param.tabId, {
-	            "signal": 'start',
-	            "reportObject": reportObject,
-	            "problemInfo": param.problemInfo,
-	            "submissionsList": param.submissionsList,
-	            "configs": {
-	              "showCR": localStorage.showCR,
-	              "autoPolish": localStorage.autoPolish,
-	              "maxStdCaseNum": localStorage.maxStdCaseNum,
-	              "maxRanCaseNum": localStorage.maxRanCaseNum,
-	              "maxMemCaseNum": localStorage.maxMemCaseNum
-	
-	            }
-	          }, function(response) {
-	            console.log(response);
-	          });
 	        }
-	        
-	        if (!requiringLatest) {
-	              // get and send the specific report to the front
-	            return matrix.getSubmission(param)
-	              
-	              .then(function(body) {
-	                param['reportBody'] = body;
-	                if (body.data.answers) {
-	                  return matrix.getGoogleStyleReport({
-	                    "answers": {
-	                      "files": body.data.answers
-	                    }
-	                  });
-	                } else {
-	                  return null;
-	                }
-	              }).catch(function(err) {
-	                console.log('Error occurs when fetching Google Style: ', err);
-	                return null;
-	              })
-	              
-	              .then(sendReportObjToFront, function(err) {
-	                  console.log('Error: Failed to get specific report. Stopped.');
-	              });
-	        }
-	
-	          // get limits and total points of each section 
-	        matrix.getProblemInfo(param).then(function(body) {
-	              if (body.data == null) return Promise.reject();
-	              var config = body.data.ca.config;
-	              param['problemInfo'] = config;
-	              param.problemInfo['totalPoints'] = config.grading;
-	          }, function(err) {
-	              console.log('Error: Failed to get problem info');
-	              console.log('parameters: ', param);
-	              param['problemInfo'] = {
-	                "limits": {},
-	                "totalPoints": {"google tests detail": {}}
-	              };
-	          }).then(function() {
-	                // get and send the latest report to the front
-	              return matrix.getLatestSubmission(param)
-	                
-	                .then(function(body) {
-	                  param['reportBody'] = body;
-	                  if (body.data.answers) {
-	                    return matrix.getGoogleStyleReport({
-	                      "answers": {
-	                        "files": body.data.answers
-	                      }
-	                    });
-	                  } else {
-	                    return null;
-	                  }
-	                }).catch(function(err) {
-	                  console.log('Error occurs when fetching Google Style: ', err);
-	                  return null;
-	                })
-	                
-	                .then(sendReportObjToFront, function(err) {
-	                    console.log('Error: Failed to get latest report. Stopped.');
-	                });
-	          });
-	    });
-	
-	}, {
-	  "urls": [
-	    matrix.rootUrl + 'api/courses/*/assignments/*/submissions/*'
-	  ]
-	});
-	
-	chrome.webRequest.onCompleted.addListener(function(details) {
-	  if (details.tabId == -1
-	    || !localStorage.autoPolish
-	    || details.method == 'POST'
-	    || (!/libraries\/(\d*)\/problems\/(\d{1,})$/.test(details.url) )) return;
-	
-	  var libraryId = RegExp['$1'], problemId = RegExp['$2'];
-	  var param = {
-	      "tabId": details.tabId,
-	      "libraryId": libraryId,
-	      "problemId": problemId
-	    };
-	  
-	  matrix.getLibraryProblemInfo(param)
-	    .then(function(body) {
-	      var reportObject = new ReportObject(body);
-	      if (reportObject === null) return;
-	      var grade = 0;
-	      for (var name in reportObject) {
-	        if (reportObject[name] && !isNaN(parseInt(reportObject[name].grade))) grade += parseInt(reportObject[name].grade);
-	      }
-	      reportObject.grade = grade;
-	      reportObject.submitTime = toSubmitAt(body.data.updated_at, true);
-	      var config = body.data.config;
-	      config['totalPoints'] = config.grading;
-	      chrome.tabs.sendMessage(param.tabId, {
-	        "signal": 'libReport',
-	        "reportObject": reportObject,
-	        "problemInfo": config,
-	        "configs": {
-	          "showCR": localStorage.showCR,
-	          "autoPolish": localStorage.autoPolish,
-	          "maxStdCaseNum": localStorage.maxStdCaseNum,
-	          "maxRanCaseNum": localStorage.maxRanCaseNum,
-	          "maxMemCaseNum": localStorage.maxMemCaseNum
-	        }
-	      }, function(response) {
-	        console.log(response);
+	        param.submissionsList = body.data;
+	        return param.submissionsList;
 	      });
-	    });
-	}, {
-	  "urls": [
-	    matrix.rootUrl + 'api/libraries/*/problems/*'
-	  ]
-	});
-	
-	chrome.webRequest.onCompleted.addListener(function(details) {
-	  if (details.tabId == -1) return;
-	  setTimeout(function() {
-	    chrome.tabs.sendMessage(details.tabId, {
-	      "signal": 'noValidationLogin'
-	    }, function(response) {
-	      console.log(response);
-	    });
-	  }, 500);
-	  
-	}, {
-	  "urls": [
-	    matrix.rootUrl + 'api/users/login'
-	  ]
-	});
-	
-	chrome.webRequest.onCompleted.addListener(function(details) {
-	  if (details.tabId == -1
-	      || details.method == 'POST'
-	      || (!/\/courses\/(\d{1,})(%20){0,}\/assignments\/(\d{1,})\/submissions\/(\d{1,})\?user_id=(\d{1,})$/.test(details.url) )) return;
-	
-	  var courseId = RegExp['$1'], problemId = RegExp['$3'], submissionId = RegExp['$4'], userId = RegExp['$5'];
-	  var param = {
-	      "tabId": details.tabId,
-	      "courseId": courseId,
-	      "problemId": problemId,
-	      "submissionId": submissionId,
-	      "userId": userId,
-	      "isUsingUserId": true
-	    };
-	  matrix.getSubmissionsList(param).then(function(body) {
-	    param['submissionsList'] = body.data;
-	    if (body.data == null || 0 == body.data.length) {
-	      param['submitTime'] = null;
-	      return;
 	    }
-	    param['submitTime'] = undefined;
-	    // get submission time
-	    body.data.some(function(oneSubmission, index, self) {
-	        if (param.submissionId == oneSubmission.sub_ca_id) {
-	          param['submitTime'] = toSubmitAt(oneSubmission.submit_at, true);
-	          return true;
-	        } else {
+	
+	    function getSubmitTime(submissionList, param) {
+	      if (submissionList === null || 0 === submissionList.length) {
+	        param.submitTime = null;
+	        return null;
+	      }
+	
+	      // get submission time
+	      if (requiringLatest) {
+	        param.submitTime = toSubmitAt(submissionList[0].submit_at, true);
+	      } else {
+	        submissionList.some((oneSubmission) => {
+	          if (Number(param.submissionId) === oneSubmission.sub_ca_id) {
+	            param.submitTime = toSubmitAt(oneSubmission.submit_at, true);
+	            return true;
+	          }
 	          return false;
-	        }
-	    });
-	    return matrix.getStudentSubmission(param);
-	  }).then(function(body) {
-	    param['reportBody'] = body;
-	    return matrix.getProblemInfo(param);
-	  }).then(function(body) {
-	    var answers = param.reportBody.data.answers.slice();
-	    if (body.data && body.data.file) {
-	      body.data.file.forEach(function(one) {
-	        one.dontCheckStyle = true;
-	        answers.push(one);
-	      });
-	      param.reportBody['supportedFiles'] = body.data.file;
-	    } else {
-	      param.reportBody['supportedFiles'] = [];
+	        });
+	      }
+	
+	      return param.submitTime;
 	    }
-	    return matrix.getGoogleStyleReport({
-	      "answers": {
-	        "files": answers,
-	        "config": {
-	          "getFormattedCodes": true
+	
+	    function getProblemInfo(param) {
+	      return genDriver(function *() {
+	        let body = null;
+	        try {
+	          body = yield matrix.getProblemInfo(param, rootUrl);
+	        } catch (e) {
+	          return console.error(`Error: Failed to get problem info list with parameters`, param), false;
 	        }
-	      }
-	    });
-	  }).catch(function(err) {
-	    console.log('Error occurred: ', err);
-	    return null;
-	  }).then(function(body) {
-	    if (!param.reportBody || param.reportBody.data === null) return Promise.reject('Error with param.reportBody: (param = )', param);
-	    var config = JSON.parse(param.reportBody.data.config);
+	    
+	        let supportFiles = [];
+	        if (body) {
+	          const {
+	            ca: { config, config: { grading } },
+	            file
+	          } = body.data;
+	          param.problemInfo = config;
+	          param.problemInfo.totalPoints = grading;
 	
-	    param['problemInfo'] = config;
-	    param.problemInfo['totalPoints'] = config.grading;
-	    param.problemInfo['supportedFiles'] = param.reportBody.supportedFiles;
+	          supportFiles = file || [];
+	          supportFiles.forEach(oneSupportFile => oneSupportFile.dontCheckStyle = true);
+	          param.problemInfo.supportFiles = supportFiles;
+	          // deprecated
+	          param.problemInfo.supportedFiles = param.problemInfo.supportFiles;
 	
-	    param.problemInfo.totalPoints['google style'] = 0;
+	        } else {
+	          param.problemInfo = {
+	            limits: {},
+	            totalPoints: { 'google tests detail': {} }
+	          };
+	        }
 	
-	    var reportObject = new ReportObject(param.reportBody);
-	    if (reportObject === null) return;
+	        return param.problemInfo;
+	
+	      });
+	    }
+	
+	    function getSubmission(param) {
+	      return genDriver(function *() {
+	        let getSubmissionFunc = matrix.getSubmission;
+	        if (requiringLatest || param.userId) {
+	          const problemInfo = yield getProblemInfo(param);
+	          if (!problemInfo) return false;
+	          if (requiringLatest) {
+	            getSubmissionFunc = matrix.getLatestSubmission;
+	          }
+	        }
+	
+	        let body = null;
+	        try {
+	          body = yield getSubmissionFunc.call(matrix, param, rootUrl);
+	        } catch (e) {
+	          return console.error('Error: Failed to get submission with parameters', param), false;
+	        }
+	        if (body.data === null) {
+	          return console.error('Error: submission body.data is empty'), false;
+	        }
+	        param.reportBody = body;
+	        const filesToMergeToAnswers = (param.userId ? param.problemInfo.supportFiles : []);
+	        const answers = [...body.data.answers, ...filesToMergeToAnswers];
+	        return answers;
+	      });
+	    }
+	
+	    function getGoogleStyle(files, config, param) {
+	      return genDriver(function *() {
+	        let body = null;
+	        try {
+	          body = yield matrix.getGoogleStyleReport({ files, config });
+	        } catch (e) {
+	          console.error('Error occurs when fetching Google Style');
+	          return;
+	        }
+	
+	        if (param.problemInfo) {
+	          param.problemInfo.totalPoints['google style'] = 0;
+	        }
+	
+	        if (body && body.status == 'OK') {
+	          param['google style'] = body.data;
+	        } else {
+	          console.error('Google Style Server Error: ', body);
+	        }
+	      });
+	    }
+	
+	  }).catch(e => console.error(`Uncaught Error`, e));
+	
+	}
+	
+	function getRootUrl(url) {
+	  let rootUrl = /^(?:\S){1,}:\/\/(?:\S){1,}?\//.exec(url);
+	  if (rootUrl) return rootUrl[0];
+	  return undefined;
+	}
+	
+	function sendReportObjToFront(param, signal) {
+	  return genDriver(function *() {
+	    const reportObject = new ReportObject(param.reportBody);
+	    if (reportObject === null || param.submitTime === null) return;
 	    reportObject.submitTime = param.submitTime;
+	    reportObject['google style'] = param['google style'];
 	
-	    if (body && body.status == 'OK') reportObject['google style'] = body.data;
-	    else console.log('Google Style Error: ', body);
-	
-	    // console.log(reportObject);
-	    chrome.tabs.sendMessage(param.tabId, {
-	      "signal": 'startStudentSubmission',
-	      "reportObject": reportObject,
-	      "problemInfo": param.problemInfo,
-	      "submissionsList": param.submissionsList,
-	      "configs": {
-	        "showCR": localStorage.showCR,
-	        "autoPolish": localStorage.autoPolish,
-	        "maxStdCaseNum": localStorage.maxStdCaseNum,
-	        "maxRanCaseNum": localStorage.maxRanCaseNum,
-	        "maxMemCaseNum": localStorage.maxMemCaseNum
-	
-	      }
-	    }, function(response) {
-	      console.log(response);
-	    });
-	  }, function(err) {
-	    console.log("Error: ", err);
+	    console.log(reportObject);
+	    const jsonToSend = {
+	      signal,
+	      reportObject: reportObject,
+	      configs: pick(localStorage, 'showCR', 'autoPolish')
+	    };
+	    Object.assign(jsonToSend, pick(param, 'problemInfo', 'submissionsList'));
+	    return chrome.tabs.sendMessageAsync(param.tabId, jsonToSend);
 	  });
-	  
+	}
+	
+	// listen for:
+	// /api/libraries/*/problems/*
+	chrome.webRequest.onCompleted.addListener(details => {
+	  return genDriver(function *() {
+	    const { matchRes } = getMatchRes(details);
+	    if (!matchRes) return;
+	
+	    const rootUrl = getRootUrl(details.url);
+	    const libraryId = matchRes[1], problemId = matchRes[2];
+	
+	    const param = {
+	      tabId: details.tabId,
+	      libraryId,
+	      problemId,
+	    };
+	
+	    const body = yield getLibraryProblemInfoAndReport(param);
+	    if (!body) return;
+	
+	    const response = yield sendReportObjToFront(param, 'libReport');
+	    console.log(response);
+	
+	    function getMatchRes(details) {
+	      if (details.tabId === -1 || details.method === 'POST' || !localStorage.autoPolish) return {};
+	      const matchRes = /libraries\/([0-9]{1,})\/problems\/([0-9]{1,})$/.exec(details.url);
+	      return { matchRes };
+	    }
+	
+	    function getLibraryProblemInfoAndReport(param) {
+	      return genDriver(function *() {
+	        let body = null;
+	        try {
+	          body = yield matrix.getLibraryProblemInfo(param, rootUrl);
+	        } catch (e) {
+	          return console.error(`Error: Failed to get library problem info with parameters`, param), false;
+	        }
+	        const {
+	          config,
+	          config: { grading },
+	          updated_at,
+	          report: { total_grade: grade }
+	        } = body.data.config;
+	        // libaray problem info
+	        param.problemInfo = config;
+	        param.problemInfo.totalPoints = grading;
+	        // time
+	        param.submitTime = toSubmitAt(updated_at, true);
+	        // report
+	        param.reportBody = body;
+	        body.data.grade = grade;
+	        return body;
+	      });
+	    }
+	  }).catch(e => console.error(`Uncaught Error`, e));
+	
 	}, {
-	  "urls": [
-	    matrix.rootUrl + 'api/courses/*%20%20%20%20%20%20%20%20/assignments/*/submissions/*?user_id=*'
+	  urls: [
+	    `${matrix.patternUrl}api/libraries/*/problems/*`
 	  ]
 	});
 	
-	chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	  if (message.signal == 'filesDiff') {
-	    var oldFiles = null;
-	    matrix.getSubmission({
-	      "courseId": message.courseId,
-	      "problemId": message.problemId,
-	      "submissionId": message.oldId
-	    }).then(function(body) {
-	        if (body.data == null) return Promise.reject();
-	        oldFiles = body.data.answers;
-	        return matrix.getSubmission({
-	          "courseId": message.courseId,
-	          "problemId": message.problemId,
-	          "submissionId": message.newId
-	        });
-	    }).then(function(body) {
-	        if (body.data == null) return Promise.reject();
-	        var filesDiff = new FilesDiff(oldFiles, body.data.answers);
-	        sendResponse({"status": 'OK', "filesDiff": filesDiff});
-	    }, function(err) {
-	        console.log('Error: Failed to get files to compare');
-	        console.log('parameters: ', message);
-	        sendResponse({"status": 'BAD'});
-	    });
-	    return true;
-	  } else if (message.signal == 'loginWithoutValidation') {
-	    matrix.login(message.param).then(function(body) {
+	chrome.webRequest.onCompleted.addListener(details => {
+	  return genDriver(function *() {
+	    if (details.tabId === -1 || details.method === 'POST') return;
+	    console.log(`Real gap of 500 ms`, yield setTimeoutAsync(500));
+	    const signal = 'noValidationLogin';
+	    const response = yield chrome.tabs.sendMessageAsync(details.tabId, { signal });
+	    console.log(response);
+	  }).catch(e => console.error(`Uncaught Error`, e));
+	
+	}, {
+	  urls: [
+	    `${matrix.patternUrl}api/users/login`
+	  ]
+	});
+	
+	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	  return genDriver(function *() {
+	    switch (message.signal) {
+	      case 'filesDiff':
+	        return filesDiff();
+	      case 'loginWithoutValidation':
+	        return loginWithoutValidation();
+	      default:
+	        return;
+	    }
+	  }).catch(e => console.error(`Uncaught Error`, e)), true;
+	
+	  function filesDiff() {
+	    return genDriver(function *() {
+	      const commonParam = pick(message, 'courseId', 'assignmentId');
+	      const oldParam = Object.assign({ submissionId: message.oldId }, commonParam);
+	      const newParam = Object.assign({ submissionId: message.newId }, commonParam);
+	      const requests = [matrix.getSubmission(oldParam), matrix.getSubmission(newParam)];
+	      let results = null;
+	      try {
+	        results = yield Promise.all(requests);
+	      } catch (e) {
+	        console.error(`Error: Failed to get submissions with parameters`, oldParam, newParam);
+	        return sendResponse({ status: 'BAD' });
+	      }
+	      const [{
+	        data: { answers: oldFiles }
+	      }, {
+	        data: { answers: newFiles }
+	      }] = results;
+	      const filesDiff = new FilesDiff(oldFiles, newFiles);
+	      return sendResponse({ status: 'OK', filesDiff });
+	    })
+	  }
+	
+	  function loginWithoutValidation() {
+	    return genDriver(function *() {
+	      let body = null;
+	      try {
+	        body = yield matrix.login(message.param);
+	      } catch (e) {
+	        console.error(`Error: Failed to login with parameters`, message.param);
+	        return sendResponse({ data: { is_valid: false }});
+	      }
 	      if (sender.tab.incognito) {
 	        body.data.is_valid = false;
 	      }
-	      sendResponse(body);
+	      return sendResponse(body);
 	    });
-	    return true;
 	  }
 	});
+	
+	chrome.tabs.sendMessageAsync = function(...args) {
+	  return new Promise(
+	    resolve => chrome.tabs.sendMessage.call(
+	      chrome.tabs,
+	      ...args.concat([response => resolve(response)])
+	    )
+	  );
+	}
 
 
 /***/ },
@@ -448,236 +440,267 @@
   \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 3);
+	const httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 3);
+	const genDriver = __webpack_require__(/*! ./lib/genDriver.js */ 4);
 	
 	/** 
 	 * parse a string to JSON without throwing an error if failed
-	 * @param {string} str - string to be parsed
+	 * @param {String} str - string to be parsed
 	 * 
-	 * @return {boolean|Object} return JSON object if succeeded, or false if failed
+	 * @return {Boolean|Object} return JSON object if succeeded, or false if failed
 	 * independent
 	 */
 	function JSONParser(str) {
-	  var ret = null;
+	  let ret = null;
 	  try {
 	    ret = JSON.parse(str);
 	  } catch (e) {
-	    ret = false;
-	    console.log(e);
-	    console.log('Error: Failed to parse the following string to JSON');
-	    console.log(str);
+	    console.error(e);
+	    console.error('Error: Failed to parse the following string to JSON');
+	    console.error(str);
 	    return e;
 	  }
 	  return ret;
 	}
 	
-	/** 
-	 * @constructor
-	 * MatrixObject
-	 * @param {string|Object} newConfigs - Matrix's root url(string) or config object that looks like this:
-	 * {
-	 *   "rootUrl": Matrix's root url
-	 * }
-	 * 
-	 * dependent of 
-	 *   {function} httpRequest
-	 */
-	function MatrixObject(configs) {
-	  this.configs = ['rootUrl', 'googleStyleUrl'];
-	  for (var i = 0; i != this.configs.length; ++i) {
-	    var oneConfig = this.configs[i];
-	    this[oneConfig] = null;
-	  }
-	    // wrap to config object
-	  if (typeof(configs) == 'string') {
-	    configs = {"rootUrl": configs};
-	  }
-	  this.configsSetter(configs);
-	  if (!this.rootUrl.endsWith('/')) {
-	    this.rootUrl += '/';
-	  }
-	  if (!this.googleStyleUrl.endsWith('/')) {
-	    this.googleStyleUrl += '/';
-	  }
-	}
-	
-	
-	
-	MatrixObject.prototype = {
-	  "constructor": MatrixObject,
-	  "configsSetter": function(newConfigs) {
-	    for (var i = 0; i != this.configs.length; ++i) {
-	      var oneConfig = this.configs[i];
-	      if (newConfigs[oneConfig] !== undefined) this[oneConfig] = newConfigs[oneConfig];
+	class MatrixObject {
+	  /** 
+	   * @param {String|Object} newConfigs - Google Style server's root url (String) or config object that looks like this:
+	   * {
+	   *   rootUrl: Matrix's root url,
+	   *   googleStyleUrl: Google Style Server's root url
+	   * }
+	   * 
+	   */
+	  constructor(newConfigs) {
+	    const self = this;
+	    self.configsNames = ['rootUrl', 'googleStyleUrl', 'patternUrl'];
+	    for (const oneConfigName of self.configsNames) {
+	      self[oneConfigName] = null;
 	    }
-	  },
+	    // wrap to config object
+	    if (typeof newConfigs === 'string') {
+	      newConfigs = { googleStyleUrl: newConfigs };
+	    }
+	    self.configsSetter(newConfigs);
+	    if (!self.rootUrl.endsWith('/')) self.rootUrl += '/';
+	    if (!self.googleStyleUrl.endsWith('/')) self.googleStyleUrl += '/';
+	    if (!self.patternUrl.endsWith('/')) self.patternUrl += '/';
+	  }
+	
+	  configsSetter(newConfigs) {
+	    const self = this;
+	    for (const oneConfigName of self.configsNames) {
+	      if (Reflect.hasOwnProperty.call(newConfigs, oneConfigName)) {
+	        self[oneConfigName] = newConfigs[oneConfigName]
+	      }
+	    }
+	  }
 	
 	  /** 
 	   * wrap an xhr request by trying parsing response data as JSON and catching possible errors
-	   * @param {string} method - 'get' or 'post'
-	   * @param {string} url - url to send request
-	   * @param {Object} [param] - parameters
+	   * @param {String} method       methods
+	   * @param {String} resourceUrl  resource url to send request
+	   * @param {String} [rootUrl]    Matrix's root url
+	   * @param {Object} [param]      parameters
 	   * 
-	   * @return {Object} Promise
-	   * 
-	   * @private
-	   * dependent of 
-	   *   {function} httpRequest
+	   * @return {Object} response json
 	   */
-	  "request": function(method, url, param) {
+	  request(method, resourceUrl, rootUrl, param) {
+	    const self = this;
 	    if (!param) param = null;
-	    return httpRequest(method, url, param)
-	      .then(function(body) {
-	          body = JSONParser(body);
-	          if (body instanceof Error) {
-	            return Promise.reject(body);
-	          } else {
-	            return Promise.resolve(body);
-	          }
-	      }, function(err) {
-	          return Promise.reject(err);
-	      });
-	  },
+	
+	    if (!rootUrl) {
+	      rootUrl = self.rootUrl;
+	    } else if (!rootUrl.endsWith('/')) {
+	      rootUrl += '/';
+	    }
+	
+	    if (resourceUrl.startsWith('/')) {
+	      resourceUrl = resourceUrl.slice(0, -1);
+	    }
+	
+	    return genDriver(function *() {
+	      const body = JSONParser(yield httpRequest(method, rootUrl + resourceUrl, param));
+	      if (body instanceof Error) throw body;
+	      return body;
+	    });
+	  }
 	
 	  /** 
 	   * test whether user has internet access to Matrix
-	   * @return {Object} - Promise
-	   * @Promise {fullfilled} null
-	   * @Promise {rejected} true or an error object
-	   * dependent of 
-	   *   {function} httpRequest
+	   * @param  {String} rootUrl  Matrix's root url
+	   * @return {null}
 	   */
-	  "testNetwork": function() {
-	    return httpRequest('get', this.rootUrl + '/app-angular/course/self/views/list.client.view.html', null)
-	      .then(function() {
-	          return Promise.resolve(null);
-	      }, function(err) {
-	          return Promise.reject(err);
-	      });
-	  },
+	  testNetwork(rootUrl) {
+	    const self = this;
+	    return genDriver(function *() {
+	      yield httpRequest('get', `${rootUrl}app-angular/course/self/views/list.client.view.html`);
+	      return null;
+	    });
+	  }
 	
 	  /** 
-	   * get one submission by courseId, problemId and submissionId (sub_ca_id)
+	   * get one submission by courseId, assignmentId and submissionId (sub_ca_id)
 	   * @param {Object} param - object that looks like this
 	   *   {
-	   *     "courseId": the course's id,
-	   *     "problemId": the assignment's id,
-	   *     "submissionId": the submission's id,
+	   *     courseId: the course's id,
+	   *     assignmentId: the assignment's id,
+	   *     submissionId: the submission's id,
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getSubmission": function(param) {
-	      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId);
-	  },
+	  getSubmission(param, rootUrl) {
+	    const self = this;
+	    const { courseId, assignmentId, submissionId } = param;
+	    return self.request(
+	      'get',
+	      `api/courses/${courseId}/assignments/${assignmentId}/submissions/${submissionId}`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
-	   * get the latest report by courseId and problemId
+	   * get the latest report by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
-	   *     "courseId": the course's id,
-	   *     "problemId": the assignment's id
+	   *     courseId: the course's id,
+	   *     assignmentId: the assignment's id
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getLatestReport": function(param) {
-	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last/feedback');
-	  },
+	  getLatestReport(param, rootUrl) {
+	    const self = this;
+	    const { courseId, assignmentId } = param;
+	    return self.request(
+	      'get',
+	      `api/courses/${courseId}/assignments/${assignmentId}/submissions/last/feedback`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
-	   * get the latest submission by courseId and problemId
+	   * get the latest submission by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
-	   *     "courseId": the course's id,
-	   *     "problemId": the assignment's id
+	   *     courseId: the course's id,
+	   *     assignmentId: the assignment's id
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getLatestSubmission": function(param) {
-	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/last');
-	  },
+	  getLatestSubmission(param, rootUrl) {
+	    const self = this;
+	    const { courseId, assignmentId } = param;
+	    return self.request(
+	      'get',
+	      `api/courses/${courseId}/assignments/${assignmentId}/submissions/last`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
-	   * get one problem's information by courseId and problemId
+	   * get one problem's information by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
-	   *     "courseId": the course's id,
-	   *     "problemId": the assignment's id
+	   *     courseId: the course's id,
+	   *     assignmentId: the assignment's id
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getProblemInfo": function(param) {
-	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId);
-	  },
+	  getProblemInfo(param, rootUrl) {
+	    const self = this;
+	    const { courseId, assignmentId } = param;
+	    return self.request(
+	      'get',
+	      `api/courses/${courseId}/assignments/${assignmentId}`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
-	   * get submissions list of a problem by courseId and problemId
+	   * get submissions list of a problem by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
-	   *     "courseId": the course's id,
-	   *     "problemId": the assignment's id
+	   *     courseId: the course's id,
+	   *     assignmentId: the assignment's id,
+	   *    
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getSubmissionsList": function(param) {
-	    if (param.isUsingUserId && param.userId) {
-	      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions?user_id=' + param.userId);
-	    } else {
-	      return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions');
+	  getSubmissionsList(param, rootUrl) {
+	    const self = this;
+	    const { courseId, assignmentId, userId } = param;
+	    let resourceUrl = `api/courses/${courseId}/assignments/${assignmentId}/submissions`;
+	    if (userId) {
+	      resourceUrl += `?user_id=${userId}`;
 	    }
-	  },
+	    return self.request(
+	      'get',
+	      resourceUrl,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
 	   * log in by username and password
 	   * @param {Object} param - object that looks like this
-	   *   {
-	   *     "username": username,
-	   *     "passowrd": password
-	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   *   { username, password }
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "login": function(param) {
-	    return this.request('post', this.rootUrl + 'api/users/login', {
-	      "username": param.username,
-	      "password": param.password
-	    });
-	  },
+	  login(param, rootUrl) {
+	    const self = this;
+	    const { username, password } = param;
+	    return self.request(
+	      'post',
+	      `api/users/login`,
+	      rootUrl,
+	      { username, password }
+	    );
+	  }
 	
 	  /** 
 	   * log out
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "logout": function() {
-	    return this.request('get', this.rootUrl + 'api/users/logout');
-	  },
+	  logout(rootUrl) {
+	    const self = this;
+	    return self.request(
+	      'get',
+	      `api/users/logout`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
 	   * get courses list of currect user
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getCoursesList": function() {
-	    return this.request('get', this.rootUrl + 'api/courses');
-	  },
+	  getCoursesList(rootUrl) {
+	    const self = this;
+	    return self.request(
+	      'get',
+	      `api/courses`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
 	   * get one course by courseId
 	   * @param {Object} param - object that looks like this
 	   *   {
-	   *     "courseId": the course's id
+	   *     courseId: the course's id
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getCourseInfo": function(param) {
-	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/description');
-	  },
+	  getCourseInfo(param, rootUrl) {
+	    const self = this;
+	    const { courseId } = param;
+	    return self.request(
+	      'get',
+	      `api/courses/${courseId}/description`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
 	   * get problems list by courseId
@@ -685,35 +708,54 @@
 	   *   {
 	   *     "courseId": the course's id
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getProblemsList": function(param) {
-	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments');
-	  },
+	  getProblemsList(param, rootUrl) {
+	    const self = this;
+	    const { courseId } = param;
+	    return self.request(
+	      'get',
+	      `api/courses/${courseId}/assignments`,
+	      rootUrl
+	    );
+	  }
 	
 	  /** 
 	   * get problem info from a library by libraryId and problemId
 	   * @param {Object} param - object that looks like this
 	   *   {
-	   *     "libraryId": the library's id
-	   *     "problemId": the assignment's id
+	   *     libraryId: the library's id
+	   *     problemId: the problem's id
 	   *   }
-	   * dependent of 
-	   *   {function} this.request
+	   * @param {String} [rootUrl]  Matrix's root url
 	   */
-	  "getLibraryProblemInfo": function(param) {
-	    return this.request('get', this.rootUrl + 'api/libraries/' + param.libraryId + '/problems/' + param.problemId);
-	  },
-	
-	  "getStudentSubmission": function(param) {
-	    return this.request('get', this.rootUrl + 'api/courses/' + param.courseId + '/assignments/' + param.problemId + '/submissions/' + param.submissionId + '?user_id=' + param.userId);
-	  },
-	
-	  "getGoogleStyleReport": function(param) {
-	    return this.request('post', this.googleStyleUrl + 'api/lint/google-style', param.answers);
+	  getLibraryProblemInfo(param, rootUrl) {
+	    const self = this;
+	    const { libraryId, problemId } = param;
+	    return self.request(
+	      'get',
+	      `api/libraries/${libraryId}/problems/${problemId}`,
+	      rootUrl
+	    );
 	  }
-	};
+	
+	  /** 
+	   * get Google Style Report from some server
+	   * @param {Object} param - object that looks like this
+	   *   {
+	   *     ...
+	   *   }
+	   */
+	  getGoogleStyleReport(param) {
+	    const self = this;
+	    return self.request(
+	      'post',
+	      `api/lint/google-style`,
+	      self.googleStyleUrl,
+	      param
+	    );
+	  }
+	}
 	
 	(function exportModuleUniversally(root, factory) {
 	  if (true)
@@ -816,13 +858,72 @@
 
 /***/ },
 /* 4 */
+/*!****************************************!*\
+  !*** ./js/components/lib/genDriver.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	/** 
+	 * @description drive a simple generator
+	 * 
+	 * @param {Generator} gen
+	 * @param {...any} args
+	 * @return {Promise}
+	 * 
+	 * independent
+	 */
+	function genDriver(gen, ...args) {
+	  const it = gen(...args);
+	  let ret = null, err = null;
+	  return new Promise((resolve, reject) => {
+	    iterate();
+	
+	    function iterate(val) {
+	      try {
+	        if (err) err = null, ret = it.throw(val);
+	        else ret = it.next(val);
+	      } catch (e) {
+	        return reject(e);
+	      }
+	      const promise = new Promise(localResolve => localResolve(ret.value));
+	      if (ret.done) promise.then(resolve, reject);
+	      else promise.catch(e => (err = true, e)).then(iterate);
+	    }
+	
+	  });
+	}
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['genDriver'] = factory();
+	  else
+	    root['genDriver'] = factory();
+	})(this, function factory() {
+	  return genDriver;
+	});
+
+
+/***/ },
+/* 5 */
 /*!*********************************!*\
   !*** ./js ^.*ReportObject\.js$ ***!
   \*********************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/ReportObject.js": 5
+		"./components/ReportObject.js": 6
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -835,17 +936,17 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 4;
+	webpackContext.id = 5;
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /*!***************************************!*\
   !*** ./js/components/ReportObject.js ***!
   \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var CaseObject = __webpack_require__(/*! ./CaseObject.js */ 6);
+	var CaseObject = __webpack_require__(/*! ./CaseObject.js */ 7);
 	/** 
 	 * ReportObject
 	 * refactored version of the original report object from Matrix
@@ -1156,20 +1257,27 @@
 	        return;
 	      }
 	    }
-	    var phases = [{'id': 'compile check',
-	                   'func': refactorCompileMsg},
-	                  {'id': 'static check',
-	                  'func': refactorStaticCheckMsg},
-	                  {'id': 'standard tests',
-	                  'func': refactorTests},
-	                  {'id': 'random tests',
-	                  'func': refactorTests},
-	                  {'id': 'memory check',
-	                  'func': refactorMemoryCheck},
-	                  {'id': 'google tests',
-	                  'func': refactorGoogleTests}];
+	    const phases = [{
+	      id: 'compile check',
+	      refactorFunc: refactorCompileMsg
+	    }, {
+	      id: 'static check',
+	      refactorFunc: refactorStaticCheckMsg
+	    }, {
+	      id: 'standard tests',
+	      refactorFunc: refactorTests
+	    }, {
+	      id: 'random tests',
+	      refactorFunc: refactorTests
+	    }, {
+	      id: 'memory check',
+	      refactorFunc: refactorMemoryCheck
+	    }, {
+	      id: 'google tests',
+	      refactorFunc: refactorGoogleTests
+	    }];
 	    if (reportObject.grade === null) reportObject.grade = data.grade;
-	    for (var i in phases) refactorPhase(phases[i].id, phases[i].func);
+	    for (const { id, refactorFunc } of phases) refactorPhase(id, refactorFunc);
 	    return reportObject;
 	  }
 	};
@@ -1197,13 +1305,13 @@
 
 
 /***/ },
-/* 6 */
+/* 7 */
 /*!*************************************!*\
   !*** ./js/components/CaseObject.js ***!
   \*************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 7);
+	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 8);
 	var Diff = new diff_match_patch();
 	Diff.Diff_Timeout = 0;
 	
@@ -1233,8 +1341,8 @@
 	   *     {diff_match_patch} Diff
 	   */
 	  "genDiffInfo": function() {
-	    if (typeof(this.stdOutput) != 'string' || 0 == this.stdOutput.length
-	      || typeof(this.yourOutput) != 'string' || 0 == this.yourOutput.length) {
+	    if (typeof(this.stdOutput) != 'string' // || 0 == this.stdOutput.length
+	      || typeof(this.yourOutput) != 'string'/* || 0 == this.yourOutput.length*/) {
 	
 	        this['diff'] = null;
 	        return;
@@ -1311,7 +1419,7 @@
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /*!***********************************************!*\
   !*** ./js/components/lib/diff_match_patch.js ***!
   \***********************************************/
@@ -1865,8 +1973,9 @@
 	
 	diff_match_patch.prototype.toLineDiffResult = function(rawDiffs) {
 	  var rawDiffsLength = rawDiffs.length;
-	  if (rawDiffsLength && 0 == rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
-	  var lastDiffEndsWithNewLine = rawDiffs[rawDiffsLength - 1][1].endsWith('\n');
+	  if (0 === rawDiffsLength) return [];
+	  if (0 === rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
+	  var lastDiffEndsWithNewLine = (rawDiffsLength && rawDiffs[rawDiffsLength - 1][1].endsWith('\n'));
 	  var secondLastDiffEndsWithNewLine = true;
 	  function appendNewLineTo(index) {
 	    rawDiffs[index][1] += '\n';
@@ -3694,14 +3803,14 @@
 	});
 
 /***/ },
-/* 8 */
+/* 9 */
 /*!************************************!*\
   !*** ./js ^.*lib\/toSubmitAt\.js$ ***!
   \************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/lib/toSubmitAt.js": 9
+		"./components/lib/toSubmitAt.js": 10
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -3714,11 +3823,11 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 8;
+	webpackContext.id = 9;
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /*!*****************************************!*\
   !*** ./js/components/lib/toSubmitAt.js ***!
   \*****************************************/
@@ -3783,14 +3892,14 @@
 
 
 /***/ },
-/* 10 */
-/*!******************************!*\
-  !*** ./js ^.*FilesDiff\.js$ ***!
-  \******************************/
+/* 11 */
+/*!***********************************!*\
+  !*** ./js ^.*lib\/genDriver\.js$ ***!
+  \***********************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/FilesDiff.js": 11
+		"./components/lib/genDriver.js": 4
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -3803,17 +3912,156 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 10;
+	webpackContext.id = 11;
 
 
 /***/ },
-/* 11 */
+/* 12 */
+/*!******************************!*\
+  !*** ./js ^.*lib\/pick\.js$ ***!
+  \******************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var map = {
+		"./components/lib/pick.js": 13
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 12;
+
+
+/***/ },
+/* 13 */
+/*!***********************************!*\
+  !*** ./js/components/lib/pick.js ***!
+  \***********************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	function pick(obj, ...props) {
+	  return Object.assign({}, ...props.map(oneProp => ({ [oneProp]: obj[oneProp] })));
+	}
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['pick'] = factory();
+	  else
+	    root['pick'] = factory();
+	})(this, function factory() {
+	  return pick;
+	});
+
+
+/***/ },
+/* 14 */
+/*!*****************************************!*\
+  !*** ./js ^.*lib\/setTimeoutAsync\.js$ ***!
+  \*****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var map = {
+		"./components/lib/setTimeoutAsync.js": 15
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 14;
+
+
+/***/ },
+/* 15 */
+/*!**********************************************!*\
+  !*** ./js/components/lib/setTimeoutAsync.js ***!
+  \**********************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	function setTimeoutAsync(milliseconds) {
+	  const start = Date.now();
+	  return new Promise(resolve => setTimeout(() => resolve(Date.now() - start), milliseconds));
+	}
+	
+	(function exportModuleUniversally(root, factory) {
+	  if (true)
+	    module.exports = factory();
+	  else if (typeof(define) === 'function' && define.amd)
+	    define(factory);
+	  /* amd  // module name: diff
+	    define([other dependent modules, ...], function(other dependent modules, ...)) {
+	      return exported object;
+	    });
+	    usage: require([required modules, ...], function(required modules, ...) {
+	      // codes using required modules
+	    });
+	  */
+	  else if (typeof(exports) === 'object')
+	    exports['setTimeoutAsync'] = factory();
+	  else
+	    root['setTimeoutAsync'] = factory();
+	})(this, function factory() {
+	  return setTimeoutAsync;
+	});
+
+
+/***/ },
+/* 16 */
+/*!******************************!*\
+  !*** ./js ^.*FilesDiff\.js$ ***!
+  \******************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var map = {
+		"./components/FilesDiff.js": 17
+	};
+	function webpackContext(req) {
+		return __webpack_require__(webpackContextResolve(req));
+	};
+	function webpackContextResolve(req) {
+		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
+	};
+	webpackContext.keys = function webpackContextKeys() {
+		return Object.keys(map);
+	};
+	webpackContext.resolve = webpackContextResolve;
+	module.exports = webpackContext;
+	webpackContext.id = 16;
+
+
+/***/ },
+/* 17 */
 /*!************************************!*\
   !*** ./js/components/FilesDiff.js ***!
   \************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 7);
+	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 8);
 	var Diff = new diff_match_patch();
 	Diff.Diff_Timeout = 0;
 	
@@ -3898,127 +4146,6 @@
 	    root['FilesDiff'] = factory();
 	})(this, function factory() {
 	  return FilesDiff;
-	});
-
-
-/***/ },
-/* 12 */
-/*!**********************************!*\
-  !*** ./js ^.*checkIsOnline\.js$ ***!
-  \**********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/checkIsOnline.js": 13
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 12;
-
-
-/***/ },
-/* 13 */
-/*!****************************************!*\
-  !*** ./js/components/checkIsOnline.js ***!
-  \****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 3);
-	
-	(function(factory) {
-	  if (typeof module === 'object' && module.exports) {
-	    // Node/CommonJS
-	    module.exports = function(matrixObj) {
-	      factory(matrixObj);
-	      return matrixObj;
-	    };
-	  // } else if (typeof define === 'function' && define.amd) {
-	  //   // AMD. Register as an anonymous module.
-	  //   define([], factory);
-	  } else {
-	    // Browser globals
-	    factory(matrixObj);
-	  }
-	})(function(matrix) {
-	  /** 
-	   * checked whether a tab is visiting matrix
-	   * if true, show the extension icon
-	   * @param {Tab} oneTab
-	   * @return {boolean} whether the tab is visiting matrix
-	   * dependent of
-	   *   {MatrixObject} matrix
-	   */
-	  function isVisitingMatrix(oneTab) {
-	    if (oneTab.url.startsWith(matrix.rootUrl)) {
-	        // show icon
-	      chrome.pageAction.show(oneTab.id);
-	      return true;
-	    } else {
-	      return false;
-	    }
-	  }
-	  var intervalId = null;
-	  chrome.webRequest.onCompleted.addListener(function(details) {
-	      // return if the request is from the background
-	    if (details.tabId == -1) return;
-	
-	      // show icon and register
-	      chrome.tabs.query({}, function(tabArray) {
-	        tabArray.forEach(function(oneTab) {
-	          if (oneTab.id == details.tabId) {
-	            if (!isVisitingMatrix(oneTab)) return;
-	          }
-	        });
-	      });
-	    
-	    // return;
-	      // set interval to check whether we have internet access to Matrix
-	    if (intervalId === null) {
-	      intervalId = setInterval(function() {
-	            // send a request to Matrix every five seconds
-	          matrix.testNetwork()
-	            .then(function() {return true;}, function() {return false;})
-	            .then(function(connected) {
-	                var img19 = './img/' + (connected ? 'online.png' : 'offline.png');
-	                var img38 = './img/' + (connected ? 'online.png' : 'offline.png');
-	                var newTitle = connected ? 'click to change settings' : 'disconnected to Matrix';
-	                  // visit each existing tab
-	                chrome.tabs.query({}, function(tabArray) {
-	                  tabArray.forEach(function(oneTab) {
-	                    if (!isVisitingMatrix(oneTab)) return;
-	                      // if the tab has registered and is visiting Matrix
-	                      // change icons and title for every tab
-	                    chrome.pageAction.setIcon({
-	                      "tabId": oneTab.id,
-	                      "path": {
-	                        "19": img19,
-	                        "38": img38
-	                      }
-	                    });
-	                    chrome.pageAction.setTitle({
-	                      "tabId": oneTab.id,
-	                      "title": newTitle
-	                    });
-	                  });
-	                });
-	            });
-	          
-	      }, 5000);
-	    }
-	  }, {
-	    "urls": [
-	      matrix.rootUrl + '*'
-	    ]
-	  });
 	});
 
 

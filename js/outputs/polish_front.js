@@ -48,12 +48,12 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var componentsPath = './components/';
-	var polisher = __webpack_require__(/*! . */ 14)(componentsPath + 'polisher.js');
-	var FilesCmp = __webpack_require__(/*! . */ 30)(componentsPath + 'FilesCmp.js');
+	var polisher = __webpack_require__(/*! . */ 18)(componentsPath + 'polisher.js');
+	var FilesCmp = __webpack_require__(/*! . */ 34)(componentsPath + 'FilesCmp.js');
 	var createPolishedReportDiv = polisher.getPolishedReportDiv;
-	var customElements = __webpack_require__(/*! . */ 32)(componentsPath + 'elements/customElements.js');
-	var StudentAnswerArea = __webpack_require__(/*! . */ 33)(componentsPath + 'elements/StudentAnswerArea.js');
-	document.body.appendChild(__webpack_require__(/*! . */ 34)(componentsPath + 'elements/backToTop.js'));
+	var customElements = __webpack_require__(/*! . */ 36)(componentsPath + 'elements/customElements.js');
+	var StudentAnswerArea = __webpack_require__(/*! . */ 37)(componentsPath + 'elements/StudentAnswerArea.js');
+	document.body.appendChild(__webpack_require__(/*! . */ 38)(componentsPath + 'elements/backToTop.js'));
 	
 	  // get the reportObject from the back,
 	  // use it to create polished report div and attach it to the page
@@ -222,21 +222,22 @@
 	            matrixAlert = polisher.createMatrixAlert(text);
 	            document.querySelector('#matrix-main').appendChild(matrixAlert);
 	            var okButton = matrixAlert.button;
-	            okButton.tabIndex = -1;
-	            okButton.focus();
+	            okButton.tabIndex = -1;     // 使div能和input一样获得焦点，然而目前是button，应该不用这句
+	            okButton.focus();           // button获得焦点
 	            okButton.addEventListener('keydown', function(event) {
 	              if ((event.key || event.keyIdentifier) != 'Enter') return;
-	              this.click();
+	              this.click();             // 触发下面的click事件，即clickOk函数
 	            }, false);
 	            okButton.addEventListener('click', clickOk, false);
 	            function clickOk(event) {
+	              // 根据错误信息，把焦点移动到适当的input并全选，方便用户修改
 	              if (status == 'USER_NOT_FOUND') {
 	                usernameInput.focus(), usernameInput.select();
 	              } else if (status == 'WRONG_PASSWORD') {
 	                passwordInput.focus(), passwordInput.select();              
 	              }
-	              okButton.tabIndex = undefined;
-	              okButton.closeMe();
+	              okButton.tabIndex = undefined;   // 还原
+	              okButton.closeMe();              // 移除Alert
 	            }
 	          }
 	        });
@@ -481,7 +482,8 @@
 /* 6 */,
 /* 7 */,
 /* 8 */,
-/* 9 */
+/* 9 */,
+/* 10 */
 /*!*****************************************!*\
   !*** ./js/components/lib/toSubmitAt.js ***!
   \*****************************************/
@@ -546,18 +548,21 @@
 
 
 /***/ },
-/* 10 */,
 /* 11 */,
 /* 12 */,
 /* 13 */,
-/* 14 */
+/* 14 */,
+/* 15 */,
+/* 16 */,
+/* 17 */,
+/* 18 */
 /*!*****************************!*\
   !*** ./js ^.*polisher\.js$ ***!
   \*****************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/polisher.js": 15
+		"./components/polisher.js": 19
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -570,18 +575,18 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 14;
+	webpackContext.id = 18;
 
 
 /***/ },
-/* 15 */
+/* 19 */
 /*!***********************************!*\
   !*** ./js/components/polisher.js ***!
   \***********************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 16);
-	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 26);
+	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 20);
+	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 30);
 	var createElementWith = customElements.createElementWith;
 	var createLinenumPreWithText = customElements.createLinenumPreWithText;
 	var createPreWithText = customElements.createPreWithText;
@@ -589,8 +594,8 @@
 	var createHideElementBtn = customElements.createHideElementBtn;
 	var createViewInHexSpan = customElements.createViewInHexSpan;
 	var createStdYourDiffRadioGroup = customElements.createStdYourDiffRadioGroup;
-	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 27);
-	var registerSelectAll = __webpack_require__(/*! ./registerSelectAll.js */ 25);
+	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 31);
+	var registerSelectAll = __webpack_require__(/*! ./registerSelectAll.js */ 29);
 	var polisher = {
 	  "getPolishedReportDiv": function(reportObject, configs) {
 	    var showCR = (configs.showCR === undefined) ? false : Boolean(configs.showCR);
@@ -744,7 +749,7 @@
 	              caseInnerWrapper.appendChild(contentPre);
 	            });
 	          }
-	          if (!cr && oneCase.diff) {
+	          if (!cr && oneCase.resultCode == 'WA' && oneCase.diff) {
 	            var title = createElementWith('pre', 'label', 'Details');
 	            caseInnerWrapper.appendChild(title);
 	            title.id = caseInnerWrapper.id + '-diff';
@@ -1093,18 +1098,18 @@
 
 
 /***/ },
-/* 16 */
+/* 20 */
 /*!**************************************************!*\
   !*** ./js/components/elements/customElements.js ***!
   \**************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var customPre = __webpack_require__(/*! ./customPre.js */ 17);
-	var createHideElementBtn = __webpack_require__(/*! ./HideElementBtn.js */ 19);
-	var createViewInHexSpan = __webpack_require__(/*! ./ViewInHexSpan.js */ 20);
-	var createStdYourDiffRadioGroup = __webpack_require__(/*! ./StdYourDiffRadioGroup.js */ 21);
-	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 22);
-	var createStudentAnswerArea = __webpack_require__(/*! ./StudentAnswerArea.js */ 23);
+	var customPre = __webpack_require__(/*! ./customPre.js */ 21);
+	var createHideElementBtn = __webpack_require__(/*! ./HideElementBtn.js */ 23);
+	var createViewInHexSpan = __webpack_require__(/*! ./ViewInHexSpan.js */ 24);
+	var createStdYourDiffRadioGroup = __webpack_require__(/*! ./StdYourDiffRadioGroup.js */ 25);
+	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 26);
+	var createStudentAnswerArea = __webpack_require__(/*! ./StudentAnswerArea.js */ 27);
 	var customElements = {
 	  "extendFrom": function(parent) {
 	    for (var name in parent) this[name] = parent[name];
@@ -1112,7 +1117,7 @@
 	};
 	customElements.extendFrom(customPre);
 	customElements.extendFrom({
-	  "createElementWith": __webpack_require__(/*! ../lib/createElementWith */ 18),
+	  "createElementWith": __webpack_require__(/*! ../lib/createElementWith */ 22),
 	  "createHideElementBtn": createHideElementBtn,
 	  "createViewInHexSpan": createViewInHexSpan,
 	  "createSwitchBtn": createSwitchBtn,
@@ -1142,13 +1147,13 @@
 
 
 /***/ },
-/* 17 */
+/* 21 */
 /*!*********************************************!*\
   !*** ./js/components/elements/customPre.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
 	var CustomPre = {
 	
 	  /** 
@@ -1357,7 +1362,7 @@
 
 
 /***/ },
-/* 18 */
+/* 22 */
 /*!************************************************!*\
   !*** ./js/components/lib/createElementWith.js ***!
   \************************************************/
@@ -1418,13 +1423,13 @@
 
 
 /***/ },
-/* 19 */
+/* 23 */
 /*!**************************************************!*\
   !*** ./js/components/elements/HideElementBtn.js ***!
   \**************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
 	function toggleHidden() {
 	  var btn = this;
 	  if (btn.elementIsHidden) {
@@ -1486,13 +1491,13 @@
 
 
 /***/ },
-/* 20 */
+/* 24 */
 /*!*************************************************!*\
   !*** ./js/components/elements/ViewInHexSpan.js ***!
   \*************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
 	function toggleViewInHex() {
 	  var checkbox = this;
 	  var parent = checkbox.parent;
@@ -1540,13 +1545,13 @@
 
 
 /***/ },
-/* 21 */
+/* 25 */
 /*!*********************************************************!*\
   !*** ./js/components/elements/StdYourDiffRadioGroup.js ***!
   \*********************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
 	function yourOnClick() {
 	  var radio = this;
 	  var parent = radio.parentNode.parentNode.parent;
@@ -1623,13 +1628,13 @@
 
 
 /***/ },
-/* 22 */
+/* 26 */
 /*!*********************************************!*\
   !*** ./js/components/elements/SwitchBtn.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
 	function toSwitch() {
 	  var button = this;
 	  if (button.elementIsHidden) {
@@ -1692,15 +1697,15 @@
 
 
 /***/ },
-/* 23 */
+/* 27 */
 /*!*****************************************************!*\
   !*** ./js/components/elements/StudentAnswerArea.js ***!
   \*****************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 24);
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
-	var registerSelectAll = __webpack_require__(/*! ../registerSelectAll.js */ 25);
+	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 28);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var registerSelectAll = __webpack_require__(/*! ../registerSelectAll.js */ 29);
 	
 	function StudentAnswerArea(formattedCodes, supportedFiles, language) {
 	  this.tabsUl = createElementWith('ul', 'answerfiles-ul');
@@ -1819,7 +1824,7 @@
 
 
 /***/ },
-/* 24 */
+/* 28 */
 /*!*********************************************!*\
   !*** ./js/components/lib/highlight.pack.js ***!
   \*********************************************/
@@ -4969,7 +4974,7 @@
 
 
 /***/ },
-/* 25 */
+/* 29 */
 /*!********************************************!*\
   !*** ./js/components/registerSelectAll.js ***!
   \********************************************/
@@ -5034,13 +5039,13 @@
 
 
 /***/ },
-/* 26 */
+/* 30 */
 /*!********************************************!*\
   !*** ./js/components/createMatrixAlert.js ***!
   \********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 18);
+	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 22);
 	function closeMe() {
 	  this.wrapper.parentNode.removeChild(this.wrapper);
 	}
@@ -5086,15 +5091,15 @@
 
 
 /***/ },
-/* 27 */
+/* 31 */
 /*!*******************************************!*\
   !*** ./js/components/elements/SideNav.js ***!
   \*******************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var $ = __webpack_require__(/*! ../jquery.js */ 28);
-	__webpack_require__(/*! ./jquery.nav.js */ 29)(this, $);
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var $ = __webpack_require__(/*! ../jquery.js */ 32);
+	__webpack_require__(/*! ./jquery.nav.js */ 33)(this, $);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
 	function SideNav() {
 	  this.wrapper = createElementWith('div', 'side-nav');
 	  this.navTitle = createElementWith('div', 'nav-toggle', 'Report');
@@ -5171,7 +5176,7 @@
 
 
 /***/ },
-/* 28 */
+/* 32 */
 /*!*********************************!*\
   !*** ./js/components/jquery.js ***!
   \*********************************/
@@ -15254,7 +15259,7 @@
 
 
 /***/ },
-/* 29 */
+/* 33 */
 /*!**********************************************!*\
   !*** ./js/components/elements/jquery.nav.js ***!
   \**********************************************/
@@ -15297,10 +15302,10 @@
 	        // that require this pattern but the window provided is a noop
 	        // if it's defined (how jquery works)
 	        if ( typeof window !== 'undefined' ) {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 28);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 32);
 	        }
 	        else {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 28)(root);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 32)(root);
 	        }
 	      }
 	      factory(jQuery);
@@ -15308,7 +15313,7 @@
 	    };
 	  } if (true) {
 	    // AMD. Register as an anonymous module.
-	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 28)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 32)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  } else {
 	    // Browser globals
 	    factory(jQuery);
@@ -15586,14 +15591,14 @@
 	}));
 
 /***/ },
-/* 30 */
+/* 34 */
 /*!*****************************!*\
   !*** ./js ^.*FilesCmp\.js$ ***!
   \*****************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/FilesCmp.js": 31
+		"./components/FilesCmp.js": 35
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -15606,20 +15611,20 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 30;
+	webpackContext.id = 34;
 
 
 /***/ },
-/* 31 */
+/* 35 */
 /*!***********************************!*\
   !*** ./js/components/FilesCmp.js ***!
   \***********************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 18);
-	var toSubmitAt = __webpack_require__(/*! ./lib/toSubmitAt.js */ 9);
-	var createSwitchBtn = __webpack_require__(/*! ./elements/SwitchBtn.js */ 22);
-	var polisher = __webpack_require__(/*! ./polisher.js */ 15);
+	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 22);
+	var toSubmitAt = __webpack_require__(/*! ./lib/toSubmitAt.js */ 10);
+	var createSwitchBtn = __webpack_require__(/*! ./elements/SwitchBtn.js */ 26);
+	var polisher = __webpack_require__(/*! ./polisher.js */ 19);
 	
 	function toArray(arrayLike) {
 	  return Array.prototype.slice.call(arrayLike, 0);
@@ -15636,52 +15641,13 @@
 	  if (shouldAppear) {
 	    shouldAppear.classList.remove('ng-hide');
 	  }
-	  // var username = this.title;
-	  // if (username) {
-	  //   var newReport = this.hideElement.parentNode.querySelector('.polished-report-success[title="' + username + '"]');
-	  //   var oldReport = this.hideElement.parentNode.querySelector('.polished-report-success:not(.hidden)');
-	  //   if (newReport) {
-	  //     if (oldReport == null || !newReport.isSameNode(oldReport)) {
-	  //       if (oldReport) oldReport.classList.add('hidden');
-	  //       newReport.classList.remove('hidden');
-	  //       newReport.parentNode.insertBefore(newReport, newReport.parentNode.firstChild.nextElementSibling);
-	  //       this.parentUl.querySelector('.files-cmp-li').fix();
-	  //     }
-	  //     newReport.sideNav.fix();
-	  //   }
-	  // }
 	}
-	
-	// function cancelBubble(event) {
-	//   event.stopPropagation();
-	//   var curLi = this.parentNode;
-	//   var oldReport = curLi.hideElement.parentNode.querySelector('.polished-report-success[title*="' + curLi.title + '"]');
-	//   if (oldReport) {
-	//     oldReport.classList.add('hidden');
-	//   }
-	
-	//   var liList = curLi.parentUl.querySelectorAll('li');
-	  
-	//   if (liList.length == 2 && ~liList[1].className.indexOf('files-cmp-li')) {
-	//     liList[0].click();
-	//   } else {
-	//     var activeLi = curLi.parentUl.querySelector('.choice-tab-active');
-	//     if (!activeLi) return;
-	//     else activeLi.click();
-	//   }
-	
-	// }
-	
-	// function clickOnMyTab() {
-	//   this.connectedTab.click();
-	// }
 	
 	function addListenersForTabs() {
 	    // add listener for other tabs
 	    // to hide our FilesCmp tab content when other tabs are clicked
 	  var curLi = this;
 	  var liList = curLi.parentNode.querySelectorAll('li');
-	  // var allBlockLiList = document.querySelectorAll('#all-block .tab-list li');
 	  liList.forEach(function(oneLi) {
 	    oneLi['hideElement'] = curLi.hideElement;
 	    oneLi['parentUl'] = curLi.parentNode;
@@ -15692,19 +15658,6 @@
 	    oneLi.addEventListener('click', hideFilesCmp, false);
 	  });
 	
-	    // if (allBlockLiList[i]) {
-	    //   allBlockLiList[i]['connectedTab'] = liList[i + 1];
-	    //   allBlockLiList[i].removeEventListener('click', clickOnMyTab, false);
-	    //   allBlockLiList[i].addEventListener('click', clickOnMyTab, false);
-	    // }
-	
-	    // var close = liList[i].querySelector('i');
-	
-	    // if (close) {
-	    //   close.removeEventListener('click', cancelBubble, false);
-	    //   close.addEventListener('click', cancelBubble, false);
-	    // }
-	  // }
 	}
 	
 	function SwitchSelectedTab() {
@@ -15799,12 +15752,8 @@
 	  if (filesDiffPart.cmpIds && filesDiffPart.cmpIds.oldId == oldId && filesDiffPart.cmpIds.newId == newId) return;
 	  
 	    // get courseId and problemId
-	  var courseId = null;
-	  var problemId = null;
-	  var ids = /course\/(\d{1,})\/assignment\/(submission-)?programming\?problemId=(\d{1,})/.exec(document.URL);
-	  courseId = ids[1];
-	  problemId = ids[ids.length - 1];
-	
+	  var ids = /courses{0,1}\/([0-9]{1,})\/assignments{0,1}\/(?:submission-)?programming(?:\/|\?problemId=)([0-9]{1,})/.exec(document.URL);
+	  const [, courseId, assignmentId] = ids;
 	    // remove old ones
 	  var oldFilesCmpDiv = filesDiffPart.querySelector('.polished-report-success');
 	  if (oldFilesCmpDiv) {
@@ -15812,17 +15761,12 @@
 	    oldFilesCmpDiv.parentNode.removeChild(oldFilesCmpDiv);
 	  }
 	  
-	  chrome.runtime.sendMessage({
-	    "signal": 'filesDiff',
-	    "courseId": courseId,
-	    "problemId": problemId,
-	    "oldId": oldId,
-	    "newId": newId
-	  }, function(response) {
+	  const message = { signal: 'filesDiff', courseId, assignmentId, oldId, newId };
+	  chrome.runtime.sendMessage(message, function(response) {
 	    if (response.status != 'OK') {
 	      filesDiffPart.appendChild(createElementWith('div', 'polished-report-success', 'Failed to get files to compare'));
 	    } else {
-	      var filesCmpDiv = __webpack_require__(/*! ./polisher.js */ 15).getFilesCmpDiv(response.filesDiff, {
+	      var filesCmpDiv = __webpack_require__(/*! ./polisher.js */ 19).getFilesCmpDiv(response.filesDiff, {
 	        "stdHeading": String(oldId),
 	        "yourHeading": String(newId)
 	      });
@@ -15997,14 +15941,14 @@
 
 
 /***/ },
-/* 32 */
+/* 36 */
 /*!*********************************************!*\
   !*** ./js ^.*elements\/customElements\.js$ ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/elements/customElements.js": 16
+		"./components/elements/customElements.js": 20
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -16017,18 +15961,18 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 32;
+	webpackContext.id = 36;
 
 
 /***/ },
-/* 33 */
+/* 37 */
 /*!************************************************!*\
   !*** ./js ^.*elements\/StudentAnswerArea\.js$ ***!
   \************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/elements/StudentAnswerArea.js": 23
+		"./components/elements/StudentAnswerArea.js": 27
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -16041,18 +15985,18 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 33;
+	webpackContext.id = 37;
 
 
 /***/ },
-/* 34 */
+/* 38 */
 /*!****************************************!*\
   !*** ./js ^.*elements\/backToTop\.js$ ***!
   \****************************************/
 /***/ function(module, exports, __webpack_require__) {
 
 	var map = {
-		"./components/elements/backToTop.js": 35
+		"./components/elements/backToTop.js": 39
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -16065,17 +16009,17 @@
 	};
 	webpackContext.resolve = webpackContextResolve;
 	module.exports = webpackContext;
-	webpackContext.id = 34;
+	webpackContext.id = 38;
 
 
 /***/ },
-/* 35 */
+/* 39 */
 /*!*********************************************!*\
   !*** ./js/components/elements/backToTop.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 18);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
 	
 	  // create backToTop button
 	var backToTop = createElementWith('div', 'backToTop-wrapper',

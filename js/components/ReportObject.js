@@ -309,20 +309,27 @@ ReportObject.prototype = {
         return;
       }
     }
-    var phases = [{'id': 'compile check',
-                   'func': refactorCompileMsg},
-                  {'id': 'static check',
-                  'func': refactorStaticCheckMsg},
-                  {'id': 'standard tests',
-                  'func': refactorTests},
-                  {'id': 'random tests',
-                  'func': refactorTests},
-                  {'id': 'memory check',
-                  'func': refactorMemoryCheck},
-                  {'id': 'google tests',
-                  'func': refactorGoogleTests}];
+    const phases = [{
+      id: 'compile check',
+      refactorFunc: refactorCompileMsg
+    }, {
+      id: 'static check',
+      refactorFunc: refactorStaticCheckMsg
+    }, {
+      id: 'standard tests',
+      refactorFunc: refactorTests
+    }, {
+      id: 'random tests',
+      refactorFunc: refactorTests
+    }, {
+      id: 'memory check',
+      refactorFunc: refactorMemoryCheck
+    }, {
+      id: 'google tests',
+      refactorFunc: refactorGoogleTests
+    }];
     if (reportObject.grade === null) reportObject.grade = data.grade;
-    for (var i in phases) refactorPhase(phases[i].id, phases[i].func);
+    for (const { id, refactorFunc } of phases) refactorPhase(id, refactorFunc);
     return reportObject;
   }
 };

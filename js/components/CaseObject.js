@@ -28,8 +28,8 @@ CaseObject.prototype = {
    *     {diff_match_patch} Diff
    */
   "genDiffInfo": function() {
-    if (typeof(this.stdOutput) != 'string' || 0 == this.stdOutput.length
-      || typeof(this.yourOutput) != 'string' || 0 == this.yourOutput.length) {
+    if (typeof(this.stdOutput) != 'string' // || 0 == this.stdOutput.length
+      || typeof(this.yourOutput) != 'string'/* || 0 == this.yourOutput.length*/) {
 
         this['diff'] = null;
         return;
