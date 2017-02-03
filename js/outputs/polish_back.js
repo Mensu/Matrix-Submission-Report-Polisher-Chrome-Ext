@@ -61,7 +61,7 @@
 	  patternUrl: 'https://*.vmatrix.org.cn/',
 	  rootUrl: 'https://vmatrix.org.cn/',
 	  // googleStyleUrl: 'http://localhost:3000/',
-	  googleStyleUrl: 'http://119.29.146.176:3000/',
+	  googleStyleUrl: 'http://123.207.29.66:3001/',
 	});
 	// require(componentsPath + 'checkIsOnline.js')(matrix);
 	
@@ -215,6 +215,9 @@
 	          return console.error('Error: submission body.data is empty'), false;
 	        }
 	        param.reportBody = body;
+	        if (!Reflect.hasOwnProperty.call(body.data, 'answers')) {
+	          return;
+	        }
 	        const filesToMergeToAnswers = (param.userId ? param.problemInfo.supportFiles : []);
 	        const answers = [...body.data.answers, ...filesToMergeToAnswers];
 	        return answers;
@@ -750,7 +753,7 @@
 	    const self = this;
 	    return self.request(
 	      'post',
-	      `api/lint/google-style`,
+	      `api/linters?linter=google-style`,
 	      self.googleStyleUrl,
 	      param
 	    );

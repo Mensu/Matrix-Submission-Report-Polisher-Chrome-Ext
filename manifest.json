@@ -37,7 +37,7 @@
   "options_page": "options.html",
   "permissions": [
     "https://*.vmatrix.org.cn:*/*",
-    "http://119.29.146.176:3000/*",
+    "http://123.207.29.66:3001/api/*",
     "http://localhost:3000/*",
     "tabs",
     "webRequest"

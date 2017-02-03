@@ -1,17 +1,19 @@
 {
   "name": "matrix-submission-output-polisher",
-  "version": "0.1.6",
-  "description": "",
+  "version": "0.2.0",
+  "description": "polish your submission report on Matrix",
   "main": "index.js",
-  "scripts": {
-    
-  },
+  "scripts": {},
   "author": "Mensu",
   "license": "MIT",
+  "repository": "https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext",
   "devDependencies": {
-    "webpack": "^1.13.1",
-    "webpack-dev-server": "^1.14.1",
     "css-loader": "^0.21.0",
-    "style-loader": "^0.13.0"
+    "eslint": "^3.14.1",
+    "eslint-config-airbnb-base": "^11.0.1",
+    "eslint-plugin-import": "^2.2.0",
+    "style-loader": "^0.13.0",
+    "webpack": "^1.13.1",
+    "webpack-dev-server": "^1.14.1"
   }
 }

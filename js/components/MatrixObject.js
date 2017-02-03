@@ -308,7 +308,7 @@ class MatrixObject {
     const self = this;
     return self.request(
       'post',
-      `api/lint/google-style`,
+      `api/linters?linter=google-style`,
       self.googleStyleUrl,
       param
     );
