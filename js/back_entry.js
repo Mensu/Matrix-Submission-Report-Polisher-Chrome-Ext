@@ -1,12 +1,10 @@
-const componentsPath = './components/';
-
-const MatrixObject = require(componentsPath + 'MatrixObject.js');
-const ReportObject = require(componentsPath + 'ReportObject.js');
-const toSubmitAt = require(componentsPath + 'lib/toSubmitAt.js');
-const genDriver = require(componentsPath + 'lib/genDriver.js');
-const pick = require(componentsPath + 'lib/pick.js');
-const setTimeoutAsync = require(componentsPath + 'lib/setTimeoutAsync.js');
-const FilesDiff = require(componentsPath + 'FilesDiff.js');
+const MatrixObject = require('./components/MatrixObject.js');
+const ReportObject = require('./components/ReportObject.js');
+const toSubmitAt = require('./components/lib/toSubmitAt.js');
+const genDriver = require('./components/lib/genDriver.js');
+const pick = require('./components/lib/pick.js');
+const setTimeoutAsync = require('./components/lib/setTimeoutAsync.js');
+const FilesDiff = require('./components/FilesDiff.js');
 
 const matrix = new MatrixObject({
   patternUrl: 'https://*.vmatrix.org.cn/',
@@ -24,7 +22,7 @@ const matrix = new MatrixObject({
 chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
   urls: [
     `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`
-  ]
+  ],
 });
 
 function getDataToPolishCourseReport(details) {
@@ -42,17 +40,19 @@ function getDataToPolishCourseReport(details) {
       submissionId,
       userId,
     };
-    
+
     const submissionList = yield getSubmissionsList(param);
     if (!submissionList) return;
 
-    const submitTime = getSubmitTime(submissionList, param);
+    getSubmitTime(submissionList, param);
 
     const answers = yield getSubmission(param);
     if (!answers) return;
 
-    const googleStyleConfig = (userId ? { getFormattedCodes: true } : undefined);    
-    yield getGoogleStyle(answers, googleStyleConfig, param);
+    if (answers.length) {
+      const googleStyleConfig = (userId ? { getFormattedCodes: true } : undefined);
+      yield getGoogleStyle(answers, googleStyleConfig, param);
+    }
 
     const signal = (userId ? 'startStudentSubmission' : 'start')
     const response = yield sendReportObjToFront(param, signal);
@@ -167,7 +167,7 @@ function getDataToPolishCourseReport(details) {
         }
         param.reportBody = body;
         if (!Reflect.hasOwnProperty.call(body.data, 'answers')) {
-          return;
+          return [];
         }
         const filesToMergeToAnswers = (param.userId ? param.problemInfo.supportFiles : []);
         const answers = [...body.data.answers, ...filesToMergeToAnswers];
@@ -197,7 +197,7 @@ function getDataToPolishCourseReport(details) {
       });
     }
 
-  }).catch(e => console.error(`Uncaught Error`, e));
+  }).catch(e => console.error('Uncaught Error', e));
 
 }
 
@@ -259,7 +259,7 @@ chrome.webRequest.onCompleted.addListener(details => {
         try {
           body = yield matrix.getLibraryProblemInfo(param, rootUrl);
         } catch (e) {
-          return console.error(`Error: Failed to get library problem info with parameters`, param), false;
+          return console.error('Error: Failed to get library problem info with parameters', param), false;
         }
         const {
           config,
@@ -278,7 +278,7 @@ chrome.webRequest.onCompleted.addListener(details => {
         return body;
       });
     }
-  }).catch(e => console.error(`Uncaught Error`, e));
+  }).catch(e => console.error('Uncaught Error', e));
 
 }, {
   urls: [
@@ -289,16 +289,16 @@ chrome.webRequest.onCompleted.addListener(details => {
 chrome.webRequest.onCompleted.addListener(details => {
   return genDriver(function *() {
     if (details.tabId === -1 || details.method === 'POST') return;
-    console.log(`Real gap of 500 ms`, yield setTimeoutAsync(500));
+    console.log('Real gap of 500 ms', yield setTimeoutAsync(500));
     const signal = 'noValidationLogin';
     const response = yield chrome.tabs.sendMessageAsync(details.tabId, { signal });
     console.log(response);
-  }).catch(e => console.error(`Uncaught Error`, e));
+  }).catch(e => console.error('Uncaught Error', e));
 
 }, {
   urls: [
-    `${matrix.patternUrl}api/users/login`
-  ]
+    `${matrix.patternUrl}api/users/login`,
+  ],
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -309,9 +309,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case 'loginWithoutValidation':
         return loginWithoutValidation();
       default:
-        return;
+        break;
     }
-  }).catch(e => console.error(`Uncaught Error`, e)), true;
+  }).catch(e => console.error('Uncaught Error', e)), true;
 
   function filesDiff() {
     return genDriver(function *() {
@@ -327,13 +327,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return sendResponse({ status: 'BAD' });
       }
       const [{
-        data: { answers: oldFiles }
+        data: { answers: oldFiles },
       }, {
-        data: { answers: newFiles }
+        data: { answers: newFiles },
       }] = results;
       const filesDiff = new FilesDiff(oldFiles, newFiles);
       return sendResponse({ status: 'OK', filesDiff });
-    })
+    });
   }
 
   function loginWithoutValidation() {
@@ -342,8 +342,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       try {
         body = yield matrix.login(message.param);
       } catch (e) {
-        console.error(`Error: Failed to login with parameters`, message.param);
-        return sendResponse({ data: { is_valid: false }});
+        console.error('Error: Failed to login with parameters', message.param);
+        return sendResponse({ data: { is_valid: false } });
       }
       if (sender.tab.incognito) {
         body.data.is_valid = false;
@@ -357,7 +357,8 @@ chrome.tabs.sendMessageAsync = function(...args) {
   return new Promise(
     resolve => chrome.tabs.sendMessage.call(
       chrome.tabs,
-      ...args.concat([response => resolve(response)])
+      ...args,
+      response => resolve(response)
     )
   );
 }

@@ -47,342 +47,362 @@
   \***************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var componentsPath = './components/';
-	var polisher = __webpack_require__(/*! . */ 18)(componentsPath + 'polisher.js');
-	var FilesCmp = __webpack_require__(/*! . */ 34)(componentsPath + 'FilesCmp.js');
-	var createPolishedReportDiv = polisher.getPolishedReportDiv;
-	var customElements = __webpack_require__(/*! . */ 36)(componentsPath + 'elements/customElements.js');
-	var StudentAnswerArea = __webpack_require__(/*! . */ 37)(componentsPath + 'elements/StudentAnswerArea.js');
-	document.body.appendChild(__webpack_require__(/*! . */ 38)(componentsPath + 'elements/backToTop.js'));
+	const polisher = __webpack_require__(/*! ./components/polisher.js */ 11);
+	const FilesCmp = __webpack_require__(/*! ./components/FilesCmp.js */ 26);
+	const customElements = __webpack_require__(/*! ./components/elements/customElements.js */ 12);
+	const StudentAnswerArea = __webpack_require__(/*! ./components/elements/StudentAnswerArea.js */ 19);
+	document.body.appendChild(__webpack_require__(/*! ./components/elements/backToTop.js */ 27));
 	
-	  // get the reportObject from the back,
-	  // use it to create polished report div and attach it to the page
-	chrome.runtime.onMessage.addListener(function(body, sender, callback) {
-	try {
-	  if (body.signal == 'start') {
-	    var reportObject = body.reportObject;
-	    var reportWrapper = document.querySelector('.course-assignment-report-content-wrapper');
-	    var matrixSecondBar = document.querySelector('#matrix-second-bar ul');
-	    if (reportWrapper === null) {
-	      return callback("front couldn't find the grade Tab.");
-	    }
-	    if (body.problemInfo) {
-	      reportWrapper['problemInfo'] = body.problemInfo;
-	    }
-	      // get div components
-	    var oldPolishedReport = reportWrapper.querySelector('.polished-report-success'),
-	        oldSwitchBtn = reportWrapper.querySelector('.switch-btn'),
-	        originalReport = reportWrapper.querySelector('#matrix-programming-report:not(.polished-ver)'),
-	        polishedReport = createPolishedReportDiv(reportObject, {
-	            "showCR": body.configs.showCR,
-	            "maxStdCaseNum": body.configs.maxStdCaseNum,
-	            "maxRanCaseNum": body.configs.maxRanCaseNum,
-	            "maxMemCaseNum": body.configs.maxMemCaseNum,
-	            "limits": reportWrapper.problemInfo.limits,
-	            "totalPoints": reportWrapper.problemInfo.totalPoints,
-	          }),
-	        switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
-	            "show": 'show polished report',
-	            "hide": 'show original report'
-	          });
+	const createPolishedReportDiv = polisher.getPolishedReportDiv;
 	
-	      // insert newly created div and perform initialization
-	    reportWrapper.insertBefore(switchBtn, originalReport);
-	    reportWrapper.appendChild(polishedReport);
-	    
-	    var sideNav = polishedReport.sideNav;
-	    if (sideNav) {
-	      sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
-	      var gradeNavTab = matrixSecondBar.querySelector('li[ng-click*="grade"]');
-	      gradeNavTab['sideNav'] = sideNav;
-	      if (!gradeNavTab.sideNavFixListenerAdded) {
-	        gradeNavTab.addEventListener('click', function() {
-	          this.sideNav.fix();
-	        }, false);
-	        gradeNavTab['sideNavFixListenerAdded'] = true;
-	      }
-	        
+	// get the reportObject from the back,
+	// use it to create polished report div and attach it to the page
+	chrome.runtime.onMessage.addListener((body, sender, callback) => {
+	  try {
+	    switch (body.signal) {
+	      case 'start':
+	        return polishMainReport(body, sender, callback);
+	      case 'libReport':
+	        return polishLibReport(body, sender, callback);
+	      // case 'noValidationLogin':
+	      //   return removeValidationLogin(body, sender, callback);
+	      case 'startStudentSubmission':
+	        return polishStudentReport(body, sender, callback);
+	      default:
+	        break;
 	    }
-	    
-	      // rid the wrapper of the old divs
-	    if (oldPolishedReport) {
-	      if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
-	      reportWrapper.removeChild(oldPolishedReport);
-	    }
-	    if (oldSwitchBtn) reportWrapper.removeChild(oldSwitchBtn);
+	  } catch (e) {
+	    callback(`the following error occurred at front:\n\n${e.stack}`);
+	    throw e;
+	  }
+	  return true;
+	});
 	
-	      // auto polish
-	    if (!body.configs.autoPolish) switchBtn.click();
-	    
-	      // files comparison
-	    if (body.submissionsList && body.submissionsList.length > 1) {
-	      var tabsContentWrapper = document.querySelector('.course-assignment-programming-wrapper');
-	      var element = tabsContentWrapper.querySelector('#files-cmp-tab');
-	      if (element) {
-	        if (body.problemInfo) {
-	          element.filesCmpTab.updateChoicesTable(body.submissionsList);
-	        }
-	      } else {
-	        var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
-	        var element = filesCmpTab.tab;
-	        element.id = 'files-cmp-tab';
-	        tabsContentWrapper.appendChild(element);
-	
-	        matrixSecondBar.appendChild(FilesCmp.createSecondBarLi('Files Comparison', element));
-	      }
-	
-	    }
-	    return callback('front has got the reportObject and attached the polished report to the grade tab!');
-	  } else if (body.signal == 'libReport') {
-	    var reportObject = body.reportObject;
-	    var reportWrapper = document.querySelector('.modal-overlay .modal-data.ERROR');
-	    if (reportWrapper === null) {
-	      return callback("front couldn't find the library report container.");
-	    }
-	    if (body.problemInfo) {
-	      reportWrapper['problemInfo'] = body.problemInfo;
-	    }
-	      // get div components
-	    var originalReport = reportWrapper.querySelector('#matrix-programming-report:not(.polished-ver)'),
-	        polishedReport = createPolishedReportDiv(reportObject, {
-	            "showCR": body.configs.showCR,
-	            "maxStdCaseNum": body.configs.maxStdCaseNum,
-	            "maxRanCaseNum": body.configs.maxRanCaseNum,
-	            "maxMemCaseNum": body.configs.maxMemCaseNum,
-	            "noValidationLogin": body.configs.noValidationLogin,
-	            "limits": reportWrapper.problemInfo.limits,
-	            "totalPoints": reportWrapper.problemInfo.totalPoints,
-	          });
-	
-	      // insert newly created div and perform initialization
-	    reportWrapper.insertBefore(polishedReport, originalReport);
-	    reportWrapper.removeChild(originalReport);
-	    var sideNav = polishedReport.sideNav;
-	    if (sideNav) {
-	      polishedReport.removeChild(sideNav.getNode());
-	    }
-	    
-	    return callback('front has got the reportObject and attached the polished report to lib!');
-	  } else if (body.signal == 'noValidationLogin') {
-	    (function removeLoginValidation() {
-	      var originalLogin = document.querySelector('input[value="Log in"]');
-	      if (!originalLogin) return setTimeout(removeLoginValidation, 1000);
-	      var noValidationLogin = document.createElement('input');
-	      var usernameInput = document.querySelector('#username');
-	      var passwordInput = document.querySelector('#password');
-	      if (usernameInput.value.length) {
-	        passwordInput.focus();
-	      } else {
-	        usernameInput.focus();
-	      }
-	      noValidationLogin.type = 'button';
-	      noValidationLogin.value = 'Log in';
-	      noValidationLogin.classList.add('no-validation-login');
-	      var form = originalLogin.parentNode;
-	      form.insertBefore(noValidationLogin, originalLogin);
-	      originalLogin.classList.add('hidden');
-	      form.removeChild(originalLogin);
-	      if (!form.noValidationLogin) {
-	        form.addEventListener('keydown', function(event) {
-	          if ((event.key || event.keyIdentifier) == 'Enter') this.noValidationLogin.click();
-	        }, false);
-	      }
-	      form['noValidationLogin'] = noValidationLogin;
-	      noValidationLogin.addEventListener('click', function() {
-	        document.activeElement.blur();
-	        var username = usernameInput.value;
-	        var param = {
-	          "username": usernameInput.value,
-	          "password": passwordInput.value
-	        };
-	        chrome.runtime.sendMessage({
-	          "signal": 'loginWithoutValidation',
-	          "param": param
-	        }, function(body) {
-	          var status = body.status;
-	          if (status == 'OK') {
-	            if (body.data && body.data.is_valid) {
-	              window.location.assign(window.location.origin + '/#!/' + body.data.username);
-	            } else {
-	              form.appendChild(originalLogin);
-	              originalLogin.click();
-	            }
-	          } else {
-	            var text = '登录失败：';
-	            var textMap = {
-	              "USER_NOT_FOUND": '查无此人。请仔细核对用户名',
-	              "WRONG_PASSWORD": '密码不对。请仔细核对您的密码并再试一次',
-	              "IP_INVALID": '您当前的IP被禁止登陆。请去指定的平台进行登陆'
-	            }
-	            if (textMap[status] === undefined) {
-	              text += '发生了插件没想到的错误。\n\n代码：' + status + '\n信息：' + body.msg;
-	            } else {
-	              text += textMap[status];
-	            }
-	            matrixAlert = polisher.createMatrixAlert(text);
-	            document.querySelector('#matrix-main').appendChild(matrixAlert);
-	            var okButton = matrixAlert.button;
-	            okButton.tabIndex = -1;     // 使div能和input一样获得焦点，然而目前是button，应该不用这句
-	            okButton.focus();           // button获得焦点
-	            okButton.addEventListener('keydown', function(event) {
-	              if ((event.key || event.keyIdentifier) != 'Enter') return;
-	              this.click();             // 触发下面的click事件，即clickOk函数
-	            }, false);
-	            okButton.addEventListener('click', clickOk, false);
-	            function clickOk(event) {
-	              // 根据错误信息，把焦点移动到适当的input并全选，方便用户修改
-	              if (status == 'USER_NOT_FOUND') {
-	                usernameInput.focus(), usernameInput.select();
-	              } else if (status == 'WRONG_PASSWORD') {
-	                passwordInput.focus(), passwordInput.select();              
-	              }
-	              okButton.tabIndex = undefined;   // 还原
-	              okButton.closeMe();              // 移除Alert
-	            }
-	          }
-	        });
-	      }, false);
-	      return callback('front has removed validation for login!');
-	    })();
-	  } else if (body.signal == 'startStudentSubmission') {
-	    var reportObject = body.reportObject;
-	    var unmodifiedOriginalReport = document.querySelector('#matrix-programming-report:not(.polished-ver):not(.original-report)');
-	    var matrixSecondBar = document.querySelector('.choice-tab ul');
-	    var reportsContainer = document.querySelector('.reports-container');
-	    if (unmodifiedOriginalReport === null) {
-	      if (null === document.querySelector('.original-report')) {
-	        return callback("front couldn't find #matrix-programming-report:not(.original-report):not(.polished-ver) or .original-report");
-	      }  // else: original report was modified. just go on
-	
-	    } else {
-	      unmodifiedOriginalReport.classList.add('original-report');
-	      reportsContainer = document.createElement('div');
-	      unmodifiedOriginalReport.parentNode.insertBefore(reportsContainer, unmodifiedOriginalReport);
-	      reportsContainer.outerHTML = '<div class="reports-container"><div class="last-div"></div></div>';
-	      reportsContainer = unmodifiedOriginalReport.parentNode.querySelector('.reports-container');
-	      reportsContainer.insertBefore(unmodifiedOriginalReport, reportsContainer.firstChild);
-	    }
-	  
-	    if (body.problemInfo) {
-	      reportsContainer['problemInfo'] = body.problemInfo;
-	    }
-	    var selectedStudentId = matrixSecondBar.querySelector('li.choice-tab-active').title;
-	    
-	      // get div components
-	    var oldPolishedReport = reportsContainer.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
-	        oldSwitchBtn = reportsContainer.querySelector('.switch-btn:not(.hidden)'),
-	        otherStudentReport = reportsContainer.querySelector('.polished-report-success:not(.hidden)'),
-	        gradeWrapper = reportsContainer.parentNode.querySelector('#matrix-programming-report.original-report .report-section:first-child');
-	        originalReport = reportsContainer.parentNode.querySelector('.original-report');
-	
-	    var polishedReport = createPolishedReportDiv(reportObject, {
+	function polishMainReport(body, sender, callback) {
+	  var reportObject = body.reportObject;
+	  var reportWrapper = document.querySelector('.course-assignment-report-content-wrapper');
+	  var matrixSecondBar = document.querySelector('#course-assignment-programming-container > ul.nav.nav-tabs');
+	  if (reportWrapper === null) {
+	    return callback("front couldn't find the grade Tab.");
+	  }
+	  if (body.problemInfo) {
+	    reportWrapper['problemInfo'] = body.problemInfo;
+	  }
+	    // get div components
+	  var oldPolishedReport = reportWrapper.querySelector('.polished-report-success'),
+	      oldSwitchBtn = reportWrapper.querySelector('.switch-btn'),
+	      originalReport = reportWrapper.querySelector('#matrix-programming-report:not(.polished-ver)'),
+	      polishedReport = createPolishedReportDiv(reportObject, {
 	          "showCR": body.configs.showCR,
 	          "maxStdCaseNum": body.configs.maxStdCaseNum,
 	          "maxRanCaseNum": body.configs.maxRanCaseNum,
 	          "maxMemCaseNum": body.configs.maxMemCaseNum,
-	          "limits": reportsContainer.problemInfo.limits,
-	          "totalPoints": reportsContainer.problemInfo.totalPoints,
+	          "limits": reportWrapper.problemInfo.limits,
+	          "totalPoints": reportWrapper.problemInfo.totalPoints,
 	        }),
-	        switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
+	      switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
 	          "show": 'show polished report',
 	          "hide": 'show original report'
 	        });
 	
-	    var studentAnswerArea = document.querySelector('.answer-wrapper.clang-formatted');
-	    var formattedCodes = null;
-	    var studentAnswerAreaObj = null;
-	    if (reportObject['google style']) {
-	      formattedCodes = reportObject['google style'].formatted;
-	    }
-	    if (studentAnswerArea) {
-	      if (!formattedCodes) {
-	        formattedCodes = {
-	          "Server Error.c": 'Google Style Server Error'
-	        }
-	      }
-	      studentAnswerAreaObj = studentAnswerArea.studentAnswerAreaObj;
-	      studentAnswerAreaObj.update(formattedCodes);
-	    } else if (formattedCodes) {
-	      var supportedFiles = {};
-	      reportsContainer.problemInfo.supportedFiles.forEach(function(one) {
-	        supportedFiles[one.name] = formattedCodes[one.name];
-	        formattedCodes[one.name] = undefined;
-	      });
-	      studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, supportedFiles, 'cpp');
-	      studentAnswerArea = studentAnswerAreaObj.getNode();
-	      reportsContainer.parentNode.insertBefore(studentAnswerArea, reportsContainer);
+	    // insert newly created div and perform initialization
+	  reportWrapper.insertBefore(switchBtn, originalReport);
+	  reportWrapper.appendChild(polishedReport);
+	
+	  var sideNav = polishedReport.sideNav;
+	  if (sideNav) {
+	    sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+	    var gradeNavTab = matrixSecondBar.querySelector('li[ng-click*="grade"]');
+	    gradeNavTab['sideNav'] = sideNav;
+	    if (!gradeNavTab.sideNavFixListenerAdded) {
+	      gradeNavTab.addEventListener('click', function() {
+	        this.sideNav.fix();
+	      }, false);
+	      gradeNavTab['sideNavFixListenerAdded'] = true;
 	    }
 	
-	    polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;
-	    polishedReport['formattedCodes'] = formattedCodes;
-	
-	    gradeWrapper.classList.add('hidden');
-	    switchBtn['gradeWrapper'] = gradeWrapper;
-	    switchBtn.addEventListener('click', showOrginalGrade, false);
-	
-	      // insert newly created div and perform initialization
-	    reportsContainer.insertBefore(switchBtn, reportsContainer.firstChild);
-	
-	    polishedReport['title'] = selectedStudentId;
-	    polishedReport['switchBtn'] = switchBtn;
-	    reportsContainer.insertBefore(polishedReport, reportsContainer.querySelector('div'));
-	    
-	    var sideNav = polishedReport.sideNav;
-	    if (sideNav) {
-	      sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
-	    }
-	    
-	      // rid the wrapper of the old divs
-	    if (oldPolishedReport) {
-	      if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
-	      reportsContainer.removeChild(oldPolishedReport);
-	    }
-	    if (otherStudentReport) {
-	      otherStudentReport.classList.add('hidden');
-	    }
-	    if (oldSwitchBtn) {
-	      oldSwitchBtn.classList.add('hidden');
-	    }
-	
-	      // auto polish
-	    if (!body.configs.autoPolish) switchBtn.click();
-	    
-	      // files comparison
-	    if (body.submissionsList && body.submissionsList.length) {
-	      var tabsContentWrapper = document.querySelector('.submission-container');
-	      var element = tabsContentWrapper.querySelector('#files-cmp-tab');
-	      if (element) {
-	        if (body.submissionsList[0].sub_ca_id != element.latestSubmissionId) {
-	          element.filesCmpTab.updateChoicesTable(body.submissionsList);
-	          element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
-	          element.fileCmpTab.fix();
-	        }
-	        
-	      } else {
-	        var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
-	        var element = filesCmpTab.tab;
-	        element.id = 'files-cmp-tab';
-	        element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
-	        tabsContentWrapper.appendChild(element);
-	
-	        var fileCmpTab = FilesCmp.createSecondBarLi('Files Comparison', element, true);
-	        element['fileCmpTab'] = fileCmpTab;
-	        matrixSecondBar.appendChild(fileCmpTab);
-	
-	        var originalFix = fileCmpTab.fix;
-	        fileCmpTab['originalFix'] = originalFix;
-	        fileCmpTab.fix = addListenersForTabs;
-	        fileCmpTab.fix();
-	      }
-	
-	    }
-	    return callback('front has got the reportObject and attached the polished report to the grade tab!');
 	  }
-	} catch (e) {
-	  callback('the following error occurred at front:\n\n' + e.stack);
-	  throw e;
+	
+	    // rid the wrapper of the old divs
+	  if (oldPolishedReport) {
+	    if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
+	    reportWrapper.removeChild(oldPolishedReport);
+	  }
+	  if (oldSwitchBtn) reportWrapper.removeChild(oldSwitchBtn);
+	
+	    // auto polish
+	  if (!body.configs.autoPolish) switchBtn.click();
+	
+	    // files comparison
+	  if (body.submissionsList && body.submissionsList.length > 1) {
+	    var tabsContentWrapper = document.querySelector('.course-assignment-programming-wrapper');
+	    var element = tabsContentWrapper.querySelector('#files-cmp-tab');
+	    if (element) {
+	      if (body.problemInfo) {
+	        element.filesCmpTab.updateChoicesTable(body.submissionsList);
+	      }
+	    } else {
+	      var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
+	      var element = filesCmpTab.tab;
+	      element.id = 'files-cmp-tab';
+	      tabsContentWrapper.appendChild(element);
+	
+	      matrixSecondBar.appendChild(FilesCmp.createSecondBarLi('Files Comparison', element));
+	    }
+	
+	  }
+	  return callback('front has got the reportObject and attached the polished report to the grade tab!');
 	}
-	});
+	
+	function polishLibReport(body, sender, callback) {
+	  var reportObject = body.reportObject;
+	  var reportWrapper = document.querySelector('.modal-overlay .modal-data.ERROR');
+	  if (reportWrapper === null) {
+	    return callback("front couldn't find the library report container.");
+	  }
+	  if (body.problemInfo) {
+	    reportWrapper['problemInfo'] = body.problemInfo;
+	  }
+	    // get div components
+	  var originalReport = reportWrapper.querySelector('#matrix-programming-report:not(.polished-ver)'),
+	      polishedReport = createPolishedReportDiv(reportObject, {
+	          "showCR": body.configs.showCR,
+	          "maxStdCaseNum": body.configs.maxStdCaseNum,
+	          "maxRanCaseNum": body.configs.maxRanCaseNum,
+	          "maxMemCaseNum": body.configs.maxMemCaseNum,
+	          "noValidationLogin": body.configs.noValidationLogin,
+	          "limits": reportWrapper.problemInfo.limits,
+	          "totalPoints": reportWrapper.problemInfo.totalPoints,
+	        });
+	
+	    // insert newly created div and perform initialization
+	  reportWrapper.insertBefore(polishedReport, originalReport);
+	  reportWrapper.removeChild(originalReport);
+	  var sideNav = polishedReport.sideNav;
+	  if (sideNav) {
+	    polishedReport.removeChild(sideNav.getNode());
+	  }
+	
+	  return callback('front has got the reportObject and attached the polished report to lib!');
+	}
+	
+	function removeValidationLogin(body, sender, callback) {
+	  (function removeLoginValidation() {
+	    var originalLogin = document.querySelector('input[value="Log in"]');
+	    if (!originalLogin) return setTimeout(removeLoginValidation, 1000);
+	    var noValidationLogin = document.createElement('input');
+	    var usernameInput = document.querySelector('#username');
+	    var passwordInput = document.querySelector('#password');
+	    if (usernameInput.value.length) {
+	      passwordInput.focus();
+	    } else {
+	      usernameInput.focus();
+	    }
+	    noValidationLogin.type = 'button';
+	    noValidationLogin.value = 'Log in';
+	    noValidationLogin.classList.add('no-validation-login');
+	    var form = originalLogin.parentNode;
+	    form.insertBefore(noValidationLogin, originalLogin);
+	    originalLogin.classList.add('hidden');
+	    form.removeChild(originalLogin);
+	    if (!form.noValidationLogin) {
+	      form.addEventListener('keydown', function(event) {
+	        if ((event.key || event.keyIdentifier) == 'Enter') this.noValidationLogin.click();
+	      }, false);
+	    }
+	    form['noValidationLogin'] = noValidationLogin;
+	    noValidationLogin.addEventListener('click', function() {
+	      document.activeElement.blur();
+	      var username = usernameInput.value;
+	      var param = {
+	        "username": usernameInput.value,
+	        "password": passwordInput.value
+	      };
+	      chrome.runtime.sendMessage({
+	        "signal": 'loginWithoutValidation',
+	        "param": param
+	      }, function(body) {
+	        var status = body.status;
+	        if (status == 'OK') {
+	          if (body.data && body.data.is_valid) {
+	            window.location.assign(window.location.origin + '/#!/' + body.data.username);
+	          } else {
+	            form.appendChild(originalLogin);
+	            originalLogin.click();
+	          }
+	        } else {
+	          var text = '登录失败：';
+	          var textMap = {
+	            "USER_NOT_FOUND": '查无此人。请仔细核对用户名',
+	            "WRONG_PASSWORD": '密码不对。请仔细核对您的密码并再试一次',
+	            "IP_INVALID": '您当前的IP被禁止登陆。请去指定的平台进行登陆'
+	          }
+	          if (textMap[status] === undefined) {
+	            text += '发生了插件没想到的错误。\n\n代码：' + status + '\n信息：' + body.msg;
+	          } else {
+	            text += textMap[status];
+	          }
+	          matrixAlert = polisher.createMatrixAlert(text);
+	          document.querySelector('#matrix-main').appendChild(matrixAlert);
+	          var okButton = matrixAlert.button;
+	          okButton.tabIndex = -1;     // 使div能和input一样获得焦点，然而目前是button，应该不用这句
+	          okButton.focus();           // button获得焦点
+	          okButton.addEventListener('keydown', function(event) {
+	            if ((event.key || event.keyIdentifier) != 'Enter') return;
+	            this.click();             // 触发下面的click事件，即clickOk函数
+	          }, false);
+	          okButton.addEventListener('click', clickOk, false);
+	          function clickOk(event) {
+	            // 根据错误信息，把焦点移动到适当的input并全选，方便用户修改
+	            if (status == 'USER_NOT_FOUND') {
+	              usernameInput.focus(), usernameInput.select();
+	            } else if (status == 'WRONG_PASSWORD') {
+	              passwordInput.focus(), passwordInput.select();
+	            }
+	            okButton.tabIndex = undefined;   // 还原
+	            okButton.closeMe();              // 移除Alert
+	          }
+	        }
+	      });
+	    }, false);
+	    return callback('front has removed validation for login!');
+	  })();
+	}
+	
+	function polishStudentReport(body, sender, callback) {
+	  var reportObject = body.reportObject;
+	  var unmodifiedOriginalReport = document.querySelector('#matrix-programming-report:not(.polished-ver):not(.original-report)');
+	  var matrixSecondBar = document.querySelector('.choice-tab ul');
+	  var reportsContainer = document.querySelector('.reports-container');
+	  if (unmodifiedOriginalReport === null) {
+	    if (null === document.querySelector('.original-report')) {
+	      return callback("front couldn't find #matrix-programming-report:not(.original-report):not(.polished-ver) or .original-report");
+	    }  // else: original report was modified. just go on
+	
+	  } else {
+	    unmodifiedOriginalReport.classList.add('original-report');
+	    reportsContainer = document.createElement('div');
+	    unmodifiedOriginalReport.parentNode.insertBefore(reportsContainer, unmodifiedOriginalReport);
+	    reportsContainer.outerHTML = '<div class="reports-container"><div class="last-div"></div></div>';
+	    reportsContainer = unmodifiedOriginalReport.parentNode.querySelector('.reports-container');
+	    reportsContainer.insertBefore(unmodifiedOriginalReport, reportsContainer.firstChild);
+	  }
+	
+	  if (body.problemInfo) {
+	    reportsContainer['problemInfo'] = body.problemInfo;
+	  }
+	  var selectedStudentId = matrixSecondBar.querySelector('li.choice-tab-active').title;
+	
+	    // get div components
+	  var oldPolishedReport = reportsContainer.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
+	      oldSwitchBtn = reportsContainer.querySelector('.switch-btn:not(.hidden)'),
+	      otherStudentReport = reportsContainer.querySelector('.polished-report-success:not(.hidden)'),
+	      gradeWrapper = reportsContainer.parentNode.querySelector('#matrix-programming-report.original-report .report-section:first-child');
+	      originalReport = reportsContainer.parentNode.querySelector('.original-report');
+	
+	  var polishedReport = createPolishedReportDiv(reportObject, {
+	        "showCR": body.configs.showCR,
+	        "maxStdCaseNum": body.configs.maxStdCaseNum,
+	        "maxRanCaseNum": body.configs.maxRanCaseNum,
+	        "maxMemCaseNum": body.configs.maxMemCaseNum,
+	        "limits": reportsContainer.problemInfo.limits,
+	        "totalPoints": reportsContainer.problemInfo.totalPoints,
+	      }),
+	      switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
+	        "show": 'show polished report',
+	        "hide": 'show original report'
+	      });
+	
+	  var studentAnswerArea = document.querySelector('.answer-wrapper.clang-formatted');
+	  var formattedCodes = null;
+	  var studentAnswerAreaObj = null;
+	  if (reportObject['google style']) {
+	    formattedCodes = reportObject['google style'].formatted;
+	  }
+	  if (studentAnswerArea) {
+	    if (!formattedCodes) {
+	      formattedCodes = {
+	        "Server Error.c": 'Google Style Server Error'
+	      }
+	    }
+	    studentAnswerAreaObj = studentAnswerArea.studentAnswerAreaObj;
+	    studentAnswerAreaObj.update(formattedCodes);
+	  } else if (formattedCodes) {
+	    var supportedFiles = {};
+	    reportsContainer.problemInfo.supportedFiles.forEach(function(one) {
+	      supportedFiles[one.name] = formattedCodes[one.name];
+	      formattedCodes[one.name] = undefined;
+	    });
+	    studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, supportedFiles, 'cpp');
+	    studentAnswerArea = studentAnswerAreaObj.getNode();
+	    reportsContainer.parentNode.insertBefore(studentAnswerArea, reportsContainer);
+	  }
+	
+	  polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;
+	  polishedReport['formattedCodes'] = formattedCodes;
+	
+	  gradeWrapper.classList.add('hidden');
+	  switchBtn['gradeWrapper'] = gradeWrapper;
+	  switchBtn.addEventListener('click', showOrginalGrade, false);
+	
+	    // insert newly created div and perform initialization
+	  reportsContainer.insertBefore(switchBtn, reportsContainer.firstChild);
+	
+	  polishedReport['title'] = selectedStudentId;
+	  polishedReport['switchBtn'] = switchBtn;
+	  reportsContainer.insertBefore(polishedReport, reportsContainer.querySelector('div'));
+	
+	  var sideNav = polishedReport.sideNav;
+	  if (sideNav) {
+	    sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+	  }
+	
+	    // rid the wrapper of the old divs
+	  if (oldPolishedReport) {
+	    if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
+	    reportsContainer.removeChild(oldPolishedReport);
+	  }
+	  if (otherStudentReport) {
+	    otherStudentReport.classList.add('hidden');
+	  }
+	  if (oldSwitchBtn) {
+	    oldSwitchBtn.classList.add('hidden');
+	  }
+	
+	    // auto polish
+	  if (!body.configs.autoPolish) switchBtn.click();
+	
+	    // files comparison
+	  if (body.submissionsList && body.submissionsList.length) {
+	    var tabsContentWrapper = document.querySelector('.submission-container');
+	    var element = tabsContentWrapper.querySelector('#files-cmp-tab');
+	    if (element) {
+	      if (body.submissionsList[0].sub_ca_id != element.latestSubmissionId) {
+	        element.filesCmpTab.updateChoicesTable(body.submissionsList);
+	        element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
+	        element.fileCmpTab.fix();
+	      }
+	
+	    } else {
+	      var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
+	      var element = filesCmpTab.tab;
+	      element.id = 'files-cmp-tab';
+	      element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
+	      tabsContentWrapper.appendChild(element);
+	
+	      var fileCmpTab = FilesCmp.createSecondBarLi('Files Comparison', element, true);
+	      element['fileCmpTab'] = fileCmpTab;
+	      matrixSecondBar.appendChild(fileCmpTab);
+	
+	      var originalFix = fileCmpTab.fix;
+	      fileCmpTab['originalFix'] = originalFix;
+	      fileCmpTab.fix = addListenersForTabs;
+	      fileCmpTab.fix();
+	    }
+	
+	  }
+	  return callback('front has got the reportObject and attached the polished report to the grade tab!');
+	}
 	
 	function showOrginalGrade() {
 	  var button = this;
@@ -432,7 +452,7 @@
 	      if (oldReport) {
 	        oldReport.classList.add('hidden');
 	      }
-	      
+	
 	      newReport.switchBtn.classList.remove('hidden');
 	      newReport.switchBtn.click(), newReport.switchBtn.click();
 	
@@ -480,10 +500,7 @@
 /* 4 */,
 /* 5 */,
 /* 6 */,
-/* 7 */,
-/* 8 */,
-/* 9 */,
-/* 10 */
+/* 7 */
 /*!*****************************************!*\
   !*** ./js/components/lib/toSubmitAt.js ***!
   \*****************************************/
@@ -548,45 +565,17 @@
 
 
 /***/ },
-/* 11 */,
-/* 12 */,
-/* 13 */,
-/* 14 */,
-/* 15 */,
-/* 16 */,
-/* 17 */,
-/* 18 */
-/*!*****************************!*\
-  !*** ./js ^.*polisher\.js$ ***!
-  \*****************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/polisher.js": 19
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 18;
-
-
-/***/ },
-/* 19 */
+/* 8 */,
+/* 9 */,
+/* 10 */,
+/* 11 */
 /*!***********************************!*\
   !*** ./js/components/polisher.js ***!
   \***********************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 20);
-	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 30);
+	var customElements = __webpack_require__(/*! ./elements/customElements.js */ 12);
+	var createMatrixAlert = __webpack_require__(/*! ./createMatrixAlert.js */ 22);
 	var createElementWith = customElements.createElementWith;
 	var createLinenumPreWithText = customElements.createLinenumPreWithText;
 	var createPreWithText = customElements.createPreWithText;
@@ -594,8 +583,8 @@
 	var createHideElementBtn = customElements.createHideElementBtn;
 	var createViewInHexSpan = customElements.createViewInHexSpan;
 	var createStdYourDiffRadioGroup = customElements.createStdYourDiffRadioGroup;
-	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 31);
-	var registerSelectAll = __webpack_require__(/*! ./registerSelectAll.js */ 29);
+	var SideNav = __webpack_require__(/*! ./elements/SideNav.js */ 23);
+	var registerSelectAll = __webpack_require__(/*! ./registerSelectAll.js */ 21);
 	var polisher = {
 	  "getPolishedReportDiv": function(reportObject, configs) {
 	    var showCR = (configs.showCR === undefined) ? false : Boolean(configs.showCR);
@@ -1098,18 +1087,18 @@
 
 
 /***/ },
-/* 20 */
+/* 12 */
 /*!**************************************************!*\
   !*** ./js/components/elements/customElements.js ***!
   \**************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var customPre = __webpack_require__(/*! ./customPre.js */ 21);
-	var createHideElementBtn = __webpack_require__(/*! ./HideElementBtn.js */ 23);
-	var createViewInHexSpan = __webpack_require__(/*! ./ViewInHexSpan.js */ 24);
-	var createStdYourDiffRadioGroup = __webpack_require__(/*! ./StdYourDiffRadioGroup.js */ 25);
-	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 26);
-	var createStudentAnswerArea = __webpack_require__(/*! ./StudentAnswerArea.js */ 27);
+	var customPre = __webpack_require__(/*! ./customPre.js */ 13);
+	var createHideElementBtn = __webpack_require__(/*! ./HideElementBtn.js */ 15);
+	var createViewInHexSpan = __webpack_require__(/*! ./ViewInHexSpan.js */ 16);
+	var createStdYourDiffRadioGroup = __webpack_require__(/*! ./StdYourDiffRadioGroup.js */ 17);
+	var createSwitchBtn = __webpack_require__(/*! ./SwitchBtn.js */ 18);
+	var createStudentAnswerArea = __webpack_require__(/*! ./StudentAnswerArea.js */ 19);
 	var customElements = {
 	  "extendFrom": function(parent) {
 	    for (var name in parent) this[name] = parent[name];
@@ -1117,7 +1106,7 @@
 	};
 	customElements.extendFrom(customPre);
 	customElements.extendFrom({
-	  "createElementWith": __webpack_require__(/*! ../lib/createElementWith */ 22),
+	  "createElementWith": __webpack_require__(/*! ../lib/createElementWith */ 14),
 	  "createHideElementBtn": createHideElementBtn,
 	  "createViewInHexSpan": createViewInHexSpan,
 	  "createSwitchBtn": createSwitchBtn,
@@ -1147,13 +1136,13 @@
 
 
 /***/ },
-/* 21 */
+/* 13 */
 /*!*********************************************!*\
   !*** ./js/components/elements/customPre.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
 	var CustomPre = {
 	
 	  /** 
@@ -1362,7 +1351,7 @@
 
 
 /***/ },
-/* 22 */
+/* 14 */
 /*!************************************************!*\
   !*** ./js/components/lib/createElementWith.js ***!
   \************************************************/
@@ -1423,13 +1412,13 @@
 
 
 /***/ },
-/* 23 */
+/* 15 */
 /*!**************************************************!*\
   !*** ./js/components/elements/HideElementBtn.js ***!
   \**************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
 	function toggleHidden() {
 	  var btn = this;
 	  if (btn.elementIsHidden) {
@@ -1491,13 +1480,13 @@
 
 
 /***/ },
-/* 24 */
+/* 16 */
 /*!*************************************************!*\
   !*** ./js/components/elements/ViewInHexSpan.js ***!
   \*************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
 	function toggleViewInHex() {
 	  var checkbox = this;
 	  var parent = checkbox.parent;
@@ -1545,13 +1534,13 @@
 
 
 /***/ },
-/* 25 */
+/* 17 */
 /*!*********************************************************!*\
   !*** ./js/components/elements/StdYourDiffRadioGroup.js ***!
   \*********************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
 	function yourOnClick() {
 	  var radio = this;
 	  var parent = radio.parentNode.parentNode.parent;
@@ -1628,13 +1617,13 @@
 
 
 /***/ },
-/* 26 */
+/* 18 */
 /*!*********************************************!*\
   !*** ./js/components/elements/SwitchBtn.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
 	function toSwitch() {
 	  var button = this;
 	  if (button.elementIsHidden) {
@@ -1697,15 +1686,15 @@
 
 
 /***/ },
-/* 27 */
+/* 19 */
 /*!*****************************************************!*\
   !*** ./js/components/elements/StudentAnswerArea.js ***!
   \*****************************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 28);
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
-	var registerSelectAll = __webpack_require__(/*! ../registerSelectAll.js */ 29);
+	var hljs = __webpack_require__(/*! ../lib/highlight.pack.js */ 20);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
+	var registerSelectAll = __webpack_require__(/*! ../registerSelectAll.js */ 21);
 	
 	function StudentAnswerArea(formattedCodes, supportedFiles, language) {
 	  this.tabsUl = createElementWith('ul', 'answerfiles-ul');
@@ -1824,7 +1813,7 @@
 
 
 /***/ },
-/* 28 */
+/* 20 */
 /*!*********************************************!*\
   !*** ./js/components/lib/highlight.pack.js ***!
   \*********************************************/
@@ -4974,7 +4963,7 @@
 
 
 /***/ },
-/* 29 */
+/* 21 */
 /*!********************************************!*\
   !*** ./js/components/registerSelectAll.js ***!
   \********************************************/
@@ -5039,13 +5028,13 @@
 
 
 /***/ },
-/* 30 */
+/* 22 */
 /*!********************************************!*\
   !*** ./js/components/createMatrixAlert.js ***!
   \********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 22);
+	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 14);
 	function closeMe() {
 	  this.wrapper.parentNode.removeChild(this.wrapper);
 	}
@@ -5091,15 +5080,15 @@
 
 
 /***/ },
-/* 31 */
+/* 23 */
 /*!*******************************************!*\
   !*** ./js/components/elements/SideNav.js ***!
   \*******************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var $ = __webpack_require__(/*! ../jquery.js */ 32);
-	__webpack_require__(/*! ./jquery.nav.js */ 33)(this, $);
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var $ = __webpack_require__(/*! ../jquery.js */ 24);
+	__webpack_require__(/*! ./jquery.nav.js */ 25)(this, $);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
 	function SideNav() {
 	  this.wrapper = createElementWith('div', 'side-nav');
 	  this.navTitle = createElementWith('div', 'nav-toggle', 'Report');
@@ -5176,7 +5165,7 @@
 
 
 /***/ },
-/* 32 */
+/* 24 */
 /*!*********************************!*\
   !*** ./js/components/jquery.js ***!
   \*********************************/
@@ -15259,7 +15248,7 @@
 
 
 /***/ },
-/* 33 */
+/* 25 */
 /*!**********************************************!*\
   !*** ./js/components/elements/jquery.nav.js ***!
   \**********************************************/
@@ -15302,10 +15291,10 @@
 	        // that require this pattern but the window provided is a noop
 	        // if it's defined (how jquery works)
 	        if ( typeof window !== 'undefined' ) {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 32);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 24);
 	        }
 	        else {
-	          jQuery = __webpack_require__(/*! ../jquery.js */ 32)(root);
+	          jQuery = __webpack_require__(/*! ../jquery.js */ 24)(root);
 	        }
 	      }
 	      factory(jQuery);
@@ -15313,7 +15302,7 @@
 	    };
 	  } if (true) {
 	    // AMD. Register as an anonymous module.
-	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 32)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! ../jquery.js */ 24)], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	  } else {
 	    // Browser globals
 	    factory(jQuery);
@@ -15591,40 +15580,16 @@
 	}));
 
 /***/ },
-/* 34 */
-/*!*****************************!*\
-  !*** ./js ^.*FilesCmp\.js$ ***!
-  \*****************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/FilesCmp.js": 35
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 34;
-
-
-/***/ },
-/* 35 */
+/* 26 */
 /*!***********************************!*\
   !*** ./js/components/FilesCmp.js ***!
   \***********************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 22);
-	var toSubmitAt = __webpack_require__(/*! ./lib/toSubmitAt.js */ 10);
-	var createSwitchBtn = __webpack_require__(/*! ./elements/SwitchBtn.js */ 26);
-	var polisher = __webpack_require__(/*! ./polisher.js */ 19);
+	var createElementWith = __webpack_require__(/*! ./lib/createElementWith.js */ 14);
+	var toSubmitAt = __webpack_require__(/*! ./lib/toSubmitAt.js */ 7);
+	var createSwitchBtn = __webpack_require__(/*! ./elements/SwitchBtn.js */ 18);
+	var polisher = __webpack_require__(/*! ./polisher.js */ 11);
 	
 	function toArray(arrayLike) {
 	  return Array.prototype.slice.call(arrayLike, 0);
@@ -15766,7 +15731,7 @@
 	    if (response.status != 'OK') {
 	      filesDiffPart.appendChild(createElementWith('div', 'polished-report-success', 'Failed to get files to compare'));
 	    } else {
-	      var filesCmpDiv = __webpack_require__(/*! ./polisher.js */ 19).getFilesCmpDiv(response.filesDiff, {
+	      var filesCmpDiv = __webpack_require__(/*! ./polisher.js */ 11).getFilesCmpDiv(response.filesDiff, {
 	        "stdHeading": String(oldId),
 	        "yourHeading": String(newId)
 	      });
@@ -15941,85 +15906,13 @@
 
 
 /***/ },
-/* 36 */
-/*!*********************************************!*\
-  !*** ./js ^.*elements\/customElements\.js$ ***!
-  \*********************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/elements/customElements.js": 20
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 36;
-
-
-/***/ },
-/* 37 */
-/*!************************************************!*\
-  !*** ./js ^.*elements\/StudentAnswerArea\.js$ ***!
-  \************************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/elements/StudentAnswerArea.js": 27
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 37;
-
-
-/***/ },
-/* 38 */
-/*!****************************************!*\
-  !*** ./js ^.*elements\/backToTop\.js$ ***!
-  \****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/elements/backToTop.js": 39
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 38;
-
-
-/***/ },
-/* 39 */
+/* 27 */
 /*!*********************************************!*\
   !*** ./js/components/elements/backToTop.js ***!
   \*********************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 22);
+	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 14);
 	
 	  // create backToTop button
 	var backToTop = createElementWith('div', 'backToTop-wrapper',

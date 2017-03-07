@@ -47,15 +47,13 @@
   \**************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	const componentsPath = './components/';
-	
-	const MatrixObject = __webpack_require__(/*! . */ 1)(componentsPath + 'MatrixObject.js');
-	const ReportObject = __webpack_require__(/*! . */ 5)(componentsPath + 'ReportObject.js');
-	const toSubmitAt = __webpack_require__(/*! . */ 9)(componentsPath + 'lib/toSubmitAt.js');
-	const genDriver = __webpack_require__(/*! . */ 11)(componentsPath + 'lib/genDriver.js');
-	const pick = __webpack_require__(/*! . */ 12)(componentsPath + 'lib/pick.js');
-	const setTimeoutAsync = __webpack_require__(/*! . */ 14)(componentsPath + 'lib/setTimeoutAsync.js');
-	const FilesDiff = __webpack_require__(/*! . */ 16)(componentsPath + 'FilesDiff.js');
+	const MatrixObject = __webpack_require__(/*! ./components/MatrixObject.js */ 1);
+	const ReportObject = __webpack_require__(/*! ./components/ReportObject.js */ 4);
+	const toSubmitAt = __webpack_require__(/*! ./components/lib/toSubmitAt.js */ 7);
+	const genDriver = __webpack_require__(/*! ./components/lib/genDriver.js */ 3);
+	const pick = __webpack_require__(/*! ./components/lib/pick.js */ 8);
+	const setTimeoutAsync = __webpack_require__(/*! ./components/lib/setTimeoutAsync.js */ 9);
+	const FilesDiff = __webpack_require__(/*! ./components/FilesDiff.js */ 10);
 	
 	const matrix = new MatrixObject({
 	  patternUrl: 'https://*.vmatrix.org.cn/',
@@ -73,7 +71,7 @@
 	chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
 	  urls: [
 	    `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`
-	  ]
+	  ],
 	});
 	
 	function getDataToPolishCourseReport(details) {
@@ -91,17 +89,19 @@
 	      submissionId,
 	      userId,
 	    };
-	    
+	
 	    const submissionList = yield getSubmissionsList(param);
 	    if (!submissionList) return;
 	
-	    const submitTime = getSubmitTime(submissionList, param);
+	    getSubmitTime(submissionList, param);
 	
 	    const answers = yield getSubmission(param);
 	    if (!answers) return;
 	
-	    const googleStyleConfig = (userId ? { getFormattedCodes: true } : undefined);    
-	    yield getGoogleStyle(answers, googleStyleConfig, param);
+	    if (answers.length) {
+	      const googleStyleConfig = (userId ? { getFormattedCodes: true } : undefined);
+	      yield getGoogleStyle(answers, googleStyleConfig, param);
+	    }
 	
 	    const signal = (userId ? 'startStudentSubmission' : 'start')
 	    const response = yield sendReportObjToFront(param, signal);
@@ -216,7 +216,7 @@
 	        }
 	        param.reportBody = body;
 	        if (!Reflect.hasOwnProperty.call(body.data, 'answers')) {
-	          return;
+	          return [];
 	        }
 	        const filesToMergeToAnswers = (param.userId ? param.problemInfo.supportFiles : []);
 	        const answers = [...body.data.answers, ...filesToMergeToAnswers];
@@ -246,7 +246,7 @@
 	      });
 	    }
 	
-	  }).catch(e => console.error(`Uncaught Error`, e));
+	  }).catch(e => console.error('Uncaught Error', e));
 	
 	}
 	
@@ -308,7 +308,7 @@
 	        try {
 	          body = yield matrix.getLibraryProblemInfo(param, rootUrl);
 	        } catch (e) {
-	          return console.error(`Error: Failed to get library problem info with parameters`, param), false;
+	          return console.error('Error: Failed to get library problem info with parameters', param), false;
 	        }
 	        const {
 	          config,
@@ -327,7 +327,7 @@
 	        return body;
 	      });
 	    }
-	  }).catch(e => console.error(`Uncaught Error`, e));
+	  }).catch(e => console.error('Uncaught Error', e));
 	
 	}, {
 	  urls: [
@@ -338,16 +338,16 @@
 	chrome.webRequest.onCompleted.addListener(details => {
 	  return genDriver(function *() {
 	    if (details.tabId === -1 || details.method === 'POST') return;
-	    console.log(`Real gap of 500 ms`, yield setTimeoutAsync(500));
+	    console.log('Real gap of 500 ms', yield setTimeoutAsync(500));
 	    const signal = 'noValidationLogin';
 	    const response = yield chrome.tabs.sendMessageAsync(details.tabId, { signal });
 	    console.log(response);
-	  }).catch(e => console.error(`Uncaught Error`, e));
+	  }).catch(e => console.error('Uncaught Error', e));
 	
 	}, {
 	  urls: [
-	    `${matrix.patternUrl}api/users/login`
-	  ]
+	    `${matrix.patternUrl}api/users/login`,
+	  ],
 	});
 	
 	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -358,9 +358,9 @@
 	      case 'loginWithoutValidation':
 	        return loginWithoutValidation();
 	      default:
-	        return;
+	        break;
 	    }
-	  }).catch(e => console.error(`Uncaught Error`, e)), true;
+	  }).catch(e => console.error('Uncaught Error', e)), true;
 	
 	  function filesDiff() {
 	    return genDriver(function *() {
@@ -376,13 +376,13 @@
 	        return sendResponse({ status: 'BAD' });
 	      }
 	      const [{
-	        data: { answers: oldFiles }
+	        data: { answers: oldFiles },
 	      }, {
-	        data: { answers: newFiles }
+	        data: { answers: newFiles },
 	      }] = results;
 	      const filesDiff = new FilesDiff(oldFiles, newFiles);
 	      return sendResponse({ status: 'OK', filesDiff });
-	    })
+	    });
 	  }
 	
 	  function loginWithoutValidation() {
@@ -391,8 +391,8 @@
 	      try {
 	        body = yield matrix.login(message.param);
 	      } catch (e) {
-	        console.error(`Error: Failed to login with parameters`, message.param);
-	        return sendResponse({ data: { is_valid: false }});
+	        console.error('Error: Failed to login with parameters', message.param);
+	        return sendResponse({ data: { is_valid: false } });
 	      }
 	      if (sender.tab.incognito) {
 	        body.data.is_valid = false;
@@ -406,7 +406,8 @@
 	  return new Promise(
 	    resolve => chrome.tabs.sendMessage.call(
 	      chrome.tabs,
-	      ...args.concat([response => resolve(response)])
+	      ...args,
+	      response => resolve(response)
 	    )
 	  );
 	}
@@ -414,37 +415,13 @@
 
 /***/ },
 /* 1 */
-/*!*********************************!*\
-  !*** ./js ^.*MatrixObject\.js$ ***!
-  \*********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/MatrixObject.js": 2
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 1;
-
-
-/***/ },
-/* 2 */
 /*!***************************************!*\
   !*** ./js/components/MatrixObject.js ***!
   \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	const httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 3);
-	const genDriver = __webpack_require__(/*! ./lib/genDriver.js */ 4);
+	const httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 2);
+	const genDriver = __webpack_require__(/*! ./lib/genDriver.js */ 3);
 	
 	/** 
 	 * parse a string to JSON without throwing an error if failed
@@ -783,7 +760,7 @@
 
 
 /***/ },
-/* 3 */
+/* 2 */
 /*!******************************************!*\
   !*** ./js/components/lib/httpRequest.js ***!
   \******************************************/
@@ -860,7 +837,7 @@
 
 
 /***/ },
-/* 4 */
+/* 3 */
 /*!****************************************!*\
   !*** ./js/components/lib/genDriver.js ***!
   \****************************************/
@@ -919,37 +896,13 @@
 
 
 /***/ },
-/* 5 */
-/*!*********************************!*\
-  !*** ./js ^.*ReportObject\.js$ ***!
-  \*********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/ReportObject.js": 6
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 5;
-
-
-/***/ },
-/* 6 */
+/* 4 */
 /*!***************************************!*\
   !*** ./js/components/ReportObject.js ***!
   \***************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var CaseObject = __webpack_require__(/*! ./CaseObject.js */ 7);
+	var CaseObject = __webpack_require__(/*! ./CaseObject.js */ 5);
 	/** 
 	 * ReportObject
 	 * refactored version of the original report object from Matrix
@@ -1308,13 +1261,13 @@
 
 
 /***/ },
-/* 7 */
+/* 5 */
 /*!*************************************!*\
   !*** ./js/components/CaseObject.js ***!
   \*************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 8);
+	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 6);
 	var Diff = new diff_match_patch();
 	Diff.Diff_Timeout = 0;
 	
@@ -1422,7 +1375,7 @@
 
 
 /***/ },
-/* 8 */
+/* 6 */
 /*!***********************************************!*\
   !*** ./js/components/lib/diff_match_patch.js ***!
   \***********************************************/
@@ -3806,31 +3759,7 @@
 	});
 
 /***/ },
-/* 9 */
-/*!************************************!*\
-  !*** ./js ^.*lib\/toSubmitAt\.js$ ***!
-  \************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/lib/toSubmitAt.js": 10
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 9;
-
-
-/***/ },
-/* 10 */
+/* 7 */
 /*!*****************************************!*\
   !*** ./js/components/lib/toSubmitAt.js ***!
   \*****************************************/
@@ -3895,55 +3824,7 @@
 
 
 /***/ },
-/* 11 */
-/*!***********************************!*\
-  !*** ./js ^.*lib\/genDriver\.js$ ***!
-  \***********************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/lib/genDriver.js": 4
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 11;
-
-
-/***/ },
-/* 12 */
-/*!******************************!*\
-  !*** ./js ^.*lib\/pick\.js$ ***!
-  \******************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/lib/pick.js": 13
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 12;
-
-
-/***/ },
-/* 13 */
+/* 8 */
 /*!***********************************!*\
   !*** ./js/components/lib/pick.js ***!
   \***********************************/
@@ -3976,31 +3857,7 @@
 
 
 /***/ },
-/* 14 */
-/*!*****************************************!*\
-  !*** ./js ^.*lib\/setTimeoutAsync\.js$ ***!
-  \*****************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/lib/setTimeoutAsync.js": 15
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 14;
-
-
-/***/ },
-/* 15 */
+/* 9 */
 /*!**********************************************!*\
   !*** ./js/components/lib/setTimeoutAsync.js ***!
   \**********************************************/
@@ -4034,37 +3891,13 @@
 
 
 /***/ },
-/* 16 */
-/*!******************************!*\
-  !*** ./js ^.*FilesDiff\.js$ ***!
-  \******************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var map = {
-		"./components/FilesDiff.js": 17
-	};
-	function webpackContext(req) {
-		return __webpack_require__(webpackContextResolve(req));
-	};
-	function webpackContextResolve(req) {
-		return map[req] || (function() { throw new Error("Cannot find module '" + req + "'.") }());
-	};
-	webpackContext.keys = function webpackContextKeys() {
-		return Object.keys(map);
-	};
-	webpackContext.resolve = webpackContextResolve;
-	module.exports = webpackContext;
-	webpackContext.id = 16;
-
-
-/***/ },
-/* 17 */
+/* 10 */
 /*!************************************!*\
   !*** ./js/components/FilesDiff.js ***!
   \************************************/
 /***/ function(module, exports, __webpack_require__) {
 
-	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 8);
+	var diff_match_patch = __webpack_require__(/*! ./lib/diff_match_patch.js */ 6);
 	var Diff = new diff_match_patch();
 	Diff.Diff_Timeout = 0;
 	
