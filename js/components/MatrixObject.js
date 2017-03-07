@@ -1,10 +1,10 @@
 const httpRequest = require('./lib/httpRequest.js');
 const genDriver = require('./lib/genDriver.js');
 
-/** 
+/**
  * parse a string to JSON without throwing an error if failed
  * @param {String} str - string to be parsed
- * 
+ *
  * @return {Boolean|Object} return JSON object if succeeded, or false if failed
  * independent
  */
@@ -22,13 +22,13 @@ function JSONParser(str) {
 }
 
 class MatrixObject {
-  /** 
+  /**
    * @param {String|Object} newConfigs - Google Style server's root url (String) or config object that looks like this:
    * {
    *   rootUrl: Matrix's root url,
    *   googleStyleUrl: Google Style Server's root url
    * }
-   * 
+   *
    */
   constructor(newConfigs) {
     const self = this;
@@ -55,13 +55,13 @@ class MatrixObject {
     }
   }
 
-  /** 
+  /**
    * wrap an xhr request by trying parsing response data as JSON and catching possible errors
    * @param {String} method       methods
    * @param {String} resourceUrl  resource url to send request
    * @param {String} [rootUrl]    Matrix's root url
    * @param {Object} [param]      parameters
-   * 
+   *
    * @return {Object} response json
    */
   request(method, resourceUrl, rootUrl, param) {
@@ -85,7 +85,7 @@ class MatrixObject {
     });
   }
 
-  /** 
+  /**
    * test whether user has internet access to Matrix
    * @param  {String} rootUrl  Matrix's root url
    * @return {null}
@@ -93,12 +93,12 @@ class MatrixObject {
   testNetwork(rootUrl) {
     const self = this;
     return genDriver(function *() {
-      yield httpRequest('get', `${rootUrl}app-angular/course/self/views/list.client.view.html`);
+      yield httpRequest('get', `${rootUrl}api/users/login`);
       return null;
     });
   }
 
-  /** 
+  /**
    * get one submission by courseId, assignmentId and submissionId (sub_ca_id)
    * @param {Object} param - object that looks like this
    *   {
@@ -118,7 +118,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get the latest report by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
@@ -137,7 +137,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get the latest submission by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
@@ -156,7 +156,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get one problem's information by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
@@ -175,13 +175,13 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get submissions list of a problem by courseId and assignmentId
    * @param {Object} param - object that looks like this
    *   {
    *     courseId: the course's id,
    *     assignmentId: the assignment's id,
-   *    
+   *
    *   }
    * @param {String} [rootUrl]  Matrix's root url
    */
@@ -199,7 +199,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * log in by username and password
    * @param {Object} param - object that looks like this
    *   { username, password }
@@ -216,7 +216,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * log out
    * @param {String} [rootUrl]  Matrix's root url
    */
@@ -229,7 +229,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get courses list of currect user
    * @param {String} [rootUrl]  Matrix's root url
    */
@@ -242,7 +242,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get one course by courseId
    * @param {Object} param - object that looks like this
    *   {
@@ -260,7 +260,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get problems list by courseId
    * @param {Object} param - object that looks like this
    *   {
@@ -278,7 +278,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get problem info from a library by libraryId and problemId
    * @param {Object} param - object that looks like this
    *   {
@@ -297,7 +297,7 @@ class MatrixObject {
     );
   }
 
-  /** 
+  /**
    * get Google Style Report from some server
    * @param {Object} param - object that looks like this
    *   {

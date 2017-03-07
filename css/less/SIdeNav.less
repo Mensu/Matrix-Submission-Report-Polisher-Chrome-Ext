@@ -1,5 +1,6 @@
 @matrix-color: #0085a1;
-.side-nav {
+.side-nav,
+#course-submission-programing .side-nav {
   display: block;
   padding-bottom: 40px;
   color: #808080;
@@ -8,7 +9,7 @@
   width: 216px;
   max-height: 500px;
   position: fixed;
-  top: 110px;
+  top: 150px;
   right: 30px;
   z-index: 6;
   box-sizing: content-box;
@@ -74,6 +75,7 @@
 
     li {
       position: relative;
+      height: unset;
       list-style: none;
       background-color: transparent !important;
       a {
@@ -145,4 +147,8 @@
     }
 
   }
+}
+#course-submission-programing .course-assignment-one-submission-wrapper .sidebar-wrapper {
+  top: 40px !important;
+  right: 85px !important;
 }

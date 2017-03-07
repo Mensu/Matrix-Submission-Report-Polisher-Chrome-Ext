@@ -58,10 +58,10 @@
 	const matrix = new MatrixObject({
 	  patternUrl: 'https://*.vmatrix.org.cn/',
 	  rootUrl: 'https://vmatrix.org.cn/',
-	  // googleStyleUrl: 'http://localhost:3000/',
 	  googleStyleUrl: 'http://123.207.29.66:3001/',
 	});
-	// require(componentsPath + 'checkIsOnline.js')(matrix);
+	const localPatternUrl = 'http://localhost:3000/';
+	__webpack_require__(/*! ./components/checkIsOnline.js */ 11)(matrix);
 	
 	
 	// listen for:
@@ -70,7 +70,8 @@
 	// /api/courses/*/assignments/*/submissions/last/feedback
 	chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
 	  urls: [
-	    `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`
+	    `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`,
+	    `${localPatternUrl}api/courses/*/assignments/*/submissions/*`,
 	  ],
 	});
 	
@@ -166,7 +167,7 @@
 	        } catch (e) {
 	          return console.error(`Error: Failed to get problem info list with parameters`, param), false;
 	        }
-	    
+	
 	        let supportFiles = [];
 	        if (body) {
 	          const {
@@ -331,7 +332,8 @@
 	
 	}, {
 	  urls: [
-	    `${matrix.patternUrl}api/libraries/*/problems/*`
+	    `${matrix.patternUrl}api/libraries/*/problems/*`,
+	    `${localPatternUrl}api/libraries/*/problems/*`,
 	  ]
 	});
 	
@@ -347,6 +349,7 @@
 	}, {
 	  urls: [
 	    `${matrix.patternUrl}api/users/login`,
+	    `${localPatternUrl}api/users/login`,
 	  ],
 	});
 	
@@ -423,10 +426,10 @@
 	const httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 2);
 	const genDriver = __webpack_require__(/*! ./lib/genDriver.js */ 3);
 	
-	/** 
+	/**
 	 * parse a string to JSON without throwing an error if failed
 	 * @param {String} str - string to be parsed
-	 * 
+	 *
 	 * @return {Boolean|Object} return JSON object if succeeded, or false if failed
 	 * independent
 	 */
@@ -444,13 +447,13 @@
 	}
 	
 	class MatrixObject {
-	  /** 
+	  /**
 	   * @param {String|Object} newConfigs - Google Style server's root url (String) or config object that looks like this:
 	   * {
 	   *   rootUrl: Matrix's root url,
 	   *   googleStyleUrl: Google Style Server's root url
 	   * }
-	   * 
+	   *
 	   */
 	  constructor(newConfigs) {
 	    const self = this;
@@ -477,13 +480,13 @@
 	    }
 	  }
 	
-	  /** 
+	  /**
 	   * wrap an xhr request by trying parsing response data as JSON and catching possible errors
 	   * @param {String} method       methods
 	   * @param {String} resourceUrl  resource url to send request
 	   * @param {String} [rootUrl]    Matrix's root url
 	   * @param {Object} [param]      parameters
-	   * 
+	   *
 	   * @return {Object} response json
 	   */
 	  request(method, resourceUrl, rootUrl, param) {
@@ -507,7 +510,7 @@
 	    });
 	  }
 	
-	  /** 
+	  /**
 	   * test whether user has internet access to Matrix
 	   * @param  {String} rootUrl  Matrix's root url
 	   * @return {null}
@@ -515,12 +518,12 @@
 	  testNetwork(rootUrl) {
 	    const self = this;
 	    return genDriver(function *() {
-	      yield httpRequest('get', `${rootUrl}app-angular/course/self/views/list.client.view.html`);
+	      yield httpRequest('get', `${rootUrl}api/users/login`);
 	      return null;
 	    });
 	  }
 	
-	  /** 
+	  /**
 	   * get one submission by courseId, assignmentId and submissionId (sub_ca_id)
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -540,7 +543,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get the latest report by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -559,7 +562,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get the latest submission by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -578,7 +581,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get one problem's information by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -597,13 +600,13 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get submissions list of a problem by courseId and assignmentId
 	   * @param {Object} param - object that looks like this
 	   *   {
 	   *     courseId: the course's id,
 	   *     assignmentId: the assignment's id,
-	   *    
+	   *
 	   *   }
 	   * @param {String} [rootUrl]  Matrix's root url
 	   */
@@ -621,7 +624,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * log in by username and password
 	   * @param {Object} param - object that looks like this
 	   *   { username, password }
@@ -638,7 +641,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * log out
 	   * @param {String} [rootUrl]  Matrix's root url
 	   */
@@ -651,7 +654,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get courses list of currect user
 	   * @param {String} [rootUrl]  Matrix's root url
 	   */
@@ -664,7 +667,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get one course by courseId
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -682,7 +685,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get problems list by courseId
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -700,7 +703,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get problem info from a library by libraryId and problemId
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -719,7 +722,7 @@
 	    );
 	  }
 	
-	  /** 
+	  /**
 	   * get Google Style Report from some server
 	   * @param {Object} param - object that looks like this
 	   *   {
@@ -3982,6 +3985,104 @@
 	    root['FilesDiff'] = factory();
 	})(this, function factory() {
 	  return FilesDiff;
+	});
+
+
+/***/ },
+/* 11 */
+/*!****************************************!*\
+  !*** ./js/components/checkIsOnline.js ***!
+  \****************************************/
+/***/ function(module, exports, __webpack_require__) {
+
+	var httpRequest = __webpack_require__(/*! ./lib/httpRequest.js */ 2);
+	
+	(function(factory) {
+	  if (typeof module === 'object' && module.exports) {
+	    // Node/CommonJS
+	    module.exports = function(matrixObj) {
+	      factory(matrixObj);
+	      return matrixObj;
+	    };
+	  // } else if (typeof define === 'function' && define.amd) {
+	  //   // AMD. Register as an anonymous module.
+	  //   define([], factory);
+	  } else {
+	    // Browser globals
+	    factory(matrixObj);
+	  }
+	})(function(matrix) {
+	  /**
+	   * checked whether a tab is visiting matrix
+	   * if true, show the extension icon
+	   * @param {Tab} oneTab
+	   * @return {boolean} whether the tab is visiting matrix
+	   * dependent of
+	   *   {MatrixObject} matrix
+	   */
+	  function isVisitingMatrix(oneTab) {
+	    if (/(vmatrix\.org\.cn|localhost:3000)/.exec(oneTab.url)) {
+	        // show icon
+	      chrome.pageAction.show(oneTab.id);
+	      return true;
+	    } else {
+	      return false;
+	    }
+	  }
+	  var intervalId = null;
+	  chrome.webRequest.onCompleted.addListener(function(details) {
+	      // return if the request is from the background
+	    if (details.tabId == -1) return;
+	
+	      // show icon and register
+	      chrome.tabs.query({}, function(tabArray) {
+	        tabArray.forEach(function(oneTab) {
+	          if (oneTab.id == details.tabId) {
+	            if (!isVisitingMatrix(oneTab)) return;
+	          }
+	        });
+	      });
+	
+	    // return;
+	      // set interval to check whether we have internet access to Matrix
+	    if (intervalId === null) {
+	      intervalId = setInterval(function() {
+	            // send a request to Matrix every five seconds
+	          matrix.testNetwork('https://vmatrix.org.cn/')
+	            .then(function() {return true;}, function() {return false;})
+	            .then(function(connected) {
+	                var img19 = './img/' + (connected ? 'online.png' : 'offline.png');
+	                var img38 = './img/' + (connected ? 'online.png' : 'offline.png');
+	                var newTitle = connected ? 'click to change settings' : 'disconnected to Matrix';
+	                  // visit each existing tab
+	                chrome.tabs.query({}, function(tabArray) {
+	                  tabArray.forEach(function(oneTab) {
+	                    if (!isVisitingMatrix(oneTab)) return;
+	                      // if the tab has registered and is visiting Matrix
+	                      // change icons and title for every tab
+	                    chrome.pageAction.setIcon({
+	                      "tabId": oneTab.id,
+	                      "path": {
+	                        "19": img19,
+	                        "38": img38
+	                      }
+	                    });
+	                    chrome.pageAction.setTitle({
+	                      "tabId": oneTab.id,
+	                      "title": newTitle
+	                    });
+	                  });
+	                });
+	            });
+	
+	      }, 5000);
+	    }
+	  }, {
+	    "urls": [
+	      matrix.patternUrl + '*',
+	      'http://localhost:3000/*'
+	    ]
+	  });
 	});
 
 

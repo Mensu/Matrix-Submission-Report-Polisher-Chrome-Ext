@@ -15,7 +15,7 @@ var httpRequest = require('./lib/httpRequest.js');
     factory(matrixObj);
   }
 })(function(matrix) {
-  /** 
+  /**
    * checked whether a tab is visiting matrix
    * if true, show the extension icon
    * @param {Tab} oneTab
@@ -24,7 +24,7 @@ var httpRequest = require('./lib/httpRequest.js');
    *   {MatrixObject} matrix
    */
   function isVisitingMatrix(oneTab) {
-    if (oneTab.url.startsWith(matrix.rootUrl)) {
+    if (/(vmatrix\.org\.cn|localhost:3000)/.exec(oneTab.url)) {
         // show icon
       chrome.pageAction.show(oneTab.id);
       return true;
@@ -45,13 +45,13 @@ var httpRequest = require('./lib/httpRequest.js');
           }
         });
       });
-    
+
     // return;
       // set interval to check whether we have internet access to Matrix
     if (intervalId === null) {
       intervalId = setInterval(function() {
             // send a request to Matrix every five seconds
-          matrix.testNetwork()
+          matrix.testNetwork('https://vmatrix.org.cn/')
             .then(function() {return true;}, function() {return false;})
             .then(function(connected) {
                 var img19 = './img/' + (connected ? 'online.png' : 'offline.png');
@@ -77,12 +77,13 @@ var httpRequest = require('./lib/httpRequest.js');
                   });
                 });
             });
-          
+
       }, 5000);
     }
   }, {
     "urls": [
-      matrix.rootUrl + '*'
+      matrix.patternUrl + '*',
+      'http://localhost:3000/*'
     ]
   });
 });

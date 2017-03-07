@@ -9,10 +9,10 @@ const FilesDiff = require('./components/FilesDiff.js');
 const matrix = new MatrixObject({
   patternUrl: 'https://*.vmatrix.org.cn/',
   rootUrl: 'https://vmatrix.org.cn/',
-  // googleStyleUrl: 'http://localhost:3000/',
   googleStyleUrl: 'http://123.207.29.66:3001/',
 });
-// require(componentsPath + 'checkIsOnline.js')(matrix);
+const localPatternUrl = 'http://localhost:3000/';
+require('./components/checkIsOnline.js')(matrix);
 
 
 // listen for:
@@ -21,7 +21,8 @@ const matrix = new MatrixObject({
 // /api/courses/*/assignments/*/submissions/last/feedback
 chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
   urls: [
-    `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`
+    `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`,
+    `${localPatternUrl}api/courses/*/assignments/*/submissions/*`,
   ],
 });
 
@@ -117,7 +118,7 @@ function getDataToPolishCourseReport(details) {
         } catch (e) {
           return console.error(`Error: Failed to get problem info list with parameters`, param), false;
         }
-    
+
         let supportFiles = [];
         if (body) {
           const {
@@ -282,7 +283,8 @@ chrome.webRequest.onCompleted.addListener(details => {
 
 }, {
   urls: [
-    `${matrix.patternUrl}api/libraries/*/problems/*`
+    `${matrix.patternUrl}api/libraries/*/problems/*`,
+    `${localPatternUrl}api/libraries/*/problems/*`,
   ]
 });
 
@@ -298,6 +300,7 @@ chrome.webRequest.onCompleted.addListener(details => {
 }, {
   urls: [
     `${matrix.patternUrl}api/users/login`,
+    `${localPatternUrl}api/users/login`,
   ],
 });
 

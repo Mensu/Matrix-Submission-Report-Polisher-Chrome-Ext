@@ -24,7 +24,8 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.vmatrix.org.cn:*/*"
+        "https://*.vmatrix.org.cn:*/*",
+        "http://localhost:3000/*"
       ],
       "css": [
         "./css/polish.css"
