@@ -1,11 +1,16 @@
 @import "utility.less";
 pre.full-score {
+  border: none;
   white-space: pre-wrap;
-
 }
 input.switch-btn {
   margin-bottom: 10px;
   .matrix-button();
+}
+input.hide-button {
+  -webkit-appearance: unset;
+  margin: 5px;
+  font: unset;
 }
 .polished-report-success {
   padding-right: 8em;
@@ -23,7 +28,7 @@ input.switch-btn {
   }
   pre {
     line-height: 20px;
-    font-size: 13px;
+    font-size: 13px !important;
     background-color: transparent;
     padding: unset;
     overflow: unset;
@@ -43,11 +48,11 @@ input.switch-btn {
           font-size: 20px;
         }
         .error-detail {
-          max-height: none;   
-          margin-top: 10px;     
+          max-height: none;
+          margin-top: 10px;
         }
       }
-      
+
     }
   }
 }
@@ -58,8 +63,13 @@ input.switch-btn {
 }
 
 .report-detail {
+  pre {
+    border-width: 0;
+  }
   pre.label {
     font-family: Courier, Arial;
+    font-size: 18px !important;
+    color: black;
   }
   .case-inner-wrapper {
     .error-content {
@@ -70,6 +80,20 @@ input.switch-btn {
     .std-your-diff-radio-group-wrapper {
       margin-left: 10px;
     }
+  }
+  input.std-your-diff-radio-group-radio {
+    margin-right: 7px;
+  }
+  input.view-in-hex-checkbox {
+    margin-right: 7px;
+  }
+  .std-your-diff-radio-group-label {
+    font-size: 13px !important;
+    font-weight: unset;
+  }
+  .view-in-hex-label {
+    font-size: 13px !important;
+    font-weight: unset;
   }
 }
 
@@ -146,4 +170,11 @@ ui-view.ng-scope #course-assignment-one-submission-program {
     color: #03A9F4;
   }
 }*/
-  
+
+.answer-container .one-student-area .code-area {
+  overflow: auto;
+}
+
+#course-submission-programing .course-assignment-one-submission-wrapper .answer-wrapper.clang-formatted {
+  margin-right: 320px;
+}

@@ -384,7 +384,7 @@
 	      }
 	
 	    } else {
-	      var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
+	      var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList, true);
 	      var element = filesCmpTab.tab;
 	      element.id = 'files-cmp-tab';
 	      element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
@@ -15598,11 +15598,16 @@
 	function hideFilesCmp() {
 	  if (this.hideElement) {
 	    this.hideElement.classList.add('hidden');
+	    if (!this.hideElement.filesCmpTab.asTA) {
+	      document.querySelector('.files-cmp-li a').classList.remove('active');
+	      document.querySelector('.programming-nav-active a').classList.add('active');
+	    }
 	  }
-	  var tabName = /"([a-z]{1,})"(, \$index)?\)$/.exec(this.attributes['ng-click'].value);
+	  var tabName = /"([a-zA-z]{1,})"(, \$index)?\)$/.exec(this.attributes['ng-click'].value);
 	  if (tabName) tabName = tabName[1];
 	  else return;
-	  var shouldAppear = this.hideElement.parentNode.querySelector('div[class*="-content"].ng-hide[ng-show*="' + tabName + '"]');
+	  var shouldAppear = this.hideElement.parentNode.querySelector('div[ng-show*="' + tabName + '"]')
+	    || document.querySelector('.course-assignment-programming-content-discussion.ng-hide');
 	  if (shouldAppear) {
 	    shouldAppear.classList.remove('ng-hide');
 	  }
@@ -15616,7 +15621,7 @@
 	  liList.forEach(function(oneLi) {
 	    oneLi['hideElement'] = curLi.hideElement;
 	    oneLi['parentUl'] = curLi.parentNode;
-	    
+	
 	    if (curLi.isSameNode(oneLi)) return;
 	
 	    oneLi.removeEventListener('click', hideFilesCmp, false);
@@ -15627,20 +15632,29 @@
 	
 	function SwitchSelectedTab() {
 	    // change tab's selected state
-	  var activeSelector = (this.asTA ? 'choice-tab-active' : 'programming-nav-active');
+	  var activeSelector = (this.asTA ? 'choice-tab-active' : 'active');
 	  var originalSelectedTab = this.parentNode.querySelector('.' + activeSelector);
-	  originalSelectedTab.classList.remove(activeSelector);
-	  this.classList.add(activeSelector);
+	  if (originalSelectedTab) {
+	    originalSelectedTab.classList.remove(activeSelector);
+	  }
+	  if (this.asTA) {
+	    this.classList.add(activeSelector);
+	  } else {
+	    this.querySelector('a').classList.add(activeSelector);
+	  }
+	
 	  if (!this.hideElement) return;
-	  
+	
 	    // show our FilesCmp tab content now because it is currently selected
 	  this.hideElement.classList.remove('hidden');
-	    // hide other tabs content 
+	    // hide other tabs content
 	  var originalContent = null;
 	  if (this.asTA) {
 	    originalContent = this.hideElement.parentNode.querySelector('div.allsubmissions-content:not(.ng-hide)') || this.hideElement.parentNode.querySelector('div.onesubmission-content:not(.ng-hide)');
 	  } else {
-	    originalContent = this.hideElement.parentNode.querySelector('div.course-assignment-programming-content:not(.ng-hide):not(.files-cmp)');
+	    originalContent = this.hideElement.parentNode.querySelector('div.course-assignment-programming-wrapper.content-container > div:not(.ng-hide):not(.files-cmp)');
+	    const discussion = document.querySelector('.course-assignment-programming-content-discussion:not(.ng-hide)');
+	    if (discussion) discussion.classList.add('ng-hide');
 	  }
 	  if (originalContent) originalContent.classList.add('ng-hide');
 	  this.fix();
@@ -15676,7 +15690,7 @@
 	      var selectedRow = tr.cloneNode(true);
 	      selectedRow.addEventListener('click', checkBoxInsideMe, false);
 	      selectedRow.querySelector('input').addEventListener('click', onChecked, false);
-	      
+	
 	      this['relatedRow'] = selectedRow;
 	      selectedRow['relatedCheckbox'] = this;
 	      oneInvisibleRow.parentNode.replaceChild(selectedRow, oneInvisibleRow);
@@ -15715,7 +15729,7 @@
 	  var oldId = Number(tbody.childNodes[0].querySelector('.th-sub-id').textContent);
 	  var newId = Number(tbody.childNodes[1].querySelector('.th-sub-id').textContent);
 	  if (filesDiffPart.cmpIds && filesDiffPart.cmpIds.oldId == oldId && filesDiffPart.cmpIds.newId == newId) return;
-	  
+	
 	    // get courseId and problemId
 	  var ids = /courses{0,1}\/([0-9]{1,})\/assignments{0,1}\/(?:submission-)?programming(?:\/|\?problemId=)([0-9]{1,})/.exec(document.URL);
 	  const [, courseId, assignmentId] = ids;
@@ -15725,7 +15739,7 @@
 	    if (oldFilesCmpDiv.sideNav) oldFilesCmpDiv.sideNav.remove();
 	    oldFilesCmpDiv.parentNode.removeChild(oldFilesCmpDiv);
 	  }
-	  
+	
 	  const message = { signal: 'filesDiff', courseId, assignmentId, oldId, newId };
 	  chrome.runtime.sendMessage(message, function(response) {
 	    if (response.status != 'OK') {
@@ -15735,7 +15749,7 @@
 	        "stdHeading": String(oldId),
 	        "yourHeading": String(newId)
 	      });
-	        
+	
 	      filesDiffPart['cmpIds'] = {
 	        "oldId": oldId,
 	        "newId": newId
@@ -15761,7 +15775,7 @@
 	          filesCmpNavTab['sideNavFixListenerAdded'] = true;
 	        }
 	      }
-	      
+	
 	    }
 	  });
 	}
@@ -15811,18 +15825,16 @@
 	      clonedInvisibleRow.insertBefore( role, clonedInvisibleRow.firstChild );
 	      tbody.appendChild(clonedInvisibleRow);
 	    }
-	    
+	
 	    var table = createElementWith('table', ['assignment-info', 'selected-table'], [thead, tbody]);
-	    var wrapper = createElementWith('div', 'files-cmp-selected-part-wrapper', 
-	                                      createElementWith('div', 'statistics-wrapper',
-	                                                  createElementWith('div', 'statistics-container', table)));
+	    var wrapper = createElementWith('div', 'files-cmp-selected-part-wrapper',
+	                                      createElementWith('div', 'matrix-datatable', table));
 	    wrapper.id = 'course-statistics';
 	    return wrapper;
 	  },
 	  "createChoicesPartContent": function(submissionsList) {
 	    var wrapper = createElementWith('div', 'files-cmp-choices-part-wrapper',
-	                                    createElementWith('div', 'statistics-wrapper',
-	                                                  createElementWith('div', 'statistics-container', this.createChoicesTable(submissionsList))));
+	                                    createElementWith('div', 'matrix-datatable', this.createChoicesTable(submissionsList)));
 	    wrapper.id = 'course-statistics';
 	    return wrapper;
 	  },
@@ -15863,7 +15875,7 @@
 	    toArray(oldTable.querySelectorAll('input:checked')).forEach(function(one) {
 	      one.click();
 	    });
-	    
+	
 	    var newTable = this.choicesTable = this.createChoicesTable(submissionsList);
 	    oldTable.parentNode.replaceChild(newTable, oldTable);
 	
@@ -15873,7 +15885,7 @@
 	
 	var FilesCmpElements = {
 	  "createSecondBarLi": function(text, hideElement, asTA) {
-	    var li = createElementWith('li', ['navli', 'files-cmp-li'], createElementWith('a', 'programming-nav', text));
+	    var li = createElementWith('li', ['navli', 'files-cmp-li'], (asTA ? text : createElementWith('a', 'programming-nav', text)));
 	    li['hideElement'] = hideElement;
 	    li['asTA'] = asTA;
 	    li.addEventListener('click', SwitchSelectedTab, false);

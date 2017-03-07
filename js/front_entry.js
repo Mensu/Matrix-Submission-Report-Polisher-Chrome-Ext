@@ -335,7 +335,7 @@ function polishStudentReport(body, sender, callback) {
       }
 
     } else {
-      var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList);
+      var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList, true);
       var element = filesCmpTab.tab;
       element.id = 'files-cmp-tab';
       element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
