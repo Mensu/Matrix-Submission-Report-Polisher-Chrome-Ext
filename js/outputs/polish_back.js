@@ -337,21 +337,21 @@
 	  ]
 	});
 	
-	chrome.webRequest.onCompleted.addListener(details => {
-	  return genDriver(function *() {
-	    if (details.tabId === -1 || details.method === 'POST') return;
-	    console.log('Real gap of 500 ms', yield setTimeoutAsync(500));
-	    const signal = 'noValidationLogin';
-	    const response = yield chrome.tabs.sendMessageAsync(details.tabId, { signal });
-	    console.log(response);
-	  }).catch(e => console.error('Uncaught Error', e));
+	// chrome.webRequest.onCompleted.addListener(details => {
+	//   return genDriver(function *() {
+	//     if (details.tabId === -1 || details.method === 'POST') return;
+	//     console.log('Real gap of 500 ms', yield setTimeoutAsync(500));
+	//     const signal = 'noValidationLogin';
+	//     const response = yield chrome.tabs.sendMessageAsync(details.tabId, { signal });
+	//     console.log(response);
+	//   }).catch(e => console.error('Uncaught Error', e));
 	
-	}, {
-	  urls: [
-	    `${matrix.patternUrl}api/users/login`,
-	    `${localPatternUrl}api/users/login`,
-	  ],
-	});
+	// }, {
+	//   urls: [
+	//     `${matrix.patternUrl}api/users/login`,
+	//     `${localPatternUrl}api/users/login`,
+	//   ],
+	// });
 	
 	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	  return genDriver(function *() {
@@ -370,7 +370,7 @@
 	      const commonParam = pick(message, 'courseId', 'assignmentId');
 	      const oldParam = Object.assign({ submissionId: message.oldId }, commonParam);
 	      const newParam = Object.assign({ submissionId: message.newId }, commonParam);
-	      const requests = [matrix.getSubmission(oldParam), matrix.getSubmission(newParam)];
+	      const requests = [matrix.getSubmission(oldParam, message.rootUrl), matrix.getSubmission(newParam, message.rootUrl)];
 	      let results = null;
 	      try {
 	        results = yield Promise.all(requests);

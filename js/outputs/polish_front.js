@@ -15740,8 +15740,9 @@
 	    if (oldFilesCmpDiv.sideNav) oldFilesCmpDiv.sideNav.remove();
 	    oldFilesCmpDiv.parentNode.removeChild(oldFilesCmpDiv);
 	  }
-	
-	  const message = { signal: 'filesDiff', courseId, assignmentId, oldId, newId };
+	  let rootUrl = location.origin;
+	  if (!rootUrl.endsWith('/')) rootUrl += '/';
+	  const message = { signal: 'filesDiff', courseId, assignmentId, oldId, newId, rootUrl };
 	  chrome.runtime.sendMessage(message, function(response) {
 	    if (response.status != 'OK') {
 	      filesDiffPart.appendChild(createElementWith('div', 'polished-report-success', 'Failed to get files to compare'));

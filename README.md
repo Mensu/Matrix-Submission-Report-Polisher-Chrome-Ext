@@ -21,9 +21,9 @@
 
 <img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-drag-installation.png" alt="drag and drop to install">
 
-- It is suggested that you check the "auto polish" box
+<!-- - It is suggested that you check the "auto polish" box -->
 
-<img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto.png" alt="auto polish">
+<!-- <img src="http://7xrahq.com1.z0.glb.clouddn.com/chrome-ext-installation-auto.png" alt="auto polish"> -->
 
 # demo
 

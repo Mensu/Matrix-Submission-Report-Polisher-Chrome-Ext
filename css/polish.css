@@ -32,7 +32,7 @@ input.hide-button {
   font: unset;
 }
 .polished-report-success {
-  padding-right: 8em;
+  padding-right: 3em;
 }
 .polished-report-success pre.success {
   background-color: #fff;
@@ -167,11 +167,14 @@ ui-view.ng-scope #course-assignment-one-submission-program .submission-container
     color: #03A9F4;
   }
 }*/
-.answer-container .one-student-area .code-area {
+#course-submission-programing .answer-container .one-student-area .code-area {
   overflow: auto;
 }
+#course-submission-programing .answer-container .one-student-area .answerfiles-ul li.answerfile-bar-li {
+  width: unset !important;
+}
 #course-submission-programing .course-assignment-one-submission-wrapper .answer-wrapper.clang-formatted {
-  margin-right: 320px;
+  margin-right: 163px;
 }
 pre.plain-text-wrapper {
   background: url("https://developer.cdn.mozilla.net/static/img/blueprint-dark.fd85a7a074ae.png") top center #fafbfc;
@@ -339,6 +342,7 @@ span.one-diff-content {
 #course-submission-programing .side-nav ul.nav-body li {
   position: relative;
   height: unset;
+  width: unset !important;
   list-style: none;
   background-color: transparent !important;
 }
@@ -452,6 +456,9 @@ span.one-diff-content {
 }
 #course-submission-programing .choice-tab li.navli.files-cmp-li {
   width: 180px;
+}
+#course-submission-programing .choice-tab li {
+  vertical-align: text-bottom;
 }
 /*
 

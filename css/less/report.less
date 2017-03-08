@@ -13,7 +13,7 @@ input.hide-button {
   font: unset;
 }
 .polished-report-success {
-  padding-right: 8em;
+  padding-right: 3em;
   pre.success {
     background-color: #fff;
     border-radius: 5px;
@@ -174,10 +174,15 @@ ui-view.ng-scope #course-assignment-one-submission-program {
   }
 }*/
 
-.answer-container .one-student-area .code-area {
-  overflow: auto;
+#course-submission-programing .answer-container .one-student-area {
+  .code-area {
+    overflow: auto;
+  }
+  .answerfiles-ul li.answerfile-bar-li {
+    width: unset !important;
+  }
 }
 
 #course-submission-programing .course-assignment-one-submission-wrapper .answer-wrapper.clang-formatted {
-  margin-right: 320px;
+  margin-right: 160px + 3em;
 }
