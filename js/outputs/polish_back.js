@@ -4048,7 +4048,7 @@
 	    if (intervalId === null) {
 	      intervalId = setInterval(function() {
 	            // send a request to Matrix every five seconds
-	          matrix.testNetwork('https://vmatrix.org.cn/')
+	          matrix.testNetwork(matrix.rootUrl)
 	            .then(function() {return true;}, function() {return false;})
 	            .then(function(connected) {
 	                var img19 = './img/' + (connected ? 'online.png' : 'offline.png');
