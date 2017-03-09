@@ -56,11 +56,11 @@
 	const FilesDiff = __webpack_require__(/*! ./components/FilesDiff.js */ 10);
 	
 	const matrix = new MatrixObject({
-	  patternUrl: 'https://*.vmatrix.org.cn/',
+	  patternUrl: 'http://*.vmatrix.org.cn/',
 	  rootUrl: 'https://vmatrix.org.cn/',
+	  localUrl: 'http://localhost:3000/',
 	  googleStyleUrl: 'http://123.207.29.66:3001/',
 	});
-	const localPatternUrl = 'http://localhost:3000/';
 	__webpack_require__(/*! ./components/checkIsOnline.js */ 11)(matrix);
 	
 	
@@ -70,8 +70,9 @@
 	// /api/courses/*/assignments/*/submissions/last/feedback
 	chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
 	  urls: [
+	    `${matrix.rootUrl}api/courses/*/assignments/*/submissions/*`,
 	    `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`,
-	    `${localPatternUrl}api/courses/*/assignments/*/submissions/*`,
+	    `${matrix.localUrl}api/courses/*/assignments/*/submissions/*`,
 	  ],
 	});
 	
@@ -332,8 +333,9 @@
 	
 	}, {
 	  urls: [
+	    `${matrix.rootUrl}api/libraries/*/problems/*`,
 	    `${matrix.patternUrl}api/libraries/*/problems/*`,
-	    `${localPatternUrl}api/libraries/*/problems/*`,
+	    `${matrix.localUrl}api/libraries/*/problems/*`,
 	  ]
 	});
 	
@@ -348,8 +350,9 @@
 	
 	// }, {
 	//   urls: [
+	//     `${matrix.rootUrl}api/users/login`,
 	//     `${matrix.patternUrl}api/users/login`,
-	//     `${localPatternUrl}api/users/login`,
+	//     `${matrix.localUrl}api/users/login`,
 	//   ],
 	// });
 	
@@ -376,6 +379,9 @@
 	        results = yield Promise.all(requests);
 	      } catch (e) {
 	        console.error(`Error: Failed to get submissions with parameters`, oldParam, newParam);
+	        return sendResponse({ status: 'BAD' });
+	      }
+	      if (results.some(status => status !== 'OK')) {
 	        return sendResponse({ status: 'BAD' });
 	      }
 	      const [{
@@ -457,7 +463,7 @@
 	   */
 	  constructor(newConfigs) {
 	    const self = this;
-	    self.configsNames = ['rootUrl', 'googleStyleUrl', 'patternUrl'];
+	    self.configsNames = ['rootUrl', 'googleStyleUrl', 'patternUrl', 'localUrl'];
 	    for (const oneConfigName of self.configsNames) {
 	      self[oneConfigName] = null;
 	    }
@@ -466,16 +472,16 @@
 	      newConfigs = { googleStyleUrl: newConfigs };
 	    }
 	    self.configsSetter(newConfigs);
-	    if (!self.rootUrl.endsWith('/')) self.rootUrl += '/';
-	    if (!self.googleStyleUrl.endsWith('/')) self.googleStyleUrl += '/';
-	    if (!self.patternUrl.endsWith('/')) self.patternUrl += '/';
 	  }
 	
 	  configsSetter(newConfigs) {
 	    const self = this;
 	    for (const oneConfigName of self.configsNames) {
 	      if (Reflect.hasOwnProperty.call(newConfigs, oneConfigName)) {
-	        self[oneConfigName] = newConfigs[oneConfigName]
+	        self[oneConfigName] = newConfigs[oneConfigName];
+	        if (oneConfigName.endsWith('Url') && !self[oneConfigName].endsWith('/')) {
+	          self[oneConfigName] += '/';
+	        }
 	      }
 	    }
 	  }
@@ -518,7 +524,7 @@
 	  testNetwork(rootUrl) {
 	    const self = this;
 	    return genDriver(function *() {
-	      yield httpRequest('get', `${rootUrl}api/users/login`);
+	      yield httpRequest('get', `${rootUrl}/api/users/login`);
 	      return null;
 	    });
 	  }
@@ -906,11 +912,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	var CaseObject = __webpack_require__(/*! ./CaseObject.js */ 5);
-	/** 
+	/**
 	 * ReportObject
 	 * refactored version of the original report object from Matrix
 	 * @param {string | object} body - object or stringified object representing report from Matrix
-	 * 
+	 *
 	 * dependent of
 	 *   {function} genDiffInfo
 	 */
@@ -922,7 +928,7 @@
 	  "extendFrom": function(parent) {
 	    for (var name in parent) this[name] = parent[name];
 	  },
-	  /** 
+	  /**
 	   * refactor the original report object from Matrix
 	   * @param {string | Object} body - object or stringified object representing report from Matrix
 	   * @return {Object} refactored report object
@@ -959,12 +965,12 @@
 	      reportObject.grade = -2;
 	      console.log('body (not logged in):', body);
 	      return null;
-	    } else if (data === null) {
-	      reportObject.msg = 'Not judged yet';
+	    } else if (data === null || data.grade === null) {
+	      reportObject.msg = 'Waiting';
 	      reportObject.grade = -2;
-	      console.log('body (not judged yet):', body);
+	      console.log('body (waiting):', body);
 	
-	    } else if (data.grade == -1 || data.grade === null) {
+	    } else if (data.grade == -1) {
 	      reportObject.grade = 'Under judging';
 	      console.log('body.data (submission under judging):', body.data);
 	
@@ -988,36 +994,36 @@
 	
 	    // reportObject.submitTime = data.submitTime;
 	
-	    /** 
+	    /**
 	     * return a string 'missing' if str is undefined, or return str itself otherwise
 	     * @param {string | undefined} str - the string to be wrapped
 	     * @param {string} [append] - string to be appended after str
 	     * @return {string}
-	     * 
+	     *
 	     * independent
 	     */
 	    function wrapWithMissing(str, append) {
 	      return (typeof(str) != 'undefined' ? (str + (typeof(append) != 'undefined' ? append : '') ) : 'missing');
 	    };
 	
-	    /** 
+	    /**
 	     * return [obj] if the obj is not an array, or obj itself otherwise
 	     * @param {*} obj - the obj to be wrapped to an array
 	     * @return {[obj]}
-	     * 
+	     *
 	     * independent
 	     */
 	    function toArray(obj) {
 	      return Object.prototype.toString.apply(obj) != '[object Array]' ? [obj] : obj;
 	    }
 	
-	    /** 
+	    /**
 	     * refactor standard/random tests
 	     * @param {string} phaseName - the type of the tests (standard or random)
 	     * @param {Object} info - infomation of tests
 	     * @return {undefined}
-	     * 
-	     * private and dependent of 
+	     *
+	     * private and dependent of
 	     *     {Object} reportObject
 	     */
 	    function refactorTests(phaseName, info) {
@@ -1077,9 +1083,9 @@
 	        return;
 	      }
 	      curPhase['pass'] = false;
-	      
+	
 	      violation.forEach(function(oneViolation, i, self) {
-	        
+	
 	        var range = function(begin, end) {
 	          if (begin == end) return begin;
 	          else return begin + ' ~ ' + end;
@@ -1126,12 +1132,12 @@
 	          var behavior = oneError.what;
 	          var content = '';
 	          var auxwhat = oneError.auxwhat, stack = oneError.stack;
-	          
+	
 	          if (!behavior) {
 	            if (oneError.kind == 'Leak_DefinitelyLost') {
-	              behavior = 'Memory leak -> ' + oneError.xwhat.text;
+	              behavior = 'Memory leak -> ' + ((oneError.xwhat && oneError.xwhat.text) || 'missing');
 	            } else if (oneError.kind == 'Leak_PossiblyLost') {
-	              behavior = 'Possible memory leak -> ' + oneError.xwhat.text;
+	              behavior = 'Possible memory leak -> ' + ((oneError.xwhat && oneError.xwhat.text) || 'missing');
 	            }
 	            if (oneError.xwhat) {
 	              auxwhat = oneError.xwhat.text;
@@ -1196,7 +1202,7 @@
 	          });
 	          ++failedCaseNum;
 	        } else {
-	          
+	
 	        }
 	        curPhase.report.push(oneCase);
 	      });

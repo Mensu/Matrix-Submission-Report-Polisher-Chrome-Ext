@@ -32,7 +32,7 @@ class MatrixObject {
    */
   constructor(newConfigs) {
     const self = this;
-    self.configsNames = ['rootUrl', 'googleStyleUrl', 'patternUrl'];
+    self.configsNames = ['rootUrl', 'googleStyleUrl', 'patternUrl', 'localUrl'];
     for (const oneConfigName of self.configsNames) {
       self[oneConfigName] = null;
     }
@@ -41,16 +41,16 @@ class MatrixObject {
       newConfigs = { googleStyleUrl: newConfigs };
     }
     self.configsSetter(newConfigs);
-    if (!self.rootUrl.endsWith('/')) self.rootUrl += '/';
-    if (!self.googleStyleUrl.endsWith('/')) self.googleStyleUrl += '/';
-    if (!self.patternUrl.endsWith('/')) self.patternUrl += '/';
   }
 
   configsSetter(newConfigs) {
     const self = this;
     for (const oneConfigName of self.configsNames) {
       if (Reflect.hasOwnProperty.call(newConfigs, oneConfigName)) {
-        self[oneConfigName] = newConfigs[oneConfigName]
+        self[oneConfigName] = newConfigs[oneConfigName];
+        if (oneConfigName.endsWith('Url') && !self[oneConfigName].endsWith('/')) {
+          self[oneConfigName] += '/';
+        }
       }
     }
   }
@@ -93,7 +93,7 @@ class MatrixObject {
   testNetwork(rootUrl) {
     const self = this;
     return genDriver(function *() {
-      yield httpRequest('get', `${rootUrl}api/users/login`);
+      yield httpRequest('get', `${rootUrl}/api/users/login`);
       return null;
     });
   }

@@ -1,9 +1,9 @@
 var CaseObject = require('./CaseObject.js');
-/** 
+/**
  * ReportObject
  * refactored version of the original report object from Matrix
  * @param {string | object} body - object or stringified object representing report from Matrix
- * 
+ *
  * dependent of
  *   {function} genDiffInfo
  */
@@ -15,7 +15,7 @@ ReportObject.prototype = {
   "extendFrom": function(parent) {
     for (var name in parent) this[name] = parent[name];
   },
-  /** 
+  /**
    * refactor the original report object from Matrix
    * @param {string | Object} body - object or stringified object representing report from Matrix
    * @return {Object} refactored report object
@@ -52,12 +52,12 @@ ReportObject.prototype = {
       reportObject.grade = -2;
       console.log('body (not logged in):', body);
       return null;
-    } else if (data === null) {
-      reportObject.msg = 'Not judged yet';
+    } else if (data === null || data.grade === null) {
+      reportObject.msg = 'Waiting';
       reportObject.grade = -2;
-      console.log('body (not judged yet):', body);
+      console.log('body (waiting):', body);
 
-    } else if (data.grade == -1 || data.grade === null) {
+    } else if (data.grade == -1) {
       reportObject.grade = 'Under judging';
       console.log('body.data (submission under judging):', body.data);
 
@@ -81,36 +81,36 @@ ReportObject.prototype = {
 
     // reportObject.submitTime = data.submitTime;
 
-    /** 
+    /**
      * return a string 'missing' if str is undefined, or return str itself otherwise
      * @param {string | undefined} str - the string to be wrapped
      * @param {string} [append] - string to be appended after str
      * @return {string}
-     * 
+     *
      * independent
      */
     function wrapWithMissing(str, append) {
       return (typeof(str) != 'undefined' ? (str + (typeof(append) != 'undefined' ? append : '') ) : 'missing');
     };
 
-    /** 
+    /**
      * return [obj] if the obj is not an array, or obj itself otherwise
      * @param {*} obj - the obj to be wrapped to an array
      * @return {[obj]}
-     * 
+     *
      * independent
      */
     function toArray(obj) {
       return Object.prototype.toString.apply(obj) != '[object Array]' ? [obj] : obj;
     }
 
-    /** 
+    /**
      * refactor standard/random tests
      * @param {string} phaseName - the type of the tests (standard or random)
      * @param {Object} info - infomation of tests
      * @return {undefined}
-     * 
-     * private and dependent of 
+     *
+     * private and dependent of
      *     {Object} reportObject
      */
     function refactorTests(phaseName, info) {
@@ -170,9 +170,9 @@ ReportObject.prototype = {
         return;
       }
       curPhase['pass'] = false;
-      
+
       violation.forEach(function(oneViolation, i, self) {
-        
+
         var range = function(begin, end) {
           if (begin == end) return begin;
           else return begin + ' ~ ' + end;
@@ -219,12 +219,12 @@ ReportObject.prototype = {
           var behavior = oneError.what;
           var content = '';
           var auxwhat = oneError.auxwhat, stack = oneError.stack;
-          
+
           if (!behavior) {
             if (oneError.kind == 'Leak_DefinitelyLost') {
-              behavior = 'Memory leak -> ' + oneError.xwhat.text;
+              behavior = 'Memory leak -> ' + ((oneError.xwhat && oneError.xwhat.text) || 'missing');
             } else if (oneError.kind == 'Leak_PossiblyLost') {
-              behavior = 'Possible memory leak -> ' + oneError.xwhat.text;
+              behavior = 'Possible memory leak -> ' + ((oneError.xwhat && oneError.xwhat.text) || 'missing');
             }
             if (oneError.xwhat) {
               auxwhat = oneError.xwhat.text;
@@ -289,7 +289,7 @@ ReportObject.prototype = {
           });
           ++failedCaseNum;
         } else {
-          
+
         }
         curPhase.report.push(oneCase);
       });

@@ -7,11 +7,11 @@ const setTimeoutAsync = require('./components/lib/setTimeoutAsync.js');
 const FilesDiff = require('./components/FilesDiff.js');
 
 const matrix = new MatrixObject({
-  patternUrl: 'https://*.vmatrix.org.cn/',
+  patternUrl: 'http://*.vmatrix.org.cn/',
   rootUrl: 'https://vmatrix.org.cn/',
+  localUrl: 'http://localhost:3000/',
   googleStyleUrl: 'http://123.207.29.66:3001/',
 });
-const localPatternUrl = 'http://localhost:3000/';
 require('./components/checkIsOnline.js')(matrix);
 
 
@@ -21,8 +21,9 @@ require('./components/checkIsOnline.js')(matrix);
 // /api/courses/*/assignments/*/submissions/last/feedback
 chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
   urls: [
+    `${matrix.rootUrl}api/courses/*/assignments/*/submissions/*`,
     `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`,
-    `${localPatternUrl}api/courses/*/assignments/*/submissions/*`,
+    `${matrix.localUrl}api/courses/*/assignments/*/submissions/*`,
   ],
 });
 
@@ -283,8 +284,9 @@ chrome.webRequest.onCompleted.addListener(details => {
 
 }, {
   urls: [
+    `${matrix.rootUrl}api/libraries/*/problems/*`,
     `${matrix.patternUrl}api/libraries/*/problems/*`,
-    `${localPatternUrl}api/libraries/*/problems/*`,
+    `${matrix.localUrl}api/libraries/*/problems/*`,
   ]
 });
 
@@ -299,8 +301,9 @@ chrome.webRequest.onCompleted.addListener(details => {
 
 // }, {
 //   urls: [
+//     `${matrix.rootUrl}api/users/login`,
 //     `${matrix.patternUrl}api/users/login`,
-//     `${localPatternUrl}api/users/login`,
+//     `${matrix.localUrl}api/users/login`,
 //   ],
 // });
 
@@ -327,6 +330,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         results = yield Promise.all(requests);
       } catch (e) {
         console.error(`Error: Failed to get submissions with parameters`, oldParam, newParam);
+        return sendResponse({ status: 'BAD' });
+      }
+      if (results.some(status => status !== 'OK')) {
         return sendResponse({ status: 'BAD' });
       }
       const [{
