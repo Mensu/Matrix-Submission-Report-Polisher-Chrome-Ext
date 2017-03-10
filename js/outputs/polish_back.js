@@ -381,7 +381,7 @@
 	        console.error(`Error: Failed to get submissions with parameters`, oldParam, newParam);
 	        return sendResponse({ status: 'BAD' });
 	      }
-	      if (results.some(status => status !== 'OK')) {
+	      if (results.some(({ status }) => status !== 'OK')) {
 	        return sendResponse({ status: 'BAD' });
 	      }
 	      const [{
