@@ -12,7 +12,7 @@
 
 # Downloads
 
-[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.2.0-beta2.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.2.0-beta1.zip)
+[``Matrix-Submission-Report-Polisher-Chrome-Ext-0.2.0-beta2.zip``](https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext/archive/v0.2.0-beta2.zip)
 
 # Installation
 
