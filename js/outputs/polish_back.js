@@ -172,14 +172,15 @@
 	        let supportFiles = [];
 	        if (body) {
 	          const {
-	            ca: { config, config: { grading } },
-	            file
+	            config,
+	            config: { grading },
+	            files
 	          } = body.data;
 	          param.problemInfo = config;
 	          param.problemInfo.totalPoints = grading;
 	
-	          supportFiles = file || [];
-	          supportFiles.forEach(oneSupportFile => oneSupportFile.dontCheckStyle = true);
+	          supportFiles = files || [];
+	          supportFiles.forEach(oneSupportFile => (oneSupportFile.dontCheckStyle = true));
 	          param.problemInfo.supportFiles = supportFiles;
 	          // deprecated
 	          param.problemInfo.supportedFiles = param.problemInfo.supportFiles;
@@ -524,7 +525,7 @@
 	  testNetwork(rootUrl) {
 	    const self = this;
 	    return genDriver(function *() {
-	      yield httpRequest('get', `${rootUrl}/api/users/login`);
+	      yield httpRequest('get', `${rootUrl}api/users/login`);
 	      return null;
 	    });
 	  }

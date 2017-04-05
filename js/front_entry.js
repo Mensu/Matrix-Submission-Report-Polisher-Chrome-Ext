@@ -2,6 +2,8 @@ const polisher = require('./components/polisher.js');
 const FilesCmp = require('./components/FilesCmp.js');
 const customElements = require('./components/elements/customElements.js');
 const StudentAnswerArea = require('./components/elements/StudentAnswerArea.js');
+const genDriver = require('./components/lib/genDriver');
+const setTimeoutAsync = require('./components/lib/setTimeoutAsync');
 document.body.appendChild(require('./components/elements/backToTop.js'));
 
 const createPolishedReportDiv = polisher.getPolishedReportDiv;
@@ -221,138 +223,146 @@ function removeValidationLogin(body, sender, callback) {
 }
 
 function polishStudentReport(body, sender, callback) {
-  var reportObject = body.reportObject;
-  var unmodifiedOriginalReport = document.querySelector('#matrix-programming-report:not(.polished-ver):not(.original-report)');
-  var matrixSecondBar = document.querySelector('.choice-tab ul');
-  var reportsContainer = document.querySelector('.reports-container');
-  if (unmodifiedOriginalReport === null) {
-    if (null === document.querySelector('.original-report')) {
-      return callback("front couldn't find #matrix-programming-report:not(.original-report):not(.polished-ver) or .original-report");
-    }  // else: original report was modified. just go on
-
-  } else {
-    unmodifiedOriginalReport.classList.add('original-report');
-    reportsContainer = document.createElement('div');
-    unmodifiedOriginalReport.parentNode.insertBefore(reportsContainer, unmodifiedOriginalReport);
-    reportsContainer.outerHTML = '<div class="reports-container"><div class="last-div"></div></div>';
-    reportsContainer = unmodifiedOriginalReport.parentNode.querySelector('.reports-container');
-    reportsContainer.insertBefore(unmodifiedOriginalReport, reportsContainer.firstChild);
-  }
-
-  if (body.problemInfo) {
-    reportsContainer['problemInfo'] = body.problemInfo;
-  }
-  var selectedStudentId = matrixSecondBar.querySelector('li.choice-tab-active').title;
-
-    // get div components
-  var oldPolishedReport = reportsContainer.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
-      oldSwitchBtn = reportsContainer.querySelector('.switch-btn:not(.hidden)'),
-      otherStudentReport = reportsContainer.querySelector('.polished-report-success:not(.hidden)'),
-      gradeWrapper = reportsContainer.parentNode.querySelector('#matrix-programming-report.original-report .report-section:first-child');
-      originalReport = reportsContainer.parentNode.querySelector('.original-report');
-
-  var polishedReport = createPolishedReportDiv(reportObject, {
-        "showCR": body.configs.showCR,
-        "maxStdCaseNum": body.configs.maxStdCaseNum,
-        "maxRanCaseNum": body.configs.maxRanCaseNum,
-        "maxMemCaseNum": body.configs.maxMemCaseNum,
-        "limits": reportsContainer.problemInfo.limits,
-        "totalPoints": reportsContainer.problemInfo.totalPoints,
-      }),
-      switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
-        "show": 'show polished report',
-        "hide": 'show original report'
-      });
-
-  var studentAnswerArea = document.querySelector('.answer-wrapper.clang-formatted');
-  var formattedCodes = null;
-  var studentAnswerAreaObj = null;
-  if (reportObject['google style']) {
-    formattedCodes = reportObject['google style'].formatted;
-  }
-  if (studentAnswerArea) {
-    if (!formattedCodes) {
-      formattedCodes = {
-        "Server Error.c": 'Google Style Server Error'
-      }
-    }
-    studentAnswerAreaObj = studentAnswerArea.studentAnswerAreaObj;
-    studentAnswerAreaObj.update(formattedCodes);
-  } else if (formattedCodes) {
-    var supportedFiles = {};
-    reportsContainer.problemInfo.supportedFiles.forEach(function(one) {
-      supportedFiles[one.name] = formattedCodes[one.name];
-      formattedCodes[one.name] = undefined;
-    });
-    studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, supportedFiles, 'cpp');
-    studentAnswerArea = studentAnswerAreaObj.getNode();
-    reportsContainer.parentNode.insertBefore(studentAnswerArea, reportsContainer);
-  }
-
-  polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;
-  polishedReport['formattedCodes'] = formattedCodes;
-
-  gradeWrapper.classList.add('hidden');
-  switchBtn['gradeWrapper'] = gradeWrapper;
-  switchBtn.addEventListener('click', showOrginalGrade, false);
-
-    // insert newly created div and perform initialization
-  reportsContainer.insertBefore(switchBtn, reportsContainer.firstChild);
-
-  polishedReport['title'] = selectedStudentId;
-  polishedReport['switchBtn'] = switchBtn;
-  reportsContainer.insertBefore(polishedReport, reportsContainer.querySelector('div'));
-
-  var sideNav = polishedReport.sideNav;
-  if (sideNav) {
-    sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
-  }
-
-    // rid the wrapper of the old divs
-  if (oldPolishedReport) {
-    if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
-    reportsContainer.removeChild(oldPolishedReport);
-  }
-  if (otherStudentReport) {
-    otherStudentReport.classList.add('hidden');
-  }
-  if (oldSwitchBtn) {
-    oldSwitchBtn.classList.add('hidden');
-  }
-
-    // auto polish
-  if (!body.configs.autoPolish) switchBtn.click();
-
-    // files comparison
-  if (body.submissionsList && body.submissionsList.length) {
-    var tabsContentWrapper = document.querySelector('.submission-container');
-    var element = tabsContentWrapper.querySelector('#files-cmp-tab');
-    if (element) {
-      if (body.submissionsList[0].sub_ca_id != element.latestSubmissionId) {
-        element.filesCmpTab.updateChoicesTable(body.submissionsList);
-        element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
-        element.fileCmpTab.fix();
-      }
+  return genDriver(function *() {
+    var reportObject = body.reportObject;
+    var unmodifiedOriginalReport = document.querySelector('#matrix-programming-report:not(.polished-ver):not(.original-report)');
+    var matrixSecondBar = document.querySelector('.choice-tab ul');
+    var reportsContainer = document.querySelector('.reports-container');
+    if (unmodifiedOriginalReport === null) {
+      if (null === document.querySelector('.original-report')) {
+        return callback("front couldn't find #matrix-programming-report:not(.original-report):not(.polished-ver) or .original-report");
+      }  // else: original report was modified. just go on
 
     } else {
-      var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList, true);
-      var element = filesCmpTab.tab;
-      element.id = 'files-cmp-tab';
-      element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
-      tabsContentWrapper.appendChild(element);
-
-      var fileCmpTab = FilesCmp.createSecondBarLi('Files Comparison', element, true);
-      element['fileCmpTab'] = fileCmpTab;
-      matrixSecondBar.appendChild(fileCmpTab);
-
-      var originalFix = fileCmpTab.fix;
-      fileCmpTab['originalFix'] = originalFix;
-      fileCmpTab.fix = addListenersForTabs;
-      fileCmpTab.fix();
+      unmodifiedOriginalReport.classList.add('original-report');
+      reportsContainer = document.createElement('div');
+      unmodifiedOriginalReport.parentNode.insertBefore(reportsContainer, unmodifiedOriginalReport);
+      reportsContainer.outerHTML = '<div class="reports-container"><div class="last-div"></div></div>';
+      reportsContainer = unmodifiedOriginalReport.parentNode.querySelector('.reports-container');
+      reportsContainer.insertBefore(unmodifiedOriginalReport, reportsContainer.firstChild);
     }
 
-  }
-  return callback('front has got the reportObject and attached the polished report to the grade tab!');
+    if (body.problemInfo) {
+      reportsContainer['problemInfo'] = body.problemInfo;
+    }
+
+    let choiceTab = null;
+    while (!choiceTab) {
+      yield setTimeoutAsync(1000);
+      choiceTab = matrixSecondBar.querySelector('li.choice-tab-active');
+    }
+    var selectedStudentId = choiceTab.title;
+
+      // get div components
+    var oldPolishedReport = reportsContainer.querySelector('.polished-report-success[title="' + selectedStudentId + '"]'),
+        oldSwitchBtn = reportsContainer.querySelector('.switch-btn:not(.hidden)'),
+        otherStudentReport = reportsContainer.querySelector('.polished-report-success:not(.hidden)'),
+        gradeWrapper = reportsContainer.parentNode.querySelector('#matrix-programming-report.original-report .report-section:first-child');
+        originalReport = reportsContainer.parentNode.querySelector('.original-report');
+
+    var polishedReport = createPolishedReportDiv(reportObject, {
+          "showCR": body.configs.showCR,
+          "maxStdCaseNum": body.configs.maxStdCaseNum,
+          "maxRanCaseNum": body.configs.maxRanCaseNum,
+          "maxMemCaseNum": body.configs.maxMemCaseNum,
+          "limits": reportsContainer.problemInfo.limits,
+          "totalPoints": reportsContainer.problemInfo.totalPoints,
+        }),
+        switchBtn = customElements.createSwitchBtn(polishedReport, originalReport, {
+          "show": 'show polished report',
+          "hide": 'show original report'
+        });
+
+    var studentAnswerArea = document.querySelector('.answer-wrapper.clang-formatted');
+    var formattedCodes = null;
+    var studentAnswerAreaObj = null;
+    if (reportObject['google style']) {
+      formattedCodes = reportObject['google style'].formatted;
+    }
+    if (studentAnswerArea) {
+      if (!formattedCodes) {
+        formattedCodes = {
+          "Server Error.c": 'Google Style Server Error'
+        }
+      }
+      studentAnswerAreaObj = studentAnswerArea.studentAnswerAreaObj;
+      studentAnswerAreaObj.update(formattedCodes);
+    } else if (formattedCodes) {
+      var supportedFiles = {};
+      reportsContainer.problemInfo.supportedFiles.forEach(function(one) {
+        supportedFiles[one.name] = formattedCodes[one.name];
+        formattedCodes[one.name] = undefined;
+      });
+      studentAnswerAreaObj = new StudentAnswerArea(formattedCodes, supportedFiles, 'cpp');
+      studentAnswerArea = studentAnswerAreaObj.getNode();
+      reportsContainer.parentNode.insertBefore(studentAnswerArea, reportsContainer);
+    }
+
+    polishedReport['studentAnswerAreaObj'] = studentAnswerAreaObj;
+    polishedReport['formattedCodes'] = formattedCodes;
+
+    gradeWrapper.classList.add('hidden');
+    switchBtn['gradeWrapper'] = gradeWrapper;
+    switchBtn.addEventListener('click', showOrginalGrade, false);
+
+      // insert newly created div and perform initialization
+    reportsContainer.insertBefore(switchBtn, reportsContainer.firstChild);
+
+    polishedReport['title'] = selectedStudentId;
+    polishedReport['switchBtn'] = switchBtn;
+    reportsContainer.insertBefore(polishedReport, reportsContainer.querySelector('div'));
+
+    var sideNav = polishedReport.sideNav;
+    if (sideNav) {
+      sideNav.init(polishedReport.endSelector, 'ui-view.ng-scope');
+    }
+
+      // rid the wrapper of the old divs
+    if (oldPolishedReport) {
+      if (oldPolishedReport.sideNav) oldPolishedReport.sideNav.remove();
+      reportsContainer.removeChild(oldPolishedReport);
+    }
+    if (otherStudentReport) {
+      otherStudentReport.classList.add('hidden');
+    }
+    if (oldSwitchBtn) {
+      oldSwitchBtn.classList.add('hidden');
+    }
+
+      // auto polish
+    if (!body.configs.autoPolish) switchBtn.click();
+
+      // files comparison
+    if (body.submissionsList && body.submissionsList.length) {
+      var tabsContentWrapper = document.querySelector('.submission-container');
+      var element = tabsContentWrapper.querySelector('#files-cmp-tab');
+      if (element) {
+        if (body.submissionsList[0].sub_ca_id != element.latestSubmissionId) {
+          element.filesCmpTab.updateChoicesTable(body.submissionsList);
+          element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
+          element.fileCmpTab.fix();
+        }
+
+      } else {
+        var filesCmpTab = new FilesCmp.FilesCmpTab(body.submissionsList, true);
+        var element = filesCmpTab.tab;
+        element.id = 'files-cmp-tab';
+        element['latestSubmissionId'] = body.submissionsList[0].sub_ca_id;
+        tabsContentWrapper.appendChild(element);
+
+        var fileCmpTab = FilesCmp.createSecondBarLi('Files Comparison', element, true);
+        element['fileCmpTab'] = fileCmpTab;
+        matrixSecondBar.appendChild(fileCmpTab);
+
+        var originalFix = fileCmpTab.fix;
+        fileCmpTab['originalFix'] = originalFix;
+        fileCmpTab.fix = addListenersForTabs;
+        fileCmpTab.fix();
+      }
+
+    }
+    return callback('front has got the reportObject and attached the polished report to the grade tab!');
+  }), true;
 }
 
 function showOrginalGrade() {

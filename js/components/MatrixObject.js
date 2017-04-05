@@ -93,7 +93,7 @@ class MatrixObject {
   testNetwork(rootUrl) {
     const self = this;
     return genDriver(function *() {
-      yield httpRequest('get', `${rootUrl}/api/users/login`);
+      yield httpRequest('get', `${rootUrl}api/users/login`);
       return null;
     });
   }
