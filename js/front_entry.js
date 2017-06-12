@@ -226,15 +226,25 @@ function removeValidationLogin(body, sender, callback) {
 
 function shixun(body, sender, callback) {
   return genDriver(function *() {
+    const { asgns } = body;
     let shixunQuery = document.querySelector('.shixun-query');
     if (shixunQuery) return;
     const studentIdInput = document.createElement('input');
+    const asgnIdSelect = document.createElement('select');
     const queryBtn = document.createElement('input');
     queryBtn.type = 'button';
     queryBtn.value = '下载该学生提交';
+    for (const { ea_id, title } of asgns) {
+      const option = document.createElement('option');
+      option.value = ea_id;
+      option.textContent = title;
+      asgnIdSelect.appendChild(option);
+    }
+    asgnIdSelect.selectedIndex = asgns.length - 1;
     shixunQuery = document.createElement('div');
     shixunQuery.classList.add('shixun-query');
     shixunQuery.appendChild(studentIdInput);
+    shixunQuery.appendChild(asgnIdSelect);
     shixunQuery.appendChild(queryBtn);
     let home = null;
     while (home === null) {
@@ -248,6 +258,7 @@ function shixun(body, sender, callback) {
       chrome.runtime.sendMessage({
         signal: 'shixun',
         studentId: studentIdInput.value,
+        asgnId: asgnIdSelect.value,
       }, ({ success, msg }) => {
         if (success === false) {
           window.alert(msg);

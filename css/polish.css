@@ -5,6 +5,9 @@
 .shixun-query input {
   font-size: 18px;
 }
+.shixun-query select {
+  margin-left: 10px;
+}
 .shixun-query input[type="button"] {
   margin-left: 10px;
   border-radius: 5px;

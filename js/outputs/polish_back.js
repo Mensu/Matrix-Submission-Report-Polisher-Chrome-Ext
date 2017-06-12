@@ -416,7 +416,7 @@
 	
 	  function shixun() {
 	    return genDriver(function *() {
-	      const { studentId } = message;
+	      const { studentId, asgnId } = message;
 	      const root = 'https://vmatrix.org.cn';
 	      const { data: members } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/members`));
 	      const user = members.find(({ student_id }) => student_id === String(studentId));
@@ -426,14 +426,14 @@
 	        return sendResponse({ success: false, msg });
 	      }
 	      const { user_id } = user;
-	      const { data: subs } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/assignments/723/submissions?user_id=${user_id}`));
+	      const { data: subs } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/assignments/${asgnId}/submissions?user_id=${user_id}`));
 	      if (subs.length === 0) {
 	        const msg = `${studentId} 在 20170611 文件备份3 没有提交`;
 	        console.log(msg);
 	        return sendResponse({ success: false, msg });
 	      }
 	      const [{ sub_ea_id }] = subs;
-	      const downloadUrl = `${root}/api/courses/78/exams/106/assignments/723/submissions/${sub_ea_id}/download`;
+	      const downloadUrl = `${root}/api/courses/78/exams/106/assignments/${asgnId}/submissions/${sub_ea_id}/download`;
 	      console.log(downloadUrl);
 	      return sendResponse({ success: true, msg: downloadUrl });
 	    });
@@ -452,8 +452,12 @@
 	
 	chrome.webRequest.onCompleted.addListener(details => {
 	  return genDriver(function *() {
+	    const root = 'https://vmatrix.org.cn';
+	    let { data: asgns } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/assignments`));
+	    asgns = asgns.filter(({ type }) => type === 'Fileupload problem').map(({ ea_id, title }) => ({ ea_id, title }));
 	    return chrome.tabs.sendMessageAsync(details.tabId, {
 	      signal: 'shixun',
+	      asgns,
 	    });
 	  }).catch(e => console.error('Uncaught Error', e));
 	
