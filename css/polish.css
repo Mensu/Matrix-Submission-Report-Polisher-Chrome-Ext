@@ -1,3 +1,34 @@
+.shixun-query {
+  text-align: right;
+  margin-bottom: 20px;
+}
+.shixun-query input {
+  font-size: 18px;
+}
+.shixun-query input[type="button"] {
+  margin-left: 10px;
+  border-radius: 5px;
+  border: 0 solid #eee;
+  padding: 8px 25px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #fff;
+  box-shadow: 0 0 10px #ccc;
+  background: rgba(71, 158, 162, 0.5);
+  outline: none;
+  -webkit-transition: background-color 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out;
+}
+.shixun-query input[type="button"]:hover {
+  background: #4797B1;
+}
+.shixun-query input[type="button"]:disabled {
+  background-color: #ccc;
+}
+.shixun-query input[type="button"]:disabled:hover {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
 pre.full-score {
   border: none;
   white-space: pre-wrap;

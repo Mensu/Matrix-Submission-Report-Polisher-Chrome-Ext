@@ -3,7 +3,9 @@
   "version": "0.2.0",
   "description": "polish your submission report on Matrix",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "dev": "lessc ./css/less/polish.less ./css/polish.css --autoprefix=\"last 2 versions, >5%\" --source-map; webpack -d -w"
+  },
   "author": "Mensu",
   "license": "MIT",
   "repository": "https://github.com/Mensu/Matrix-Submission-Report-Polisher-Chrome-Ext",

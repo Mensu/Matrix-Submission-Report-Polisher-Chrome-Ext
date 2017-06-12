@@ -53,7 +53,7 @@
 	const StudentAnswerArea = __webpack_require__(/*! ./components/elements/StudentAnswerArea.js */ 20);
 	const genDriver = __webpack_require__(/*! ./components/lib/genDriver */ 3);
 	const setTimeoutAsync = __webpack_require__(/*! ./components/lib/setTimeoutAsync */ 9);
-	document.body.appendChild(__webpack_require__(/*! ./components/elements/backToTop.js */ 28));
+	// document.body.appendChild(require('./components/elements/backToTop.js'));
 	
 	const createPolishedReportDiv = polisher.getPolishedReportDiv;
 	
@@ -70,6 +70,8 @@
 	      //   return removeValidationLogin(body, sender, callback);
 	      case 'startStudentSubmission':
 	        return polishStudentReport(body, sender, callback);
+	      case 'shixun':
+	        return shixun(body, sender, callback);
 	      default:
 	        break;
 	    }
@@ -269,6 +271,44 @@
 	    }, false);
 	    return callback('front has removed validation for login!');
 	  })();
+	}
+	
+	function shixun(body, sender, callback) {
+	  return genDriver(function *() {
+	    let shixunQuery = document.querySelector('.shixun-query');
+	    if (shixunQuery) return;
+	    const studentIdInput = document.createElement('input');
+	    const queryBtn = document.createElement('input');
+	    queryBtn.type = 'button';
+	    queryBtn.value = '下载该学生提交';
+	    shixunQuery = document.createElement('div');
+	    shixunQuery.classList.add('shixun-query');
+	    shixunQuery.appendChild(studentIdInput);
+	    shixunQuery.appendChild(queryBtn);
+	    let home = null;
+	    while (home === null) {
+	      yield setTimeoutAsync(500);
+	      home = document.querySelector('#matrix-home');
+	    }
+	    home.insertBefore(shixunQuery, home.firstElementChild);
+	    queryBtn.addEventListener('click', () => {
+	      const { value } = studentIdInput;
+	      if (value.length === 0) return;
+	      chrome.runtime.sendMessage({
+	        signal: 'shixun',
+	        studentId: studentIdInput.value,
+	      }, ({ success, msg }) => {
+	        if (success === false) {
+	          window.alert(msg);
+	          return;
+	        }
+	        window.open(msg, '_blank');
+	      });
+	    });
+	    studentIdInput.addEventListener('keydown', function(event) {
+	      if ((event.key || event.keyIdentifier) == 'Enter') queryBtn.click();
+	    });
+	  });
 	}
 	
 	function polishStudentReport(body, sender, callback) {
@@ -16017,65 +16057,6 @@
 	    root['FilesCmpElements'] = factory();
 	})(this, function factory() {
 	  return FilesCmpElements;
-	});
-
-
-/***/ },
-/* 28 */
-/*!*********************************************!*\
-  !*** ./js/components/elements/backToTop.js ***!
-  \*********************************************/
-/***/ function(module, exports, __webpack_require__) {
-
-	var createElementWith = __webpack_require__(/*! ../lib/createElementWith.js */ 15);
-	
-	  // create backToTop button
-	var backToTop = createElementWith('div', 'backToTop-wrapper',
-	  createElementWith('div', 'backToTop-btn', [
-	      createElementWith('div', 'arrow-upward'),
-	      createElementWith('div', 'vertical-stick')
-	    ]
-	  )
-	);
-	backToTop.id = 'backToTop';
-	
-	  // scroll event
-	backToTop.addEventListener('click', function () {
-	  var distanceFromTop = document.body.scrollTop;
-	  var pace = distanceFromTop / 33.3;
-	  window.requestAnimationFrame((function () {
-	    var resultedScrollTop = document.body.scrollTop - pace;
-	    document.body.scrollTop = ((resultedScrollTop < 0) ? 0 : resultedScrollTop);
-	    if (document.body.scrollTop > 0) window.requestAnimationFrame(arguments.callee);
-	  }));
-	}, false);
-	
-	backToTop.toShow = function() {
-	  this.classList.remove('hidden');
-	};
-	backToTop.toHide = function() {
-	  this.classList.add('hidden');
-	};
-	
-	(function exportModuleUniversally(root, factory) {
-	  if (true)
-	    module.exports = factory();
-	  else if (typeof(define) === 'function' && define.amd)
-	    define(factory);
-	  /* amd  // module name: diff
-	    define([other dependent modules, ...], function(other dependent modules, ...)) {
-	      return exported object;
-	    });
-	    usage: require([required modules, ...], function(required modules, ...) {
-	      // codes using required modules
-	    });
-	  */
-	  else if (typeof(exports) === 'object')
-	    exports['backToTop'] = factory();
-	  else
-	    root['backToTop'] = factory();
-	})(this, function factory() {
-	  return backToTop;
 	});
 
 

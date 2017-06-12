@@ -5,6 +5,7 @@ const genDriver = require('./components/lib/genDriver.js');
 const pick = require('./components/lib/pick.js');
 const setTimeoutAsync = require('./components/lib/setTimeoutAsync.js');
 const FilesDiff = require('./components/FilesDiff.js');
+const httpRequest = require('./components/lib/httpRequest.js');
 
 const matrix = new MatrixObject({
   patternUrl: 'http://*.vmatrix.org.cn/',
@@ -315,6 +316,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return filesDiff();
       case 'loginWithoutValidation':
         return loginWithoutValidation();
+      case 'shixun':
+        return shixun();
       default:
         break;
     }
@@ -361,6 +364,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return sendResponse(body);
     });
   }
+
+  function shixun() {
+    return genDriver(function *() {
+      const { studentId } = message;
+      const root = 'https://vmatrix.org.cn';
+      const { data: members } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/members`));
+      const user = members.find(({ student_id }) => student_id === String(studentId));
+      if (!user) {
+        const msg = `找不到学号为 ${studentId} 的学生`;
+        console.log(msg);
+        return sendResponse({ success: false, msg });
+      }
+      const { user_id } = user;
+      const { data: subs } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/assignments/723/submissions?user_id=${user_id}`));
+      if (subs.length === 0) {
+        const msg = `${studentId} 在 20170611 文件备份3 没有提交`;
+        console.log(msg);
+        return sendResponse({ success: false, msg });
+      }
+      const [{ sub_ea_id }] = subs;
+      const downloadUrl = `${root}/api/courses/78/exams/106/assignments/723/submissions/${sub_ea_id}/download`;
+      console.log(downloadUrl);
+      return sendResponse({ success: true, msg: downloadUrl });
+    });
+  }
 });
 
 chrome.tabs.sendMessageAsync = function(...args) {
@@ -372,3 +400,16 @@ chrome.tabs.sendMessageAsync = function(...args) {
     )
   );
 }
+
+chrome.webRequest.onCompleted.addListener(details => {
+  return genDriver(function *() {
+    return chrome.tabs.sendMessageAsync(details.tabId, {
+      signal: 'shixun',
+    });
+  }).catch(e => console.error('Uncaught Error', e));
+
+}, {
+  urls: [
+    `${matrix.rootUrl}api/courses/assignments?state=started&waitingForMyJudging=1`,
+  ]
+});

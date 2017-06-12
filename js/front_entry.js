@@ -4,7 +4,7 @@ const customElements = require('./components/elements/customElements.js');
 const StudentAnswerArea = require('./components/elements/StudentAnswerArea.js');
 const genDriver = require('./components/lib/genDriver');
 const setTimeoutAsync = require('./components/lib/setTimeoutAsync');
-document.body.appendChild(require('./components/elements/backToTop.js'));
+// document.body.appendChild(require('./components/elements/backToTop.js'));
 
 const createPolishedReportDiv = polisher.getPolishedReportDiv;
 
@@ -21,6 +21,8 @@ chrome.runtime.onMessage.addListener((body, sender, callback) => {
       //   return removeValidationLogin(body, sender, callback);
       case 'startStudentSubmission':
         return polishStudentReport(body, sender, callback);
+      case 'shixun':
+        return shixun(body, sender, callback);
       default:
         break;
     }
@@ -220,6 +222,44 @@ function removeValidationLogin(body, sender, callback) {
     }, false);
     return callback('front has removed validation for login!');
   })();
+}
+
+function shixun(body, sender, callback) {
+  return genDriver(function *() {
+    let shixunQuery = document.querySelector('.shixun-query');
+    if (shixunQuery) return;
+    const studentIdInput = document.createElement('input');
+    const queryBtn = document.createElement('input');
+    queryBtn.type = 'button';
+    queryBtn.value = '下载该学生提交';
+    shixunQuery = document.createElement('div');
+    shixunQuery.classList.add('shixun-query');
+    shixunQuery.appendChild(studentIdInput);
+    shixunQuery.appendChild(queryBtn);
+    let home = null;
+    while (home === null) {
+      yield setTimeoutAsync(500);
+      home = document.querySelector('#matrix-home');
+    }
+    home.insertBefore(shixunQuery, home.firstElementChild);
+    queryBtn.addEventListener('click', () => {
+      const { value } = studentIdInput;
+      if (value.length === 0) return;
+      chrome.runtime.sendMessage({
+        signal: 'shixun',
+        studentId: studentIdInput.value,
+      }, ({ success, msg }) => {
+        if (success === false) {
+          window.alert(msg);
+          return;
+        }
+        window.open(msg, '_blank');
+      });
+    });
+    studentIdInput.addEventListener('keydown', function(event) {
+      if ((event.key || event.keyIdentifier) == 'Enter') queryBtn.click();
+    });
+  });
 }
 
 function polishStudentReport(body, sender, callback) {
