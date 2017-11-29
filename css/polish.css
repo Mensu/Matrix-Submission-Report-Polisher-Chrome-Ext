@@ -1,3 +1,62 @@
+.shixun-query {
+  text-align: right;
+  margin-bottom: 20px;
+}
+.shixun-query input {
+  font-size: 18px;
+}
+.shixun-query select {
+  margin-left: 10px;
+}
+.shixun-query input[type="button"] {
+  margin-left: 10px;
+  border-radius: 5px;
+  border: 0 solid #eee;
+  padding: 8px 25px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #fff;
+  box-shadow: 0 0 10px #ccc;
+  background: rgba(71, 158, 162, 0.5);
+  outline: none;
+  transition: background-color 0.2s ease-in-out;
+}
+.shixun-query input[type="button"]:hover {
+  background: #4797B1;
+}
+.shixun-query input[type="button"]:disabled {
+  background-color: #ccc;
+}
+.shixun-query input[type="button"]:disabled:hover {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+#matrix-programming-report .report-section {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 36px;
+  box-shadow: 0px 3px 10px #ccc;
+  height: auto;
+}
+#matrix-programming-report .report-section .score {
+  padding-bottom: 24px;
+  margin-bottom: 5px;
+  font-size: 24px;
+  line-height: 24px;
+  border-bottom: 1px solid #ccc;
+  color: #479ea2;
+}
+#matrix-programming-report .report-section .report-detail pre.full-score {
+  color: #2b9161;
+}
+#matrix-programming-report .report-section .report-detail pre.red-color {
+  color: #df3636;
+}
+#matrix-programming-report .report-section a.link {
+  float: right;
+  font-size: 16px;
+}
 pre.full-score {
   border: none;
   white-space: pre-wrap;
@@ -13,7 +72,6 @@ input.switch-btn {
   box-shadow: 0 0 10px #ccc;
   background: rgba(71, 158, 162, 0.5);
   outline: none;
-  -webkit-transition: background-color 0.2s ease-in-out;
   transition: background-color 0.2s ease-in-out;
 }
 input.switch-btn:hover {
@@ -120,6 +178,9 @@ input.hide-button {
   margin-bottom: 0;
   margin-left: 0 !important;
 }
+.tests-check-summary .result-code {
+  margin-top: 10px;
+}
 .tests-check-summary .result-code,
 .tests-check-summary .limit-use {
   font-size: 18px !important;
@@ -173,8 +234,20 @@ ui-view.ng-scope #course-assignment-one-submission-program .submission-container
 #course-submission-programing .answer-container .one-student-area .answerfiles-ul li.answerfile-bar-li {
   width: unset !important;
 }
-#course-submission-programing .course-assignment-one-submission-wrapper .answer-wrapper.clang-formatted {
-  margin-right: 163px;
+.answer-wrapper.clang-formatted {
+  margin-bottom: 24px;
+  padding: 36px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px #ccc;
+}
+.answer-wrapper.clang-formatted .title {
+  border-bottom: 1px solid #eee;
+  line-height: 24px;
+  font-size: 24px;
+  padding-bottom: 24px;
+  color: #479ea2;
+  margin-bottom: 10px;
 }
 pre.plain-text-wrapper {
   background: url("https://developer.cdn.mozilla.net/static/img/blueprint-dark.fd85a7a074ae.png") top center #fafbfc;
@@ -434,6 +507,10 @@ span.one-diff-content {
   top: 40px !important;
   right: 85px !important;
 }
+.one-submission-container .sidebar-container {
+  top: 40px !important;
+  right: 85px !important;
+}
 .button-wrapper {
   top: 80px !important;
   right: 20px !important;
@@ -460,6 +537,18 @@ span.one-diff-content {
 #course-submission-programing .choice-tab li {
   vertical-align: text-bottom;
 }
+assignment-program .files-cmp-li .tab-title {
+  cursor: pointer;
+  padding: 10px 15px;
+  min-width: 60px;
+  color: #959494;
+  text-align: center;
+  height: 100%;
+}
+assignment-program .files-cmp-li .tab-title.active {
+  border-bottom: 2px solid #4a8bee;
+  color: #000;
+}
 /*
 
 Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-license.org/
@@ -468,7 +557,11 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
 .clang-formatted .code-area {
   height: unset !important;
 }
+.clang-formatted ul {
+  -webkit-padding-start: unset;
+}
 .clang-formatted li.answerfile-bar-li {
+  display: inline-block;
   cursor: pointer;
   text-decoration: none;
   color: #ccc;
@@ -602,7 +695,6 @@ Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-lic
   background-color: rgba(71, 158, 162, 0.5);
   font-size: 16px;
   color: #fff;
-  -webkit-transition: background-color 0.2s;
   transition: background-color 0.2s;
   -webkit-appearance: push-button;
   -webkit-user-select: none;

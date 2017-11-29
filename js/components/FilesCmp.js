@@ -52,7 +52,7 @@ function SwitchSelectedTab() {
   if (this.asTA) {
     this.classList.add(activeSelector);
   } else {
-    this.querySelector('a').classList.add(activeSelector);
+    this.querySelector('.tab-title').classList.add(activeSelector);
   }
 
   if (!this.hideElement) return;
@@ -144,6 +144,9 @@ function showDifference() {
 
     // get courseId and problemId
   var ids = /courses{0,1}\/([0-9]{1,})\/assignments{0,1}\/(?:submission-)?programming(?:\/|\?problemId=)([0-9]{1,})/.exec(document.URL);
+  if (!ids) {
+    ids = /courses{0,1}\/([0-9]{1,})\/assignments{0,1}\/(?:check-submission\/)?([0-9]{1,})/.exec(document.URL);
+  }
   const [, courseId, assignmentId] = ids;
     // remove old ones
   var oldFilesCmpDiv = filesDiffPart.querySelector('.polished-report-success');
@@ -298,7 +301,12 @@ FilesCmpTab.prototype = {
 
 var FilesCmpElements = {
   "createSecondBarLi": function(text, hideElement, asTA) {
-    var li = createElementWith('li', ['navli', 'files-cmp-li'], (asTA ? text : createElementWith('a', 'programming-nav', text)));
+    var li;
+    if (asTA) {
+      li = createElementWith('li', ['nav-li', 'nav-item', 'submission-tab', 'files-cmp-li'], createElementWith('a', 'nav-link', createElementWith('span', ['tab-heading'], text)));
+    } else {
+      li = createElementWith('tab-title', ['nav-li', 'nav-item', 'files-cmp-li'], createElementWith('div', 'tab-title', text));
+    }
     li['hideElement'] = hideElement;
     li['asTA'] = asTA;
     li.addEventListener('click', SwitchSelectedTab, false);

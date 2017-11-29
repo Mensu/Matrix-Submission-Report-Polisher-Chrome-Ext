@@ -77,12 +77,12 @@ var polisher = {
       fragment.appendChild(detail);
       return fragment;
     }
-   
+
     function testsDetail(phaseInfo, std) {
       var cases = phaseInfo.report;
       var fragment = document.createDocumentFragment();
       var detail = document.createDocumentFragment();
-      
+
       var index = 1;
       var maxCaseNum = std ? maxStdCaseNum : maxRanCaseNum;
       if (phaseInfo.failedCaseNum) {
@@ -100,7 +100,7 @@ var polisher = {
           summary.appendChild(createElementWith('pre', (caseInfo.resultCode != 'CR' ? ['result-code', 'non-pass'] : 'result-code'), 'Result: ' + resultText[caseInfo.resultCode]));
           summary.appendChild(createElementWith('br'));
           summary.appendChild(createElementWith('pre', 'limit-use', [
-              createElementWith('span', 'limit-text', '\nMemory Used: '),
+              createElementWith('span', 'limit-text', 'Memory Used: '),
               createElementWith('span', (caseInfo.resultCode == 'ML' ? ['limit-text', 'non-pass'] : 'limit-text'), caseInfo.memoryused + 'KB'),
               createElementWith('span', 'limit-text', ' / ' + memoryLimit),
               createElementWith('span', 'limit-text', '\nTime Used: '),
@@ -175,7 +175,7 @@ var polisher = {
             radioGroup.querySelector('input').click();
             caseInnerWrapper.appendChild(createViewInHexSpan(sectionId, caseInnerWrapper));
             caseInnerWrapper.classList.add('hideHex');
-            var errorContent = createElementWith('pre', 'error-content', diffPre); 
+            var errorContent = createElementWith('pre', 'error-content', diffPre);
             caseInnerWrapper.appendChild(errorContent);
           }
           caseOuterWrapper.appendChild(caseInnerWrapper), detail.appendChild(caseOuterWrapper);
@@ -306,7 +306,7 @@ var polisher = {
           caseWrapper.appendChild(itemsWrapper), detail.appendChild(caseWrapper);
         }
       }
-        
+
       fragment.appendChild(detail);
       return fragment;
     }
@@ -322,7 +322,7 @@ var polisher = {
     function randomTestsDetail(phaseInfo) {
       return testsDetail(phaseInfo, false);
     }
-    
+
     function getScoreDiv(phase, score, total, pass) {
       var nodesToBeAppended = [
         createElementWith('span', 'score-text', phase.description + " : You've got "),
@@ -336,7 +336,7 @@ var polisher = {
       }
       return createElementWith('div', [phase.id.replace(/ /g, '-').replace(/-tests/, '-tests-check') + '-score', 'score'], nodesToBeAppended);
     }
-    
+
     var phases = [{
                     "id": 'compile check',
                     "getDetail": compileCheckDetail,
@@ -408,7 +408,7 @@ var polisher = {
       }
       reportSection.id = 'report-' + onePhase.id.replace(/ /g, '-');
       sideNav.add(onePhase.description + scoreTextOnNav, reportSection.id, 1, (pass ? undefined : 'non-pass'));
-      
+
       var testContent = createElementWith('div', 'test-content');
       var detail = null;
       if (reportObjCurPhase.error) {
@@ -441,7 +441,7 @@ var polisher = {
     sectionsWrapper.id = 'matrix-programming-report';
     report.appendChild(sectionsWrapper);
     var sideNav = new SideNav();
-    
+
     filesDiff.files.forEach(function(oneCommonFile) {
       var suffix = '';
       if (oneCommonFile.diff && oneCommonFile.diff.length == 1 && oneCommonFile.diff[0].common == true) {
@@ -468,7 +468,7 @@ var polisher = {
       radioGroup.querySelectorAll('.std-your-diff-radio-group-label')[2].textContent = configs.yourHeading;
       caseInnerWrapper.appendChild(createViewInHexSpan('view-hex-span-' + oneCommonFile.name.replace(/ |\./g, '-'), caseInnerWrapper));
       caseInnerWrapper.classList.add('hideHex');
-      var errorContent = createElementWith('pre', 'error-content', diffPre); 
+      var errorContent = createElementWith('pre', 'error-content', diffPre);
       caseInnerWrapper.appendChild(errorContent);
       caseOuterWrapper.appendChild(caseInnerWrapper), detail.appendChild(caseOuterWrapper);
       var reportDetail = createElementWith('div', 'report-detail', detail);

@@ -1,4 +1,36 @@
 @import "utility.less";
+#matrix-programming-report {
+  .report-section {
+    margin-bottom: 24px;
+    border-radius: 8px;
+    background-color: #fff;
+    padding: 36px;
+    box-shadow: 0px 3px 10px #ccc;
+    height: auto;
+    .score {
+      padding-bottom: 24px;
+      margin-bottom: 5px;
+      font-size: 24px;
+      line-height: 24px;
+      border-bottom: 1px solid #ccc;
+      color: #479ea2;
+    }
+    .report-detail {
+      pre.full-score {
+        color: #2b9161;
+      }
+      pre.red-color {
+        color: #df3636;
+      }
+    }
+
+    a.link {
+      float: right;
+      font-size: 16px;
+    }
+
+  }
+}
 pre.full-score {
   border: none;
   white-space: pre-wrap;
@@ -111,6 +143,10 @@ input.hide-button {
     margin-left: 0 !important;
   }
 
+  .result-code {
+    margin-top: 10px;
+  }
+
   .result-code,
   .limit-use {
     font-size: 18px !important;
@@ -183,6 +219,18 @@ ui-view.ng-scope #course-assignment-one-submission-program {
   }
 }
 
-#course-submission-programing .course-assignment-one-submission-wrapper .answer-wrapper.clang-formatted {
-  margin-right: 160px + 3em;
+.answer-wrapper.clang-formatted {
+  margin-bottom: 24px;
+  padding: 36px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px #ccc;
+  .title {
+    border-bottom: 1px solid #eee;
+    line-height: 24px;
+    font-size: 24px;
+    padding-bottom: 24px;
+    color: #479ea2;
+    margin-bottom: 10px;
+  }
 }

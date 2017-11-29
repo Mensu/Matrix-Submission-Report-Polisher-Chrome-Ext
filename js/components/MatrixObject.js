@@ -32,7 +32,7 @@ class MatrixObject {
    */
   constructor(newConfigs) {
     const self = this;
-    self.configsNames = ['rootUrl', 'googleStyleUrl', 'patternUrl', 'localUrl'];
+    self.configsNames = ['rootUrl', 'rootUrl2', 'googleStyleUrl', 'patternUrl', 'localUrl'];
     for (const oneConfigName of self.configsNames) {
       self[oneConfigName] = null;
     }

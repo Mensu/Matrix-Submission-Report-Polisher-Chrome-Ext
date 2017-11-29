@@ -5,11 +5,13 @@ const genDriver = require('./components/lib/genDriver.js');
 const pick = require('./components/lib/pick.js');
 const setTimeoutAsync = require('./components/lib/setTimeoutAsync.js');
 const FilesDiff = require('./components/FilesDiff.js');
+const httpRequest = require('./components/lib/httpRequest.js');
 
 const matrix = new MatrixObject({
   patternUrl: 'http://*.vmatrix.org.cn/',
   rootUrl: 'https://vmatrix.org.cn/',
-  localUrl: 'http://localhost:3000/',
+  rootUrl2: 'http://matrix.sysu.edu.cn/',
+  localUrl: 'http://localhost:4200/',
   googleStyleUrl: 'http://123.207.29.66:3001/',
 });
 require('./components/checkIsOnline.js')(matrix);
@@ -22,6 +24,7 @@ require('./components/checkIsOnline.js')(matrix);
 chrome.webRequest.onCompleted.addListener(getDataToPolishCourseReport, {
   urls: [
     `${matrix.rootUrl}api/courses/*/assignments/*/submissions/*`,
+    `${matrix.rootUrl2}api/courses/*/assignments/*/submissions/*`,
     `${matrix.patternUrl}api/courses/*/assignments/*/submissions/*`,
     `${matrix.localUrl}api/courses/*/assignments/*/submissions/*`,
   ],
@@ -43,20 +46,20 @@ function getDataToPolishCourseReport(details) {
       userId,
     };
 
+    const answers = yield getSubmission(param);
+    if (!answers) return;
+
     const submissionList = yield getSubmissionsList(param);
     if (!submissionList) return;
 
     getSubmitTime(submissionList, param);
 
-    const answers = yield getSubmission(param);
-    if (!answers) return;
-
     if (answers.length) {
-      const googleStyleConfig = (userId ? { getFormattedCodes: true } : undefined);
+      const googleStyleConfig = (param.userId ? { getFormattedCodes: true } : undefined);
       yield getGoogleStyle(answers, googleStyleConfig, param);
     }
 
-    const signal = (userId ? 'startStudentSubmission' : 'start')
+    const signal = (param.userId ? 'startStudentSubmission' : 'start');
     const response = yield sendReportObjToFront(param, signal);
     console.log(response);
 
@@ -125,7 +128,7 @@ function getDataToPolishCourseReport(details) {
           const {
             config,
             config: { grading },
-            files
+            files,
           } = body.data;
           param.problemInfo = config;
           param.problemInfo.totalPoints = grading;
@@ -134,8 +137,7 @@ function getDataToPolishCourseReport(details) {
           supportFiles.forEach(oneSupportFile => (oneSupportFile.dontCheckStyle = true));
           param.problemInfo.supportFiles = supportFiles;
           // deprecated
-          param.problemInfo.supportedFiles = param.problemInfo.supportFiles;
-
+          // param.problemInfo.supportedFiles = param.problemInfo.supportFiles;
         } else {
           param.problemInfo = {
             limits: {},
@@ -144,20 +146,15 @@ function getDataToPolishCourseReport(details) {
         }
 
         return param.problemInfo;
-
       });
     }
 
     function getSubmission(param) {
       return genDriver(function *() {
-        let getSubmissionFunc = matrix.getSubmission;
-        if (requiringLatest || param.userId) {
-          const problemInfo = yield getProblemInfo(param);
-          if (!problemInfo) return false;
-          if (requiringLatest) {
-            getSubmissionFunc = matrix.getLatestSubmission;
-          }
-        }
+        const getSubmissionFunc = requiringLatest ? matrix.getLatestSubmission : matrix.getSubmission;
+
+        const problemInfo = yield getProblemInfo(param);
+        if (!problemInfo) return false;
 
         let body = null;
         try {
@@ -169,12 +166,12 @@ function getDataToPolishCourseReport(details) {
           return console.error('Error: submission body.data is empty'), false;
         }
         param.reportBody = body;
+        param.userId = body.paramData.submission.user_id;
         if (!Reflect.hasOwnProperty.call(body.data, 'answers')) {
           return [];
         }
-        const filesToMergeToAnswers = (param.userId ? param.problemInfo.supportFiles : []);
-        const answers = [...body.data.answers, ...filesToMergeToAnswers];
-        return answers;
+        const filesToMergeToAnswers = param.problemInfo.supportFiles;
+        return [...body.data.answers, ...filesToMergeToAnswers];
       });
     }
 
@@ -201,7 +198,6 @@ function getDataToPolishCourseReport(details) {
     }
 
   }).catch(e => console.error('Uncaught Error', e));
-
 }
 
 function getRootUrl(url) {
@@ -230,7 +226,7 @@ function sendReportObjToFront(param, signal) {
 
 // listen for:
 // /api/libraries/*/problems/*
-chrome.webRequest.onCompleted.addListener(details => {
+chrome.webRequest.onCompleted.addListener((details) => {
   return genDriver(function *() {
     const { matchRes } = getMatchRes(details);
     if (!matchRes) return;
@@ -268,7 +264,7 @@ chrome.webRequest.onCompleted.addListener(details => {
           config,
           config: { grading },
           updated_at,
-          report: { total_grade: grade }
+          report: { total_grade: grade },
         } = body.data.config;
         // libaray problem info
         param.problemInfo = config;
@@ -282,13 +278,13 @@ chrome.webRequest.onCompleted.addListener(details => {
       });
     }
   }).catch(e => console.error('Uncaught Error', e));
-
 }, {
   urls: [
     `${matrix.rootUrl}api/libraries/*/problems/*`,
+    `${matrix.rootUrl2}api/libraries/*/problems/*`,
     `${matrix.patternUrl}api/libraries/*/problems/*`,
     `${matrix.localUrl}api/libraries/*/problems/*`,
-  ]
+  ],
 });
 
 // chrome.webRequest.onCompleted.addListener(details => {
@@ -315,6 +311,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return filesDiff();
       case 'loginWithoutValidation':
         return loginWithoutValidation();
+      case 'shixun':
+        return shixun();
       default:
         break;
     }
@@ -361,14 +359,54 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return sendResponse(body);
     });
   }
+
+  function shixun() {
+    return genDriver(function *() {
+      const { studentId, asgnId } = message;
+      const root = 'https://vmatrix.org.cn';
+      const { data: members } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/members`));
+      const user = members.find(({ student_id }) => student_id === String(studentId));
+      if (!user) {
+        const msg = `找不到学号为 ${studentId} 的学生`;
+        console.log(msg);
+        return sendResponse({ success: false, msg });
+      }
+      const { user_id } = user;
+      const { data: subs } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/assignments/${asgnId}/submissions?user_id=${user_id}`));
+      if (subs.length === 0) {
+        const msg = `${studentId} 在 20170611 文件备份3 没有提交`;
+        console.log(msg);
+        return sendResponse({ success: false, msg });
+      }
+      const [{ sub_ea_id }] = subs;
+      const downloadUrl = `${root}/api/courses/78/exams/106/assignments/${asgnId}/submissions/${sub_ea_id}/download`;
+      console.log(downloadUrl);
+      return sendResponse({ success: true, msg: downloadUrl });
+    });
+  }
 });
 
-chrome.tabs.sendMessageAsync = function(...args) {
-  return new Promise(
-    resolve => chrome.tabs.sendMessage.call(
-      chrome.tabs,
-      ...args,
-      response => resolve(response)
-    )
-  );
-}
+chrome.tabs.sendMessageAsync = (...args) => new Promise(
+  resolve => chrome.tabs.sendMessage.call(
+    chrome.tabs,
+    ...args,
+    response => resolve(response)
+  )
+);
+
+// chrome.webRequest.onCompleted.addListener(details => {
+//   return genDriver(function *() {
+//     const root = 'https://vmatrix.org.cn';
+//     let { data: asgns } = JSON.parse(yield httpRequest('get', `${root}/api/exams/106/assignments`));
+//     asgns = asgns.filter(({ type }) => type === 'Fileupload problem').map(({ ea_id, title }) => ({ ea_id, title }));
+//     return chrome.tabs.sendMessageAsync(details.tabId, {
+//       signal: 'shixun',
+//       asgns,
+//     });
+//   }).catch(e => console.error('Uncaught Error', e));
+
+// }, {
+//   urls: [
+//     `${matrix.rootUrl}api/courses/assignments?state=started&waitingForMyJudging=1`,
+//   ]
+// });
