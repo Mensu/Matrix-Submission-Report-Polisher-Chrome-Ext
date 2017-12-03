@@ -547,6 +547,8 @@ diff_match_patch.prototype.diff_onelineToWords_ = function(text1, text2) {
 diff_match_patch.prototype.toLineDiffResult = function(rawDiffs) {
   var rawDiffsLength = rawDiffs.length;
   if (0 === rawDiffsLength) return [];
+  if (0 === rawDiffs[0][1].length) rawDiffs.shift(), --rawDiffsLength;
+  if (0 === rawDiffsLength) return [];
   if (0 === rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
   var lastDiffEndsWithNewLine = (rawDiffsLength && rawDiffs[rawDiffsLength - 1][1].endsWith('\n'));
   var secondLastDiffEndsWithNewLine = true;
@@ -577,12 +579,12 @@ diff_match_patch.prototype.toLineDiffResult = function(rawDiffs) {
               // ... [added] [common] or ... [removed] [common]
               // and [common] ends with a '\n'
             appendNewLineTo(rawDiffsLength - 1);
-            
+
             // ... [removed] [added]
               // both end with a '\n'
         } else if (secondLastDiffEndsWithNewLine && lastDiffEndsWithNewLine) {
             rawDiffs[rawDiffsLength] = [0, '\n'];  // to result: ... [removed] [added] [common (content: '\n' from both)]
-            
+
             ++rawDiffsLength;
         } else if (secondLastDiffEndsWithNewLine) {
               // only [removed] with a '\n' => ... [removed + '\n'] [added]
@@ -615,6 +617,7 @@ diff_match_patch.prototype.toLineDiffResult = function(rawDiffs) {
 };
 diff_match_patch.prototype.toCharDiffResult = function(rawDiffs) {
   var rawDiffsLength = rawDiffs.length;
+  if (rawDiffsLength && 0 === rawDiffs[0][1].length) rawDiffs.shift(), --rawDiffsLength;
   if (rawDiffsLength && 0 == rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
   return rawDiffs.map(function(oneRawDiff, index, self) {
     var oneDiff = {};
@@ -627,6 +630,7 @@ diff_match_patch.prototype.toCharDiffResult = function(rawDiffs) {
 };
 diff_match_patch.prototype.toWordDiffResult = function(rawDiffs) {
   var rawDiffsLength = rawDiffs.length;
+  if (rawDiffsLength && 0 === rawDiffs[0][1].length) rawDiffs.shift(), --rawDiffsLength;
   if (rawDiffsLength && 0 == rawDiffs[rawDiffsLength - 1][1].length) rawDiffs.pop(), --rawDiffsLength;
   return rawDiffs.map(function(oneRawDiff, index, self) {
     var oneDiff = {};

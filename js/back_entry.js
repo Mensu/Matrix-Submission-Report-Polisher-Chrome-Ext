@@ -59,7 +59,7 @@ function getDataToPolishCourseReport(details) {
       yield getGoogleStyle(answers, googleStyleConfig, param);
     }
 
-    const signal = (param.userId ? 'startStudentSubmission' : 'start');
+    const signal = 'start';
     const response = yield sendReportObjToFront(param, signal);
     console.log(response);
 
